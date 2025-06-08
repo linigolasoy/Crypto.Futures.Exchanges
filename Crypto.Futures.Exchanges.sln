@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35913.81 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges", "Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj", "{FB2ACDCF-32B4-489A-86DB-FF49363B253A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Tests", "Crypto.Futures.Exchanges.Tests\Crypto.Futures.Exchanges.Tests.csproj", "{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB2ACDCF-32B4-489A-86DB-FF49363B253A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB2ACDCF-32B4-489A-86DB-FF49363B253A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB2ACDCF-32B4-489A-86DB-FF49363B253A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB2ACDCF-32B4-489A-86DB-FF49363B253A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6D8192B7-1ECF-49A7-9271-7F5FFAADD678}
+	EndGlobalSection
+EndGlobal

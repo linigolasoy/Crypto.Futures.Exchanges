@@ -1,0 +1,51 @@
+﻿using Crypto.Futures.Exchanges.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Crypto.Futures.Exchanges.Coinex
+{
+    internal class CoinexMarket : IFuturesMarket
+    {
+        private const string ENDP_FUNDING = "/futures/funding-rate";
+        private CoinexFutures m_oExchange;
+        public CoinexMarket( CoinexFutures oExchange)
+        {
+            m_oExchange = oExchange;
+        }
+
+        public IFuturesExchange Exchange { get => m_oExchange; }
+
+
+        private async Task<IFundingRate[]?> GetAllFundingRates()
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+            List<IFundingRate> aResult = new List<IFundingRate>();
+            foreach (var f in oResult.Data)
+            {
+                if( f!= null) aResult.Add(f);   
+            }
+
+            return aResult.ToArray();
+        }
+        public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
+        {
+            IFundingRate[]? aAllFunding = await GetAllFundingRates();
+            if (aAllFunding == null) return null;
+            return aAllFunding.FirstOrDefault(f => f.Symbol.Symbol == oSymbol.Symbol);
+        }
+
+        public async Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[]? aSymbols)
+        {
+            IFundingRate[]? aAllFunding = await GetAllFundingRates();
+            if (aAllFunding == null) return null;
+            if( aSymbols == null) return aAllFunding;
+            return aAllFunding.Where(f => aSymbols.Any(s => f.Symbol.Symbol == s.Symbol)).ToArray();
+        }
+    }
+}

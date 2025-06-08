@@ -1,0 +1,41 @@
+﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.Rest;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Crypto.Futures.Exchanges.Coinex
+{
+    internal class CoinexParser : ICryptoRestParser
+    {
+        public CoinexParser(IFuturesExchange exchange)
+        {
+            Exchange = exchange;
+        }
+
+        public IFuturesExchange Exchange { get; }
+
+        public string? ErrorToMessage(int nError)
+        {
+            return nError.ToString();
+        }
+
+        public IFuturesSymbol? ParseSymbols(JToken? oJson)
+        {
+            return CoinexSymbol.Parse(this.Exchange, oJson);
+        }
+
+        public IFundingRate? ParseFundingRate(JToken? oJson)
+        {
+            return CoinexFundingRate.Parse(this.Exchange, oJson);   
+        }
+
+        public IBar? ParseBar( IFuturesSymbol oSymbol, BarTimeframe eFrame, JToken? oJson)
+        {
+            return CoinexBar.Parse(Exchange, oSymbol, eFrame, oJson);
+        }
+    }
+}
