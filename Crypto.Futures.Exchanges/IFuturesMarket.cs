@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,5 +23,8 @@ namespace Crypto.Futures.Exchanges
         public Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol);
         public Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[]? aSymbols = null);
         // Tickers 
+
+        // Websocket
+        public IWebsocketPublic Websocket { get; }
     }
 }

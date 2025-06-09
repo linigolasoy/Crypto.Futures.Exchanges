@@ -1,5 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Mexc.MexcWs;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,8 +24,11 @@ namespace Crypto.Futures.Exchanges.Mexc
         public MexcMarket( MexcFutures oExchange ) 
         {
             m_oExchange = oExchange;
+            Websocket = new MexcWebsocketPublic(this);
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPublic Websocket { get;}
 
 
         /// <summary>

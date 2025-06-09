@@ -38,13 +38,30 @@ namespace Crypto.Futures.Exchanges.Tests
         }
 
 
+        private class NewSymbolChance
+        {
+            public NewSymbolChance(IFuturesSymbol oSymbol) 
+            { 
+                Symbol = oSymbol;
+            }
+
+            public IFuturesSymbol Symbol { get; }
+
+            public IBar? BarOpen { get; set; } = null;
+            public IBar? BarClose { get; set; } = null;
+            public decimal PriceSL { get; set; } = 0;
+            public decimal PriceTp { get; set; } = 0;
+            public decimal PriceOpen { get; set; } = 0;
+            public decimal PriceClose { get; set; } = 0;
+            public decimal Quantity {  get; set; } = 0; 
+        }
         [TestMethod]
         public async Task NewSymbolsBarTest()
         {
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(CommonTests.SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            DateTime dFrom = DateTime.Today.AddMonths(-1);
+            DateTime dFrom = new DateTime(2025, 1, 1,0,0,0, DateTimeKind.Local);
 
             List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();   
             List<IFuturesSymbol> aAllSymbols = new List<IFuturesSymbol>();  
@@ -57,9 +74,16 @@ namespace Crypto.Futures.Exchanges.Tests
                 aAllSymbols.AddRange(oExchange.SymbolManager.GetAllValues());   
             }
 
-            IFuturesSymbol[] aNew = aAllSymbols.Where(p=> p.ListDate >= dFrom).OrderByDescending(p=> p.ListDate).ToArray(); 
+            IFuturesSymbol[] aNew = aAllSymbols.Where(p=> p.ListDate >= dFrom && p.Quote == "USDT").OrderBy(p=> p.ListDate).ToArray(); 
             Assert.IsNotNull(aNew);
             Assert.IsTrue(aNew.Length > 10);
+
+
+            decimal nMoneyStart = 50;
+            decimal nMoneyActual = nMoneyStart;
+            decimal nRisk = 0.1M;
+
+            List<NewSymbolChance> aChances = new List<NewSymbolChance>();
 
             foreach( var oNew in aNew )
             {
@@ -70,9 +94,59 @@ namespace Crypto.Futures.Exchanges.Tests
                 IBar[] aCorrectBars = aBars.Where(p => p.DateTime.AddMinutes(15) >= oNew.ListDate).ToArray();
                 Assert.IsTrue(aCorrectBars.Length > 5);
                 if (aCorrectBars[0].Open > aCorrectBars[0].Close && aCorrectBars[1].Open > aCorrectBars[1].Close) continue;
-                Console.WriteLine("Founs");
+                string strFound = $"{oNew.ToString()} - {oNew.ListDate.ToShortDateString()} {oNew.ListDate.ToShortTimeString()}";
+
+                NewSymbolChance oChance = new NewSymbolChance(oNew);
+                IBar? oOpenBar = aCorrectBars.Skip(1).FirstOrDefault( p=> p.Close < p.Open );
+                if (oOpenBar == null) continue;
+                decimal nHigh = aCorrectBars.Where(p => p.DateTime <= oOpenBar.DateTime).Select(p => p.High).Max();
+                oChance.PriceOpen = oOpenBar.Close;
+                decimal nDiff = (nHigh - oChance.PriceOpen);
+                oChance.PriceSL = nHigh;
+                oChance.PriceTp = oChance.PriceOpen - nDiff;
+
+                decimal nMoneyRisk = (nMoneyActual * nRisk);
+                if (nDiff <= 0) continue;
+                decimal nQuantity = Math.Truncate(nMoneyRisk / nDiff);
+                if (nQuantity <= 0) continue;
+                oChance.Quantity = nQuantity;
+
+                IBar? oBarSl = aCorrectBars.FirstOrDefault(p => p.DateTime > oOpenBar.DateTime && p.High >= oChance.PriceSL);
+                IBar? oBarTp = aCorrectBars.FirstOrDefault(p => p.DateTime > oOpenBar.DateTime && p.Low <= oChance.PriceTp);
+
+                if( oBarSl == null )
+                {
+                    if (oBarTp == null) continue;
+                    oChance.BarClose = oBarTp;
+                    oChance.PriceClose = oChance.PriceTp;
+                }
+                else
+                {
+                    if( oBarTp == null )
+                    {
+                        oChance.BarClose = oBarSl;
+                        oChance.PriceClose = oChance.PriceSL;
+                    }
+                    else
+                    {
+                        if( oBarTp.DateTime < oBarSl.DateTime )
+                        {
+                            oChance.BarClose = oBarTp;
+                            oChance.PriceClose = oChance.PriceTp;
+                        }
+                        else
+                        {
+                            oChance.BarClose = oBarSl;
+                            oChance.PriceClose = oChance.PriceSL;
+                        }
+                    }
+
+                }
+                decimal nProfit = (oChance.PriceOpen - oChance.PriceClose) * oChance.Quantity;
+                nMoneyActual += nProfit;
             }
 
+            Console.WriteLine($"{nMoneyActual}");
         }
     }
 }

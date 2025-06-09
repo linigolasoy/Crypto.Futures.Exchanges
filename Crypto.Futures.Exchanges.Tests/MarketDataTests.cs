@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Tests
 {
@@ -149,6 +150,42 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
             return;
+        }
+
+
+        [TestMethod]
+        public async Task MarketSocketTests()
+        {
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+
+            // List of all funding rates in exchanges
+
+            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
+                aExchanges.Add(oExchange);
+            }
+
+
+            foreach (var oExchange in aExchanges)
+            {
+                IWebsocketPublic oWs = oExchange.Market.Websocket;
+                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "BTC" && p.Quote == "USDT");
+                Assert.IsNotNull(oBtc);
+                oWs.Timeframe = BarTimeframe.M15;
+                bool bStarted = await oWs.Start();
+                Assert.IsTrue(bStarted);
+                bool bSubscribed = await oWs.Subscribe(oBtc);
+
+                await Task.Delay(23000);
+
+                await oWs.Stop();   
+
+            }
+
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         private const int MAX_TASKS = 10;
         private const string ENDP_BARS = "/api/v1/contract/kline/";
 
-        private enum MexcIntervals
+        public enum MexcIntervals
         {
             Min1,
             Min5,
@@ -37,7 +37,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         public IFuturesExchange Exchange { get => m_oExchange; }
 
 
-        private MexcIntervals? TimeframeToMexc(BarTimeframe eFrame)
+        public static MexcIntervals? TimeframeToMexc(BarTimeframe eFrame)
         {
             switch (eFrame)
             {
