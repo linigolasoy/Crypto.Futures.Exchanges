@@ -102,5 +102,19 @@ namespace Crypto.Futures.Exchanges.Rest
             return new CryptoRestResult<T[]>(aList.ToArray());
         }
 
+
+        public static ICryptoRestResult<T> CreateFromException(Exception ex)
+        {
+            ICryptoErrorCode oHttpError = CryptoRestError.Create(ex);
+            return new CryptoRestResult<T>(oHttpError);
+        }
+        /*
+        public static ICryptoRestResult<T[]> CreateFromExceptionArray(Exception ex)
+        {
+            ICryptoErrorCode oHttpError = CryptoRestError.Create(ex);
+            return new CryptoRestResult<T[]>(oHttpError);
+        }
+        */
+
     }
 }

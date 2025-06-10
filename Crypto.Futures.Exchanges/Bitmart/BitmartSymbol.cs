@@ -115,7 +115,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
             {
                 DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.OpenTimestamp);
                 DateTime dDate = oOffset.Date.ToLocalTime();
-                if (dDate > DateTime.Now) return null;
+                if (dDate > DateTime.Now.AddDays(1)) return null;
 
             }
 

@@ -48,19 +48,26 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         public async Task<IFuturesSymbol[]?> RefreshSymbols()
         {
-            var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, "symbols", p => m_oParser.ParseSymbols(p));
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-            List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
-            foreach (var oSymbol in oResult.Data)
-            {
-                if (oSymbol == null) continue;
-                aResult.Add(oSymbol);
-            }
+            try
+            { 
+                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, "symbols", p => m_oParser.ParseSymbols(p));
+                if (oResult == null || !oResult.Success) return null;
+                if (oResult.Data == null) return null;
+                if (oResult.Data.Count() <= 0) return null;
+                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+                foreach (var oSymbol in oResult.Data)
+                {
+                    if (oSymbol == null) continue;
+                    aResult.Add(oSymbol);
+                }
 
-            SymbolManager.SetSymbols(aResult.ToArray());
-            return aResult.ToArray();
+                SymbolManager.SetSymbols(aResult.ToArray());
+                return aResult.ToArray();
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
     }
 }

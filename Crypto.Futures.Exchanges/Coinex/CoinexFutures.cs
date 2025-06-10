@@ -53,19 +53,27 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public async Task<IFuturesSymbol[]?> RefreshSymbols()
         {
-            var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-            List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
-            foreach (var oSymbol in oResult.Data)
+            try
+            { 
+                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                if (oResult == null || !oResult.Success) return null;
+                if (oResult.Data == null) return null;
+                if (oResult.Data.Count() <= 0) return null;
+                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+                foreach (var oSymbol in oResult.Data)
+                {
+                    if (oSymbol == null) continue;
+                    aResult.Add(oSymbol);
+                }
+
+                SymbolManager.SetSymbols(aResult.ToArray());
+                return aResult.ToArray();
+            }
+            catch (Exception ex)
             {
-                if (oSymbol == null) continue;
-                aResult.Add(oSymbol);
+                return null;
             }
 
-            SymbolManager.SetSymbols(aResult.ToArray());
-            return aResult.ToArray();
         }
     }
 }

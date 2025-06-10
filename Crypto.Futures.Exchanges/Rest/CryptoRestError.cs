@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Crypto.Futures.Exchanges.Rest
 {
@@ -21,6 +22,7 @@ namespace Crypto.Futures.Exchanges.Rest
             ErrorCode = nError;
             Message = strMessage;
         }
+
         public HttpStatusCode HttpCode { get; }
 
         public int ErrorCode { get; }
@@ -35,6 +37,11 @@ namespace Crypto.Futures.Exchanges.Rest
         public static ICryptoErrorCode? Create(int nError, string strMessage)
         {
             return new CryptoRestError(nError, strMessage);
+        }
+
+        public static ICryptoErrorCode Create( Exception ex )
+        {
+            return new CryptoRestError(-1, ex.Message);
         }
     }
 }

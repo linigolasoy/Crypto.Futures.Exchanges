@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35913.81 d17.13
+VisualStudioVersion = 17.13.35913.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges", "Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj", "{FB2ACDCF-32B4-489A-86DB-FF49363B253A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Tests", "Crypto.Futures.Exchanges.Tests\Crypto.Futures.Exchanges.Tests.csproj", "{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Bot", "Crypto.Futures.Bot\Crypto.Futures.Bot.csproj", "{747B37CB-6621-47A7-A6B3-4CA347DAAA3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Console", "Crypto.Futures.Exchanges.Console\Crypto.Futures.Exchanges.Console.csproj", "{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBB6EFD4-9DE9-44DC-A2FB-3450FED69206}.Release|Any CPU.Build.0 = Release|Any CPU
+		{747B37CB-6621-47A7-A6B3-4CA347DAAA3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{747B37CB-6621-47A7-A6B3-4CA347DAAA3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{747B37CB-6621-47A7-A6B3-4CA347DAAA3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{747B37CB-6621-47A7-A6B3-4CA347DAAA3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,7 +9,7 @@ namespace Crypto.Futures.Exchanges
 
     public enum ExchangeType
     {
-        // MexcSpot,
+        BlofinFutures,
         MexcFutures,
         //BingxSpot,
         CoinExFutures,

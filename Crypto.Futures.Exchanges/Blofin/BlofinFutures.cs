@@ -1,47 +1,45 @@
 ﻿using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crypto.Futures.Exchanges.Mexc
+namespace Crypto.Futures.Exchanges.Blofin
 {
-    internal class MexcFutures : IFuturesExchange
+    internal class BlofinFutures : IFuturesExchange
     {
 
         public const int MAX_TASKS = 20;
-        public const string BASE_URL = "https://contract.mexc.com";
-        private const string ENDP_SYMBOLS = "/api/v1/contract/detail";
+        private const string BASE_URL = "https://openapi.blofin.com";
+        private const string ENDP_SYMBOLS = "/api/v1/market/instruments";
 
         internal CryptoRestClient m_oRestClient;
-        internal MexcParser m_oParser;
-        public MexcFutures(IExchangeSetup oSetup, ICommonLogger? logger = null)
-        {
+        internal BlofinParser m_oParser;
+
+        public BlofinFutures(IExchangeSetup oSetup, ICommonLogger? oLogger) 
+        { 
             Setup = oSetup;
-            Logger = logger;
-            m_oParser = new MexcParser(this);
+            Logger = oLogger;
+            m_oParser = new BlofinParser(this);
             m_oRestClient = new CryptoRestClient(BASE_URL, m_oParser);
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
-            Market = new MexcMarket(this);
-            History = new MexcHistory(this);
         }
-
-
-        internal CryptoRestClient RestClient { get => m_oRestClient; }
-        internal MexcParser Parser { get => m_oParser; }
         public IExchangeSetup Setup { get; }
+        internal CryptoRestClient RestClient { get => m_oRestClient; }
+        internal BlofinParser Parser { get => m_oParser; }
 
         public ICommonLogger? Logger { get; }
 
-        public ExchangeType ExchangeType { get => ExchangeType.MexcFutures; }
+        public ExchangeType ExchangeType { get => ExchangeType.BlofinFutures; }
 
-        public IFuturesMarket Market { get; }
+        public IFuturesMarket Market => throw new NotImplementedException();
 
-        public IFuturesHistory History { get; }
+        public IFuturesHistory History => throw new NotImplementedException();
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
@@ -49,15 +47,10 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public IFuturesSymbolManager SymbolManager { get; }
 
-        /// <summary>
-        /// Refreshes the symbols from the exchange.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public async Task<IFuturesSymbol[]?> RefreshSymbols()
         {
             try
-            { 
+            {
                 var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;

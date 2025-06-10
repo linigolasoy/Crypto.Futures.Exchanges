@@ -19,7 +19,7 @@ namespace Crypto.Futures.Exchanges
 
         public static ICommonLogger CreateLogger( IExchangeSetup oSetup, string strName )
         {
-            throw new NotImplementedException();
+            return new CommonLogger(oSetup, strName, new CancellationTokenSource().Token);
         }
 
         /// <summary>
@@ -33,6 +33,8 @@ namespace Crypto.Futures.Exchanges
         {
             switch( eType )
             {
+                case ExchangeType.BlofinFutures:
+                    return new Blofin.BlofinFutures(oSetup, oLogger);
                 case ExchangeType.MexcFutures:
                     return new Mexc.MexcFutures(oSetup, oLogger);
                 case ExchangeType.BingxFutures:

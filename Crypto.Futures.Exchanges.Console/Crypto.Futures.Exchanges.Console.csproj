@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Crypto.Futures.Bot\Crypto.Futures.Bot.csproj" />
+    <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />
+  </ItemGroup>
+
+</Project>

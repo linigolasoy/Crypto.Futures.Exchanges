@@ -84,7 +84,7 @@ namespace Crypto.Futures.Exchanges.Bingx
 
             DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.LaunchTime);
             DateTime dDate = oOffset.Date.ToLocalTime();
-            if (dDate > DateTime.Now) return null;
+            if (dDate > DateTime.Now.AddDays(1)) return null;
             return new BingxSymbol(oExchange, oJson);
         }
 

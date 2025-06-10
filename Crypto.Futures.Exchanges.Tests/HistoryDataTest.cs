@@ -1,4 +1,6 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using System.Globalization;
+using System.Text;
 
 namespace Crypto.Futures.Exchanges.Tests
 {
@@ -54,14 +56,39 @@ namespace Crypto.Futures.Exchanges.Tests
             public decimal PriceOpen { get; set; } = 0;
             public decimal PriceClose { get; set; } = 0;
             public decimal Quantity {  get; set; } = 0; 
+            public decimal Profit { get; set; } = 0;    
         }
+
+
+
+        private void SaveBars(IBar[] aBars, IExchangeSetup oSetup )
+        {
+            string strFile = $"{oSetup.LogPath}/{aBars[0].Symbol.Symbol}_{aBars[0].Symbol.Exchange.ExchangeType.ToString()}.csv";
+
+
+            StringBuilder oBuild = new StringBuilder();
+            oBuild.AppendLine( "Date\tOpen\tHigh\tLow\tClose" );
+            foreach (IBar bar in aBars)
+            {
+                string strDate = bar.DateTime.ToString("yyyy-MM-dd HH:mm");
+                oBuild.Append($"{strDate}\t");
+                oBuild.Append($"{bar.Open.ToString(CultureInfo.InvariantCulture)}\t");
+                oBuild.Append($"{bar.High.ToString(CultureInfo.InvariantCulture)}\t");
+                oBuild.Append($"{bar.Low.ToString(CultureInfo.InvariantCulture)}\t");
+                oBuild.AppendLine($"{bar.Close.ToString(CultureInfo.InvariantCulture)}");
+            }
+
+            File.WriteAllText( strFile, oBuild.ToString() );    
+        }
+
+
         [TestMethod]
         public async Task NewSymbolsBarTest()
         {
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(CommonTests.SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            DateTime dFrom = new DateTime(2025, 1, 1,0,0,0, DateTimeKind.Local);
+            DateTime dFrom = new DateTime(2025, 5, 1,0,0,0, DateTimeKind.Local);
 
             List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();   
             List<IFuturesSymbol> aAllSymbols = new List<IFuturesSymbol>();  
@@ -78,14 +105,16 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(aNew);
             Assert.IsTrue(aNew.Length > 10);
 
-
+            IFuturesSymbol? oFound = aAllSymbols.FirstOrDefault(p => p.Base == "YBDBD");
             decimal nMoneyStart = 50;
             decimal nMoneyActual = nMoneyStart;
             decimal nRisk = 0.1M;
 
             List<NewSymbolChance> aChances = new List<NewSymbolChance>();
 
-            foreach( var oNew in aNew )
+            int nWon = 0;
+            int nTotal = 0;
+            foreach( var oNew in aNew.Where(p=> p.Exchange.ExchangeType == ExchangeType.MexcFutures ) )
             {
                 DateTime dList = oNew.ListDate.AddMinutes(-15);
                 DateTime dTo = dList.AddDays(1);
@@ -93,16 +122,20 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsNotNull(aBars);
                 IBar[] aCorrectBars = aBars.Where(p => p.DateTime.AddMinutes(15) >= oNew.ListDate).ToArray();
                 Assert.IsTrue(aCorrectBars.Length > 5);
+
                 if (aCorrectBars[0].Open > aCorrectBars[0].Close && aCorrectBars[1].Open > aCorrectBars[1].Close) continue;
+
+                SaveBars(aCorrectBars, oSetup);
                 string strFound = $"{oNew.ToString()} - {oNew.ListDate.ToShortDateString()} {oNew.ListDate.ToShortTimeString()}";
 
                 NewSymbolChance oChance = new NewSymbolChance(oNew);
                 IBar? oOpenBar = aCorrectBars.Skip(1).FirstOrDefault( p=> p.Close < p.Open );
                 if (oOpenBar == null) continue;
+                oChance.BarOpen = oOpenBar;
                 decimal nHigh = aCorrectBars.Where(p => p.DateTime <= oOpenBar.DateTime).Select(p => p.High).Max();
                 oChance.PriceOpen = oOpenBar.Close;
-                decimal nDiff = (nHigh - oChance.PriceOpen);
-                oChance.PriceSL = nHigh;
+                oChance.PriceSL = nHigh; // + 0.1M * oChance.PriceOpen;
+                decimal nDiff = oChance.PriceSL - oChance.PriceOpen;
                 oChance.PriceTp = oChance.PriceOpen - nDiff;
 
                 decimal nMoneyRisk = (nMoneyActual * nRisk);
@@ -142,8 +175,11 @@ namespace Crypto.Futures.Exchanges.Tests
                     }
 
                 }
-                decimal nProfit = (oChance.PriceOpen - oChance.PriceClose) * oChance.Quantity;
-                nMoneyActual += nProfit;
+                oChance.Profit = (oChance.PriceOpen - oChance.PriceClose) * oChance.Quantity;
+                nMoneyActual += oChance.Profit;
+                nTotal++;
+                if (oChance.Profit > 0) nWon++;
+                aChances.Add(oChance);
             }
 
             Console.WriteLine($"{nMoneyActual}");

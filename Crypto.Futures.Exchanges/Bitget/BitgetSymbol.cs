@@ -116,7 +116,7 @@ namespace Crypto.Futures.Exchanges.Bitget
             {
                 DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(oJson.LaunchTime));
                 DateTime dDate = oOffset.Date.ToLocalTime();
-                if (dDate > DateTime.Now) return null;
+                if (dDate > DateTime.Now.AddDays(1) ) return null;
 
             }
             return new BitgetSymbol(oExchange, oJson);

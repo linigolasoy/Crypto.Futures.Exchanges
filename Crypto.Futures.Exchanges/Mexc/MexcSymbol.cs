@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -66,8 +67,15 @@ namespace Crypto.Futures.Exchanges.Mexc
             FeeTaker = oJson.TakerFeeRate;
             Decimals = oJson.PriceScale;
             QuantityDecimals = oJson.VolScale;
+            ContractSize = oJson.ContractSize;
+            UseContractSize = true;
             DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.OpeningTime);
             DateTime dDate = oOffset.DateTime.ToLocalTime();
+            if( oJson.OpeningTime <= 0 )
+            {
+                oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.CreateTime);
+                dDate = oOffset.DateTime.ToLocalTime();
+            }
             ListDate = dDate;
         }
 
@@ -85,7 +93,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
             DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.OpeningTime);
             DateTime dDate = oOffset.Date.ToLocalTime();
-            if (dDate > DateTime.Now) return null;
+            if (dDate > DateTime.Now.AddDays(1)) return null;
             return new MexcSymbol(oExchange, oJson);
         }
     }
