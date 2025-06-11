@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
@@ -33,7 +34,7 @@ namespace Crypto.Futures.Exchanges.Bitget
             Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
         }
         public IFuturesSymbol Symbol { get; }
-
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }  
         public DateTime Next { get; }
 
         public decimal Rate { get; }

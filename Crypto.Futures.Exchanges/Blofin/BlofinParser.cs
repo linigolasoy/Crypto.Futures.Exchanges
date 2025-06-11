@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Blofin.BlofinData;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using Newtonsoft.Json.Linq;
 using System;
@@ -25,6 +26,12 @@ namespace Crypto.Futures.Exchanges.Blofin
         public IFuturesSymbol? ParseSymbols(JToken? oJson)
         {
             return BlofinSymbol.Parse(Exchange, oJson);
+        }
+
+
+        public IFundingRate? ParseFundingRate(JToken? oJson)
+        {
+            return BlofinFundingRate.Parse(Exchange, oJson);    
         }
 
     }

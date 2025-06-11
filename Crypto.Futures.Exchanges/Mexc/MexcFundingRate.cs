@@ -9,6 +9,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Mexc
 {
@@ -51,6 +52,7 @@ namespace Crypto.Futures.Exchanges.Mexc
             Next = Util.NextFundingRate(8);
         }
 
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }
         public IFuturesSymbol Symbol { get; }
 
         public DateTime Next { get; }

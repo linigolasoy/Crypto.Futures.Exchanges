@@ -88,7 +88,7 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(CommonTests.SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            DateTime dFrom = new DateTime(2025, 5, 1,0,0,0, DateTimeKind.Local);
+            DateTime dFrom = new DateTime(2025, 6, 1,0,0,0, DateTimeKind.Local);
 
             List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();   
             List<IFuturesSymbol> aAllSymbols = new List<IFuturesSymbol>();  
@@ -110,18 +110,30 @@ namespace Crypto.Futures.Exchanges.Tests
             decimal nMoneyActual = nMoneyStart;
             decimal nRisk = 0.1M;
 
+            decimal nPumpPercent = 50;
+            int nMinutesMax = 120;
             List<NewSymbolChance> aChances = new List<NewSymbolChance>();
 
             int nWon = 0;
             int nTotal = 0;
             foreach( var oNew in aNew.Where(p=> p.Exchange.ExchangeType == ExchangeType.MexcFutures ) )
             {
-                DateTime dList = oNew.ListDate.AddMinutes(-15);
+                DateTime dList = oNew.ListDate.AddMinutes(-5);
                 DateTime dTo = dList.AddDays(1);
-                IBar[]? aBars = await oNew.Exchange.History.GetBars(oNew, BarTimeframe.M15, dList, dTo);  
+                IBar[]? aBars = await oNew.Exchange.History.GetBars(oNew, BarTimeframe.M5, dList, dTo);  
                 Assert.IsNotNull(aBars);
-                IBar[] aCorrectBars = aBars.Where(p => p.DateTime.AddMinutes(15) >= oNew.ListDate).ToArray();
+                IBar[] aCorrectBars = aBars.Where(p => p.DateTime.AddMinutes(5) >= oNew.ListDate).ToArray();
                 Assert.IsTrue(aCorrectBars.Length > 5);
+
+                // Pump bar
+                decimal nOpenPrice = aCorrectBars[0].Open;
+                decimal nPumpMin = (100.0M + nPumpPercent) * nOpenPrice / 100.0M;
+
+                IBar? oPumpBar = aCorrectBars.FirstOrDefault(p => p.Close >= nPumpMin);
+                if (oPumpBar == null) continue;
+
+                int nMinutes = (int)(oPumpBar.DateTime - aCorrectBars[0].DateTime).TotalMinutes;
+                if (nMinutes > nMinutesMax) continue;
 
                 if (aCorrectBars[0].Open > aCorrectBars[0].Close && aCorrectBars[1].Open > aCorrectBars[1].Close) continue;
 

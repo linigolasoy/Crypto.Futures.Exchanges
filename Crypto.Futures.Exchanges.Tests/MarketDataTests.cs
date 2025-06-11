@@ -170,7 +170,7 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
 
-            foreach (var oExchange in aExchanges)
+            foreach (var oExchange in aExchanges ) //.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
             {
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
                 IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "BTC" && p.Quote == "USDT");
@@ -180,7 +180,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsTrue(bStarted);
                 bool bSubscribed = await oWs.Subscribe(oBtc);
 
-                await Task.Delay(23000);
+                await Task.Delay(43000);
 
                 await oWs.Stop();   
 

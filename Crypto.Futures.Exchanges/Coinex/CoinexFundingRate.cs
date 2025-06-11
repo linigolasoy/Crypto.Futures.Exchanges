@@ -11,6 +11,7 @@ using System.Xml.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Coinex
 {
@@ -48,6 +49,7 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         }
         public IFuturesSymbol Symbol { get; }
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }
 
         public DateTime Next { get; }
 

@@ -10,6 +10,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
 
 
+
     /// <summary>
     /// Market websockets
     /// </summary>
@@ -18,6 +19,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IFuturesMarket Market { get; }
         public BarTimeframe Timeframe { get; set; }
         public IWebsocketParser Parser { get; }
+        public IWebsocketDataManager DataManager { get; }
         public string Url { get; }
         public Task<bool> Start();
         public Task<bool> Stop();
@@ -32,26 +34,6 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     }
 
 
-    /// <summary>
-    /// Websocket message
-    /// </summary>
-    public interface IWebsocketMessage
-    {
 
-    }
-
-    /// <summary>
-    /// Internal methods for websocket
-    /// </summary>
-    public interface IWebsocketParser
-    {
-        public int PingSeconds { get; } 
-        public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame);
-
-        public string ParsePing();
-        public string ParsePong();
-
-        public IWebsocketMessage[]? ParseMessage(string strMessage);
-    }
 
 }

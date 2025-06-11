@@ -66,7 +66,8 @@ namespace Crypto.Futures.Exchanges.Bitget
                 return aResult.ToArray();
             }
             catch( Exception ex) 
-            { 
+            {
+                if (Logger != null) Logger.Error("Error refreshing symbols", ex);
                 return null;
             }
         }

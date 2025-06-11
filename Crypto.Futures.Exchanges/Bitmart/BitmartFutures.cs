@@ -66,6 +66,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
             }
             catch (Exception ex)
             {
+                if (Logger != null) Logger.Error("Error refreshing symbols", ex);
                 return null;
             }
         }

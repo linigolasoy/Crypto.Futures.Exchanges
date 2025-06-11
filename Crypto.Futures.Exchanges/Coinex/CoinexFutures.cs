@@ -71,6 +71,7 @@ namespace Crypto.Futures.Exchanges.Coinex
             }
             catch (Exception ex)
             {
+                if (Logger != null) Logger.Error("Error refreshing symbols", ex);
                 return null;
             }
 

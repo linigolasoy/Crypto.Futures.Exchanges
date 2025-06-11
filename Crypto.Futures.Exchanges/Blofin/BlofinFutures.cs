@@ -28,6 +28,7 @@ namespace Crypto.Futures.Exchanges.Blofin
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
+            Market = new BlofinMarket(this);
         }
         public IExchangeSetup Setup { get; }
         internal CryptoRestClient RestClient { get => m_oRestClient; }
@@ -37,7 +38,7 @@ namespace Crypto.Futures.Exchanges.Blofin
 
         public ExchangeType ExchangeType { get => ExchangeType.BlofinFutures; }
 
-        public IFuturesMarket Market => throw new NotImplementedException();
+        public IFuturesMarket Market { get; }
 
         public IFuturesHistory History => throw new NotImplementedException();
 
@@ -67,6 +68,7 @@ namespace Crypto.Futures.Exchanges.Blofin
             }
             catch (Exception ex)
             {
+                if (Logger != null) Logger.Error("Error refreshing symbols", ex);
                 return null;
             }
         }

@@ -24,5 +24,18 @@ namespace Crypto.Futures.Exchanges.Model
             if( bAddDays ) dNext = dNext.AddDays(1);
             return dNext.ToLocalTime(); 
         }
+
+
+        public static DateTime FromUnixTimestamp( string strTime, bool bMillis )
+        {
+            return FromUnixTimestamp( long.Parse(strTime), bMillis );
+        }
+
+        public static DateTime FromUnixTimestamp( long nTime, bool bMillis)
+        {
+            DateTimeOffset oOffset = (bMillis ? DateTimeOffset.FromUnixTimeMilliseconds(nTime) : DateTimeOffset.FromUnixTimeSeconds(nTime));
+            DateTime dDate = oOffset.DateTime.ToLocalTime();
+            return dDate;   
+        }
     }
 }

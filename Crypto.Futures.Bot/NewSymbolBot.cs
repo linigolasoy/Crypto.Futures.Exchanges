@@ -46,7 +46,6 @@ namespace Crypto.Futures.Bot
                         IFuturesSymbol[] aNews = aActual.Where(p => !aPrevious.Any(q => p.Symbol == q.Symbol)).ToArray();
                         if (bFirst)
                         {
-                            bFirst = false; 
                             IFuturesSymbol[] aToday = aActual.Where(p=> p.ListDate.Date == DateTime.Today).ToArray();   
                             if (aToday.Length > 0 ) 
                             {
@@ -68,6 +67,7 @@ namespace Crypto.Futures.Bot
                         Logger.Error($"Error on exchange {oExchange.ExchangeType.ToString()}", ex);
                     }
                 }
+                bFirst = false;
                 DateTime dNow = DateTime.Now;   
                 if( (dNow - dLastLog ).TotalMinutes >= nMinutes )
                 {

@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -41,6 +42,7 @@ namespace Crypto.Futures.Exchanges.Bingx
         }
         public IFuturesSymbol Symbol { get; }
 
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }
         public DateTime Next { get; }
 
         public decimal Rate { get; }

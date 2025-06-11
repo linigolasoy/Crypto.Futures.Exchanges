@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using Websocket.Client;
@@ -17,11 +18,21 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
         private List<IFuturesSymbol> m_aSubscribed = new List<IFuturesSymbol>();
 
-
-        private Task? m_oPingTask = null;
+        private Timer? m_oTimer;
+        // private Task? m_oPingTask = null;
         private CancellationTokenSource m_oCancelToken = new CancellationTokenSource();
         private WebsocketClient? m_oWsClient = null;
 
+        private class TimerData
+        {
+            public TimerData(WebsocketClient oClient, IWebsocketParser oParser )
+            {
+                WsClient = oClient;
+                Parser = oParser;
+            }
+            public WebsocketClient WsClient { get; }
+            public IWebsocketParser Parser { get; }
+        }
         public BaseWebsocketPublic(
             IFuturesMarket oMarket, 
             string strUrl,
@@ -30,6 +41,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             Market = oMarket;   
             Url = strUrl;
             Parser = oParser;
+            DataManager = new BaseWsDataManager(oMarket.Exchange);
         }
 
         public IFuturesSymbol[] SubscribedSymbols { get => m_aSubscribed.ToArray(); }
@@ -37,6 +49,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IFuturesMarket Market { get; }
         public BarTimeframe Timeframe { get; set; } = BarTimeframe.M1;
         public IWebsocketParser Parser { get; }
+
+        public IWebsocketDataManager DataManager { get; }    
         public string Url { get; }
 
         /// <summary>
@@ -50,15 +64,28 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
                 await Stop();
             }
             m_oCancelToken = new CancellationTokenSource();
-
-            m_oPingTask = PingTask();
+            // m_oPingTask = PingTask();
             m_oWsClient = new WebsocketClient(new Uri(Url));
             m_oWsClient.MessageReceived.Subscribe(p => OnMessage(p));
             m_oWsClient.ReconnectionHappened.Subscribe(p => OnReconnection(p));
+            m_oTimer = new Timer(new TimerCallback(TimerTask), new TimerData(m_oWsClient, Parser), Parser.PingSeconds * 1000, Parser.PingSeconds * 1000);
 
             await m_oWsClient.Start();
             await Task.Delay(1000);
             return true;
+        }
+
+        /// <summary>
+        /// Timer task for ping
+        /// </summary>
+        /// <param name="oState"></param>
+        private static void TimerTask(object? oState)
+        {
+            if (oState == null) return;
+            if (!(oState is TimerData)) return;
+            TimerData oData = (TimerData)oState;
+            string strPing = oData.Parser.ParsePing();
+            oData.WsClient.Send(strPing);
         }
 
         /// <summary>
@@ -67,7 +94,24 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         /// <param name="oMessage"></param>
         private void OnMessage(ResponseMessage oMessage)
         {
-            Console.WriteLine(oMessage);
+            try
+            {
+                if( oMessage.MessageType != WebSocketMessageType.Text || oMessage.Text == null) return;
+                IWebsocketMessage[]? aMessages = Parser.ParseMessage(oMessage.Text);
+                if( aMessages == null || aMessages.Length == 0 ) return;
+                foreach (var oMsg in aMessages)
+                {
+                    DataManager.Put(oMsg);
+                }
+
+            }
+            catch (Exception e)
+            {
+                if( Market.Exchange.Logger != null )
+                {
+                    Market.Exchange.Logger.Error("WsOnMessage error", e);
+                }
+            }
         }
 
         /// <summary>
@@ -88,10 +132,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public async Task<bool> Stop()
         {
             m_oCancelToken.Cancel();
-            if (m_oPingTask != null)
+            if ( m_oTimer != null )
             {
-                await m_oPingTask;
-                m_oPingTask = null;
+                await m_oTimer.DisposeAsync();
+                m_oTimer = null;
             }
             if (m_oWsClient != null)
             {
@@ -125,33 +169,29 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         {
             throw new NotImplementedException();
         }
-        public async Task<bool> UnSubscribe(IFuturesSymbol[]? aSymbols = null)
-        {
-            throw new NotImplementedException();
-        }
 
         /// <summary>
-        /// Ping loop task
+        /// Unsubscribe to symbols or to all if no argument
         /// </summary>
+        /// <param name="aSymbols"></param>
         /// <returns></returns>
-        private async Task PingTask()
+        public async Task<bool> UnSubscribe(IFuturesSymbol[]? aSymbols = null)
         {
-            DateTime dLastPing = DateTime.Now;
-            while (!m_oCancelToken.IsCancellationRequested)
+            if( aSymbols == null )
             {
-                DateTime dNow = DateTime.Now;
-                if ((dNow - dLastPing).TotalSeconds > Parser.PingSeconds)
-                {
-                    if (m_oWsClient != null)
-                    {
-                        m_oWsClient.Send(Parser.ParsePing());
-                    }
-                    dLastPing = dNow;
-                }
-                await Task.Delay(2000);
+                aSymbols = SubscribedSymbols;
             }
-
+            foreach( var oSymbol in aSymbols )
+            {
+                bool bOk = await UnSubscribe( oSymbol );
+                if (!bOk)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
+
 
     }
 }

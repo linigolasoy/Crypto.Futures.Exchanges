@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -12,18 +13,14 @@ namespace Crypto.Futures.Exchanges.Bitmart
     internal class BitmartFundingRate : IFundingRate
     {
 
-        static List<DateTime> dDates = new List<DateTime>();    
         public BitmartFundingRate( IFuturesSymbol oSymbol, BitmartSymbolJson oJson) 
         { 
             Symbol = oSymbol;
             Next = Util.NextFundingRate(oJson.FundingIntervalHours);
-            if (!dDates.Contains(Next))
-            {
-                dDates.Add(Next);
-            }
             Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);  
         }
         public IFuturesSymbol Symbol { get; }
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }
 
         public DateTime Next { get; }
 
