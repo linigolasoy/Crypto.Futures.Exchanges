@@ -13,6 +13,7 @@ namespace Crypto.Futures.Exchanges.Bingx
         private BingxFutures m_oExchange;
 
         private const string ENDP_FUNDING = "/openApi/swap/v2/quote/premiumIndex";
+        private const string ENDP_TICKER = "/openApi/swap/v2/quote/ticker";
         public BingxMarket( BingxFutures oExchange ) 
         { 
            m_oExchange = oExchange;
@@ -56,6 +57,25 @@ namespace Crypto.Futures.Exchanges.Bingx
             if (aAllFunding == null) return null;
             if (aSymbols == null) return aAllFunding;
             return aAllFunding.Where(f => aSymbols.Any( s=> f.Symbol.Symbol == s.Symbol)).ToArray();
+        }
+        public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var oTicker in oResult.Data)
+            {
+                if (oTicker == null) continue;
+                if( aSymbols != null )
+                {
+                    if (!aSymbols.Any(p => p.Symbol == oTicker.Symbol.Symbol)) continue;
+                }
+                aResult.Add(oTicker);
+            }
+            return aResult.ToArray();
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Cypto.Futures.Exchanges.Blofin.Data;
+using Crypto.Futures.Exchanges.Blofin.Data;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
@@ -35,5 +36,9 @@ namespace Cypto.Futures.Exchanges.Blofin
             return BlofinFundingRate.Parse(Exchange, oJson);
         }
 
+        public ITicker? ParseTicker(JToken? oJson)
+        {
+            return BlofinTicker.Parse(Exchange, oJson);
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace Crypto.Futures.Exchanges.Bitget
         private BitgetFutures m_oExchange;
 
         private const string ENDP_FUNDINGRATE = "/mix/market/current-fund-rate?productType=usdt-futures";
+        private const string ENDP_TICKERS = "/mix/market/tickers?productType=usdt-futures";
         // curl "https://api.bitget.com/api/v2/mix/market/current-fund-rate?symbol=BTCUSDT&productType=usdt-futures"
         public BitgetMarket(BitgetFutures oExchange)
         {
@@ -51,6 +52,25 @@ namespace Crypto.Futures.Exchanges.Bitget
             if (aAllFunding == null) return null;
             if (aSymbols == null) return aAllFunding;
             return aAllFunding.Where(f => aSymbols.Any(s => f.Symbol.Symbol == s.Symbol)).ToArray();
+        }
+        public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKERS, null, p => m_oExchange.Parser.ParseTicker(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var f in oResult.Data)
+            {
+                if (f == null) continue;
+                if( aSymbols != null )
+                {
+                    if (!aSymbols.Any(p => p.Symbol == f.Symbol.Symbol)) continue;
+                }
+                aResult.Add(f);
+            }
+
+            return aResult.ToArray();
         }
     }
 }

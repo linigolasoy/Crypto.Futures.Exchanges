@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
 using Newtonsoft.Json;
+using Crypto.Futures.Exchanges.Model;
+using Newtonsoft.Json.Linq;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Mexc.Data
 {
@@ -41,5 +44,46 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
         public decimal FundingRate { get; set; } = 0;
         [JsonProperty("timestamp")]
         public long Timestamp { get; set; } = 0;
+    }
+
+
+    internal class MexcTicker: ITicker
+    {
+        public MexcTicker(IFuturesSymbol oSymbol, MexcTickerJson oJson )
+        {
+            Symbol = oSymbol;
+            DateTime = Util.FromUnixTimestamp(oJson.Timestamp, true);
+            AskPrice = oJson.Ask1;
+            BidPrice = oJson.Bid1;
+            AskVolume = 0;
+            BidVolume = 0;
+            LastPrice = oJson.LastPrice;
+        }
+        public DateTime DateTime { get; }
+
+        public decimal LastPrice { get; }
+
+        public decimal AskPrice { get; }
+
+        public decimal BidPrice { get; }
+
+        public decimal AskVolume { get; }
+
+        public decimal BidVolume { get; }
+
+        public WsMessageType MessageType { get => WsMessageType.Ticker; }
+
+        public IFuturesSymbol Symbol { get; }
+
+        public static ITicker? Parse( IFuturesExchange oExchange, JToken? oToken )
+        {
+            if (oToken == null) return null;
+            MexcTickerJson? oJson = oToken.ToObject<MexcTickerJson>();  
+            if (oJson == null) return null;
+            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
+            if (oSymbol == null) return null;
+
+            return new MexcTicker(oSymbol, oJson);
+        }
     }
 }

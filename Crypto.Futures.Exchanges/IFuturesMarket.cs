@@ -23,7 +23,7 @@ namespace Crypto.Futures.Exchanges
         public Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol);
         public Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[]? aSymbols = null);
         // Tickers 
-
+        public Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols = null);
         // Websocket
         public IWebsocketPublic Websocket { get; }
     }

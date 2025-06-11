@@ -70,6 +70,32 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
         [TestMethod]
+        public async Task MarketTickersTest()
+        {
+
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
+                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+
+
+                IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();
+                Assert.IsNotNull(aSymbols, $"Symbols for {eType} should not be null.");
+
+                ITicker[]? aTickers = await oExchange.Market.GetTickers();
+                Assert.IsNotNull(aTickers, $"Tikers for {eType} should not be null.");
+
+                Assert.IsTrue(aTickers.Length >= aSymbols.Length / 2);
+
+            }
+
+        }
+
+        [TestMethod]
         public async Task GetBestFundingRateArbitrageTest()
         {
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);

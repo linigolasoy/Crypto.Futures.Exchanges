@@ -42,5 +42,10 @@ namespace Crypto.Futures.Exchanges.Mexc
             return MexcBar.Parse(oSymbol, eFrame, oJson);
         }
 
+
+        public ITicker? ParseTicker(JToken? oJson)
+        {
+            return MexcTicker.Parse(this.Exchange, oJson);  
+        }
     }
 }

@@ -13,7 +13,7 @@
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Coinex\Crypto.Futures.Exchanges.Coinex.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Mexc\Crypto.Futures.Exchanges.Mexc.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />
-    <ProjectReference Include="..\Cypto.Futures.Exchanges.Blofin\Cypto.Futures.Exchanges.Blofin.csproj" />
+    <ProjectReference Include="..\Cypto.Futures.Exchanges.Blofin\Crypto.Futures.Exchanges.Blofin.csproj" />
   </ItemGroup>
 
 </Project>

@@ -11,6 +11,7 @@ namespace Crypto.Futures.Exchanges.Coinex
     internal class CoinexMarket : IFuturesMarket
     {
         private const string ENDP_FUNDING = "/futures/funding-rate";
+        private const string ENDP_TICKERS = "/futures/ticker";
         private CoinexFutures m_oExchange;
         public CoinexMarket( CoinexFutures oExchange)
         {
@@ -48,6 +49,26 @@ namespace Crypto.Futures.Exchanges.Coinex
             if (aAllFunding == null) return null;
             if( aSymbols == null) return aAllFunding;
             return aAllFunding.Where(f => aSymbols.Any(s => f.Symbol.Symbol == s.Symbol)).ToArray();
+        }
+
+        public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKERS, null, p => m_oExchange.Parser.ParseTicker(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var f in oResult.Data)
+            {
+                if (f == null) continue;
+                if( aSymbols != null)
+                {
+                    if (!aSymbols.Any(p => p.Symbol == f.Symbol.Symbol)) continue;
+                }
+                aResult.Add(f);
+            }
+
+            return aResult.ToArray();
         }
     }
 }

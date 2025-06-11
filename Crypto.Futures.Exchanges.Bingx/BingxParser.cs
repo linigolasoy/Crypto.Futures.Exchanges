@@ -36,5 +36,9 @@ namespace Crypto.Futures.Exchanges.Bingx
         {
             return BingxBar.Parse(Exchange, oSymbol, eFrame, oJson);
         }
+        public ITicker? ParseTicker(JToken? oJson)
+        {
+            return BingxTicker.Parse(this.Exchange, oJson);
+        }
     }
 }

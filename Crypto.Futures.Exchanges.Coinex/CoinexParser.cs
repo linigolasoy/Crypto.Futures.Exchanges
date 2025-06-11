@@ -34,6 +34,10 @@ namespace Crypto.Futures.Exchanges.Coinex
             return CoinexFundingRate.Parse(this.Exchange, oJson);   
         }
 
+        public ITicker? ParseTicker(JToken? oJson)
+        {
+            return CoinexTicker.Parse(this.Exchange, oJson);
+        }
         public IBar? ParseBar( IFuturesSymbol oSymbol, BarTimeframe eFrame, JToken? oJson)
         {
             return CoinexBar.Parse(Exchange, oSymbol, eFrame, oJson);

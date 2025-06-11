@@ -15,6 +15,7 @@ namespace Cypto.Futures.Exchanges.Blofin
 
         private BlofinFutures m_oExchange;
         private const string ENDP_FUNDING = "/api/v1/market/funding-rate";
+        private const string ENDP_TICKER = "/api/v1/market/tickers";
 
         public BlofinMarket(BlofinFutures oExchange)
         {
@@ -61,6 +62,25 @@ namespace Cypto.Futures.Exchanges.Blofin
             if (aAll == null) return null;
             if (aSymbols == null) return aAll;
             return aAll.Where(p => aSymbols.Any(q => p.Symbol.Symbol == q.Symbol)).ToArray();
+        }
+        public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var oTicker in oResult.Data)
+            {
+                if (oTicker == null) continue;
+                if( aSymbols != null )
+                {
+                    if (!aSymbols.Any(p => p.Symbol == oTicker.Symbol.Symbol)) continue;
+                }
+                aResult.Add(oTicker);
+            }
+            return aResult.ToArray();
         }
     }
 }

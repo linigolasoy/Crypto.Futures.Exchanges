@@ -49,5 +49,23 @@ namespace Crypto.Futures.Exchanges.Bitmart
             if (aSymbols == null) return aAllFunding;
             return aAllFunding.Where(f => aSymbols.Any(s => f.Symbol.Symbol == s.Symbol)).ToArray();
         }
+        public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
+        {
+            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(BitmartFutures.ENDP_SYMBOLS, "symbols", p => m_oExchange.Parser.ParseTicker(p));
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Count() <= 0) return null;
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var item in oResult.Data)
+            {
+                if (item == null) continue;
+                if( aSymbols != null )
+                {
+                    if (!aSymbols.Any(p => p.Symbol == item.Symbol.Symbol)) continue;
+                }
+                aResult.Add(item);
+            }
+            return aResult.ToArray();
+        }
     }
 }

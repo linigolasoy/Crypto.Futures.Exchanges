@@ -36,5 +36,10 @@ namespace Crypto.Futures.Exchanges.Bitmart
         {
             return BitmartBar.Parse(Exchange, oSymbol, eFrame, oJson); 
         }
+
+        public ITicker? ParseTicker( JToken? oJson)
+        {
+            return BitmartTicker.Parse(Exchange, oJson);
+        }
     }
 }

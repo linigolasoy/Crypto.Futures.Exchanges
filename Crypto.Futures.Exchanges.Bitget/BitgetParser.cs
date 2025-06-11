@@ -33,6 +33,10 @@ namespace Crypto.Futures.Exchanges.Bitget
             return BitgetFundingRate.Parse(this.Exchange, oJson);
         }
 
+        public ITicker? ParseTicker(JToken? oJson)
+        {
+            return BitgetTicker.Parse(this.Exchange, oJson);
+        }
         public IBar? ParseBar(IFuturesSymbol oSymbol, BarTimeframe eFrame, JToken? oJson)
         {
             return BitgetBar.Parse(Exchange, oSymbol, eFrame, oJson);

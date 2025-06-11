@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Bot", "Crypt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Console", "Crypto.Futures.Exchanges.Console\Crypto.Futures.Exchanges.Console.csproj", "{E1D2E466-57F2-4031-8DBC-2A5D00B6BC59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cypto.Futures.Exchanges.Blofin", "Cypto.Futures.Exchanges.Blofin\Cypto.Futures.Exchanges.Blofin.csproj", "{460018A4-6F53-4A24-A3A6-2A60160C9BAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Blofin", "Cypto.Futures.Exchanges.Blofin\Crypto.Futures.Exchanges.Blofin.csproj", "{460018A4-6F53-4A24-A3A6-2A60160C9BAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Factory", "Crypto.Futures.Exchanges.Factory\Crypto.Futures.Exchanges.Factory.csproj", "{60CF5567-BD15-4E8A-AB18-E2C150052410}"
 EndProject
