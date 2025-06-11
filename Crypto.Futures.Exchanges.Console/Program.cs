@@ -3,6 +3,7 @@
 
 using Crypto.Futures.Bot;
 using Crypto.Futures.Exchanges;
+using Crypto.Futures.Exchanges.Factory;
 
 public class Program
 {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Rest
 {
-    internal interface ICryptoRestParser
+    public interface ICryptoRestParser
     {
         public IFuturesExchange Exchange { get; }
 

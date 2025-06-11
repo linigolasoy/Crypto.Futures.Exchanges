@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Factory;
+using Crypto.Futures.Exchanges.Model;
 using System.Globalization;
 using System.Text;
 

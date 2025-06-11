@@ -1,4 +1,6 @@
-﻿namespace Crypto.Futures.Exchanges.Tests
+﻿using Crypto.Futures.Exchanges.Factory;
+
+namespace Crypto.Futures.Exchanges.Tests
 {
     [TestClass]
     public sealed class BasicTests

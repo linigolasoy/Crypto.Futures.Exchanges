@@ -13,7 +13,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     /// <summary>
     /// Generic exchange websocket implementation
     /// </summary>
-    internal class BaseWebsocketPublic
+    public class BaseWebsocketPublic
     {
 
         private List<IFuturesSymbol> m_aSubscribed = new List<IFuturesSymbol>();

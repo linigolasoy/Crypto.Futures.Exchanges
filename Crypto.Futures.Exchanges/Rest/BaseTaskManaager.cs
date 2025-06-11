@@ -11,7 +11,7 @@ namespace Crypto.Futures.Exchanges.Rest
     /// Multitask manager
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class BaseTaskManager<T> : ITaskManager<T>
+    public class BaseTaskManager<T> : ITaskManager<T>
     {
         private List<Task<T>> m_aTasks = new List<Task<T>>();
         public BaseTaskManager(int nMaximum)

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Model
 {
-    internal class Util
+    public class Util
     {
 
         public static DateTime NextFundingRate( int nHourInterval )

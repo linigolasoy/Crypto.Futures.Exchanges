@@ -10,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Rest
     /// <summary>
     /// Rest client interface
     /// </summary>
-    internal interface ICryptoRestClient
+    public interface ICryptoRestClient
     {
         public string BaseUrl { get; }
         public ICryptoRestParser Parser { get; }

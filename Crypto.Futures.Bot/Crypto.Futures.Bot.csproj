@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Crypto.Futures.Exchanges.Factory\Crypto.Futures.Exchanges.Factory.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />
   </ItemGroup>
 

@@ -10,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Model
     /// <summary>
     /// Symbol manager, easy access symbol thread safe mode
     /// </summary>
-    internal class FuturesSymbolManager: IFuturesSymbolManager
+    public class FuturesSymbolManager: IFuturesSymbolManager
     {
         private SortedDictionary<string, IFuturesSymbol> m_oDictSymbols = new SortedDictionary<string, IFuturesSymbol>();
         public IFuturesSymbol? GetSymbol(string strSymbol)

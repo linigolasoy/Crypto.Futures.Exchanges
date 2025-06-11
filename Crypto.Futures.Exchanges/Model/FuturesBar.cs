@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Model
 {
-    internal class FuturesBar : IBar
+    public class FuturesBar : IBar
     {
         public FuturesBar( 
                 IFuturesSymbol oSymbol,
@@ -20,16 +20,16 @@ namespace Crypto.Futures.Exchanges.Model
 
         public BarTimeframe Timeframe { get; }
 
-        public DateTime DateTime { get; internal set; } = DateTime.MinValue;
+        public DateTime DateTime { get; set; } = DateTime.MinValue;
 
-        public decimal Open { get; internal set; } = 0;
+        public decimal Open { get; set; } = 0;
 
-        public decimal Close { get; internal set; } = 0;
+        public decimal Close { get; set; } = 0;
 
-        public decimal High { get; internal set; } = 0;
+        public decimal High { get; set; } = 0;
 
-        public decimal Low { get; internal set; } = 0;
+        public decimal Low { get; set; } = 0;
 
-        public decimal Volume { get; internal set; } = 0;
+        public decimal Volume { get; set; } = 0;
     }
 }

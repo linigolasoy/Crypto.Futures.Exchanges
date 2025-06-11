@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Rest
 {
-    internal class CryptoRestClient : ICryptoRestClient
+    public class CryptoRestClient : ICryptoRestClient
     {
         public CryptoRestClient(string strUrl, ICryptoRestParser oParser)
         {
