@@ -34,10 +34,17 @@ namespace Crypto.Futures.Exchanges.Bitget
             Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
         }
         public IFuturesSymbol Symbol { get; }
-        public WsMessageType MessageType { get => WsMessageType.FundingRate; }  
-        public DateTime Next { get; }
+        public WsMessageType MessageType { get => WsMessageType.FundingRate; }
+        public DateTime Next { get; private set; }
 
-        public decimal Rate { get; }
+        public decimal Rate { get; private set; }
+        public void Update(IWebsocketMessage oMessage)
+        {
+            if (!(oMessage is IFundingRate)) return;
+            IFundingRate oFunding = (IFundingRate)oMessage;
+            Next = oFunding.Next;
+            Rate = oFunding.Rate;
+        }
 
         public static IFundingRate? Parse( IFuturesExchange oExchange, JToken? oToken )
         {

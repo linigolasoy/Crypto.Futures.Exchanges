@@ -161,7 +161,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             foreach (string strMessage in aMessages)
             {
                 m_oWsClient.Send(strMessage);
-                await Task.Delay(200);
+                await Task.Delay(500);
             }
             return true;
         }

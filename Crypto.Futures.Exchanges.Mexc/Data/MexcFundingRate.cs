@@ -13,6 +13,14 @@ using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Mexc.Data
 {
+
+    internal class MexcFundingRateWs
+    {
+        [JsonProperty("symbol")]
+        public string Symbol { get; set; } = string.Empty;
+        [JsonProperty("rate")]
+        public decimal FundingRate { get; set; } = 0m;
+    }
     internal class MexcFundingRateJson
     {
         [JsonProperty("symbol")]
@@ -52,13 +60,26 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
             Next = Util.NextFundingRate(8);
         }
 
+        public MexcFundingRate(IFuturesSymbol oSymbol, MexcFundingRateWs oWs)
+        {
+            Symbol = oSymbol;
+            Rate = oWs.FundingRate;
+            Next = Util.NextFundingRate(8);
+        }
         public WsMessageType MessageType { get => WsMessageType.FundingRate; }
         public IFuturesSymbol Symbol { get; }
 
-        public DateTime Next { get; }
+        public DateTime Next { get; private set; }
 
-        public decimal Rate { get; }
+        public decimal Rate { get; private set; }
 
+        public void Update(IWebsocketMessage oMessage)
+        {
+            if (!(oMessage is IFundingRate)) return;
+            IFundingRate oFunding = (IFundingRate)oMessage;
+            Next = oFunding.Next;
+            Rate = oFunding.Rate;
+        }
 
         public static IFundingRate? Parse(IFuturesExchange oExchange, JToken? oJson, bool bTicker)
         {
@@ -79,6 +100,48 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
                 if (oSymbol == null) return null;
                 return new MexcFundingRate(oSymbol, oTickerJson);
             }
-        }   
+        }
+
+
+        public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, string? strSymbol, JToken? oData)
+        {
+
+            if (oData == null) return null;
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();
+            if (oData is JArray)
+            {
+                foreach (JToken oData2 in oData)
+                {
+                    MexcFundingRateWs? oWs = oData2.ToObject<MexcFundingRateWs>();
+                    if (oWs == null) continue;
+                    string strSymbolReal = oWs.Symbol;
+                    if (string.IsNullOrEmpty(strSymbolReal))
+                    {
+                        if (strSymbol == null) continue;
+                        strSymbolReal = strSymbol;
+                    }
+                    IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(strSymbolReal);
+                    if (oSymbol == null) continue;
+
+                    aResult.Add(new MexcFundingRate(oSymbol, oWs));
+                }
+            }
+            else
+            {
+                MexcFundingRateWs? oWs = oData.ToObject<MexcFundingRateWs>();
+                if (oWs == null) return null;
+                string strSymbolReal = oWs.Symbol;
+                if (string.IsNullOrEmpty(strSymbolReal))
+                {
+                    if (strSymbol == null) return null;
+                    strSymbolReal = strSymbol;
+                }
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(strSymbolReal);
+                if (oSymbol == null) return null;
+                aResult.Add(new MexcFundingRate(oSymbol, oWs));
+            }
+            return aResult.ToArray();
+
+        }
     }
 }

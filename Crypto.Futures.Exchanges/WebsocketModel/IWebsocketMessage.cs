@@ -22,5 +22,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     {
         public WsMessageType MessageType { get; }
         public IFuturesSymbol Symbol { get; }
+
+        public void Update(IWebsocketMessage oMessage);
     }
 }

@@ -197,19 +197,30 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
 
-            foreach (var oExchange in aExchanges ) //.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
             {
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
-                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "BTC" && p.Quote == "USDT");
-                Assert.IsNotNull(oBtc);
+                IFuturesSymbol[] aFirst = oExchange.SymbolManager.GetAllValues().Take(10).ToArray();   
                 oWs.Timeframe = BarTimeframe.M15;
                 bool bStarted = await oWs.Start();
                 Assert.IsTrue(bStarted);
-                bool bSubscribed = await oWs.Subscribe(oBtc);
+                bool bSubscribed = await oWs.Subscribe(aFirst);
 
-                await Task.Delay(43000);
+                await Task.Delay(30000);
 
-                await oWs.Stop();   
+                await oWs.Stop();
+                List<IFundingRate> aFunding = new List<IFundingRate>();
+                List<ITrade> aTrade = new List<ITrade>();
+                foreach (var oSymbol in aFirst)
+                {
+                    var oData = oWs.DataManager.GetData(oSymbol);
+                    Assert.IsNotNull(oData);
+                    if( oData.FundingRate != null ) aFunding.Add(oData.FundingRate);
+                    if (oData.LastTrade != null) aTrade.Add(oData.LastTrade);
+                }
+
+                Assert.IsTrue(aFunding.Count > 1);
+                Assert.IsTrue(aTrade.Count > 1);
 
             }
 

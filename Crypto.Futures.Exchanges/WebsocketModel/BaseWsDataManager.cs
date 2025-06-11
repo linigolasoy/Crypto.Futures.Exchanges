@@ -23,12 +23,14 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
         public IWebsocketSymbolData? GetData(string strSymbol)
         {
-            throw new NotImplementedException();
+            IWebsocketSymbolData? oFound = null;
+            if( !m_aData.TryGetValue (strSymbol, out oFound) ) return null;
+            return oFound;
         }
 
         public IWebsocketSymbolData? GetData(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            return GetData(oSymbol.Symbol);
         }
 
 
@@ -37,10 +39,18 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             switch (oMessage.MessageType)
             {
                 case WsMessageType.Trade:
-                    oData.LastTrade = (ITrade)oMessage;
+                    if (oData.LastTrade == null) oData.LastTrade = (ITrade)oMessage;
+                    else
+                    {
+                        oData.LastTrade.Update(oMessage);
+                    }
                     break;
                 case WsMessageType.FundingRate:
-                    oData.FundingRate = (IFundingRate)oMessage; 
+                    if (oData.FundingRate == null) oData.FundingRate = (IFundingRate)oMessage; 
+                    else 
+                    {
+                        oData.FundingRate.Update(oMessage);
+                    }
                     break;
                 default:
                     break;

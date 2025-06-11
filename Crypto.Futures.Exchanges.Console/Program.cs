@@ -41,9 +41,10 @@ public class Program
     public static async Task Main(string[] args)
     {
         IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
-        ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "NewSymbolBot");
+        ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "ArbitrageBot");
 
-        ITradingBot oBot = BotFactory.CreateNewSymbolBot(oSetup, oLogger);
+        // ITradingBot oBot = BotFactory.CreateNewSymbolBot(oSetup, oLogger);
+        ITradingBot oBot = BotFactory.CreateArbitrageBot(oSetup, oLogger);
 
         try
         {

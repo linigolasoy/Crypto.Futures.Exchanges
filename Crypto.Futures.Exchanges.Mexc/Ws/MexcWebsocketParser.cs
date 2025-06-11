@@ -1,5 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Mexc.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -16,8 +18,14 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
     {
         private const string PING_METHOD = "ping";
         private const string BAR_METHOD = "kline";
+        private const string TRADE_METHOD = "deal";
+        private const string FUNDING_METHOD = "funding.rate";
         private const string METHOD_SUBSCRIBE = "sub.";
         private const string METHOD_UNSUBSCRIBE = "unsub.";
+
+        private const string CHANNEL_TRADE = "push.deal";
+        private const string CHANNEL_FUNDING = "push.funding.rate";
+        private const string CHANNEL_KLINE = "push.kline";
 
         public int PingSeconds { get => 20; }
 
@@ -28,7 +36,22 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
 
         public IWebsocketMessage[]? ParseMessage(string strMessage)
         {
-            throw new NotImplementedException();
+            MexcMessage? oMessage = JsonConvert.DeserializeObject<MexcMessage>(strMessage);
+            if (oMessage == null) return null;
+
+            if (oMessage.Channel == CHANNEL_TRADE)
+            {
+                return MexcTrade.ParseWs(Exchange, oMessage.Symbol, oMessage.Data);
+            }
+            else if (oMessage.Channel == CHANNEL_FUNDING)
+            {
+                return MexcFundingRate.ParseWs(Exchange, oMessage.Symbol, oMessage.Data);    
+            }
+            else if( oMessage.Channel == CHANNEL_KLINE)
+            { 
+                return null;
+            }
+            return null;
         }
 
         public IFuturesExchange Exchange { get; }
@@ -60,7 +83,13 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
                 MexcMethod oMethodBar = new MexcMethod($"{METHOD_SUBSCRIBE}{BAR_METHOD}", oParamBarJson);
                 aResult.Add(JObject.FromObject(oMethodBar).ToString());
                 // Trades subscription
-
+                var oSymbolParam = new SymbolSubscription(oSymbol);
+                JObject oSymbolJson = JObject.FromObject(oSymbolParam);
+                MexcMethod oMethodTrade = new MexcMethod($"{METHOD_SUBSCRIBE}{TRADE_METHOD}", oSymbolJson);
+                aResult.Add(JObject.FromObject(oMethodTrade).ToString());
+                // Funding rate
+                MexcMethod oMethodFunding = new MexcMethod($"{METHOD_SUBSCRIBE}{FUNDING_METHOD}", oSymbolJson);
+                aResult.Add(JObject.FromObject(oMethodFunding).ToString());
 
             }
             return aResult.ToArray();

@@ -61,21 +61,35 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             BidVolume = oJson.BidQty * oSymbol.ContractSize;
         }
 
-        public DateTime DateTime { get; }
+        public DateTime DateTime { get; private set; }
 
-        public decimal LastPrice { get; }
+        public decimal LastPrice { get; private set; }
 
-        public decimal AskPrice { get; }
+        public decimal AskPrice { get; private set; }
 
-        public decimal BidPrice { get; }
+        public decimal BidPrice { get; private set; }
 
-        public decimal AskVolume { get; }
+        public decimal AskVolume { get; private set; }
 
-        public decimal BidVolume { get; }
+        public decimal BidVolume { get; private set; }
 
         public WsMessageType MessageType { get => WsMessageType.Ticker; }
 
         public IFuturesSymbol Symbol { get; }
+
+        public void Update(IWebsocketMessage oMessage)
+        {
+            if (!(oMessage is ITicker)) return;
+            ITicker oTicker = (ITicker)oMessage;
+            DateTime = oTicker.DateTime;
+            AskPrice = oTicker.AskPrice;
+            BidPrice = oTicker.BidPrice;
+            AskVolume = oTicker.AskVolume;
+            BidVolume = oTicker.BidVolume;
+            LastPrice = oTicker.LastPrice;
+
+        }
+
 
         public static ITicker? Parse( IFuturesExchange oExchange, JToken? oToken )
         {

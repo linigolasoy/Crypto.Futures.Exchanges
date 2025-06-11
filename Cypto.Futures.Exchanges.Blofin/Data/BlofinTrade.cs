@@ -47,13 +47,23 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public DateTime DateTime { get; }
+        public DateTime DateTime { get; private set; }
 
-        public decimal Price { get; }
+        public decimal Price { get; private set; }
 
-        public decimal Volume { get; }
+        public decimal Volume { get; private set; }
 
-        public bool IsBuy { get; }
+        public bool IsBuy { get; private set; }
+
+        public void Update(IWebsocketMessage oMessage)
+        {
+            if (!(oMessage is ITrade)) return;
+            ITrade oTrade = (ITrade)oMessage;   
+            DateTime = oTrade.DateTime;
+            Price = oTrade.Price;
+            Volume = oTrade.Volume;
+            IsBuy = oTrade.IsBuy;
+        }
 
         public static IWebsocketMessage[]? ParseWs( IFuturesExchange oExchange, JToken? oData )
         {

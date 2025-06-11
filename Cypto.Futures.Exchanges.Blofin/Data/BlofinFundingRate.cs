@@ -34,9 +34,16 @@ namespace Cypto.Futures.Exchanges.Blofin.Data
         public WsMessageType MessageType { get => WsMessageType.FundingRate; }
         public IFuturesSymbol Symbol { get; }
 
-        public DateTime Next { get; }
+        public DateTime Next { get; private set; }
 
-        public decimal Rate { get; }
+        public decimal Rate { get; private set; }
+        public void Update(IWebsocketMessage oMessage)
+        {
+            if (!(oMessage is IFundingRate)) return;
+            IFundingRate oFunding = (IFundingRate)oMessage;
+            Next = oFunding.Next;
+            Rate = oFunding.Rate;
+        }
 
         public static IFundingRate? Parse(IFuturesExchange oExchange, JToken? oToken)
         {

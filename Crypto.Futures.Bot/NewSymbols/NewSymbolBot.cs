@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crypto.Futures.Bot
+namespace Crypto.Futures.Bot.NewSymbols
 {
     internal class NewSymbolBot : ITradingBot
     {
