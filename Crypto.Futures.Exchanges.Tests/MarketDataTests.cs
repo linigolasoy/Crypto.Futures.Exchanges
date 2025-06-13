@@ -206,7 +206,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsTrue(bStarted);
                 bool bSubscribed = await oWs.Subscribe(aFirst);
 
-                await Task.Delay(30000);
+                await Task.Delay(25000);
 
                 await oWs.Stop();
                 List<IFundingRate> aFunding = new List<IFundingRate>();
@@ -218,9 +218,9 @@ namespace Crypto.Futures.Exchanges.Tests
                     if( oData.FundingRate != null ) aFunding.Add(oData.FundingRate);
                     if (oData.LastTrade != null) aTrade.Add(oData.LastTrade);
                 }
-
                 Assert.IsTrue(aFunding.Count > 1);
                 Assert.IsTrue(aTrade.Count > 1);
+
 
             }
 

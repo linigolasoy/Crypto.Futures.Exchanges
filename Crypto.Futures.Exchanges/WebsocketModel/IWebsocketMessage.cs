@@ -10,6 +10,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
     public enum WsMessageType
     {
+        Ping,
         Trade,
         FundingRate,
         KLine,

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bitget.Ws;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,11 @@ namespace Crypto.Futures.Exchanges.Bitget
         public BitgetMarket(BitgetFutures oExchange)
         {
             m_oExchange = oExchange;
+            Websocket = new BitgetWebsocketPublic(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
-        public IWebsocketPublic Websocket { get => throw new NotImplementedException(); }
+        public IWebsocketPublic Websocket { get; }
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {

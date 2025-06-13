@@ -92,6 +92,7 @@ namespace Crypto.Futures.Exchanges.Bitget
         public BitgetSymbol(IFuturesExchange oExchange, BitgetSymbolJson oJson):
             base(oExchange, oJson.Symbol, oJson.BaseCoin, oJson.QuoteCoin)
         {
+
             this.LeverageMax = int.Parse(oJson.MaxLever);
             this.LeverageMin = int.Parse(oJson.MinLever);
             this.FeeMaker = decimal.Parse(oJson.MakerFeeRate, CultureInfo.InvariantCulture);

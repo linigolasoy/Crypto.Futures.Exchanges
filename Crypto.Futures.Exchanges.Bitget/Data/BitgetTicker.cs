@@ -52,6 +52,8 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public string IndexPrice { get; set; } = string.Empty;
         [JsonProperty("fundingRate")]
         public string FundingRate { get; set; } = string.Empty;
+        [JsonProperty("nextFundingTime")]
+        public string NexFundingTime { get; set; } = string.Empty;
     }
     internal class BitgetTicker: ITicker
     {

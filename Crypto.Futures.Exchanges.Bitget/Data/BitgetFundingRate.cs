@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bitget.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,11 +29,17 @@ namespace Crypto.Futures.Exchanges.Bitget
         public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetFundingRateJson oJson) 
         {
             Symbol = oSymbol;
-            DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(oJson.NextUpdate));
-            DateTime dDate = oOffset.DateTime.ToLocalTime();
-            Next = dDate;
+            Next = Util.FromUnixTimestamp(oJson.NextUpdate,true);
             Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
         }
+
+        public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetTickerJson oJson)
+        {
+            Symbol = oSymbol;
+            Next = Util.FromUnixTimestamp(oJson.NexFundingTime, true);
+            Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+        }
+
         public IFuturesSymbol Symbol { get; }
         public WsMessageType MessageType { get => WsMessageType.FundingRate; }
         public DateTime Next { get; private set; }
@@ -54,6 +61,20 @@ namespace Crypto.Futures.Exchanges.Bitget
             var oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
             if (oSymbol == null) return null;
             return new BitgetFundingRate(oSymbol, oFundingJson);
+        }
+
+        public static IWebsocketMessage[]? Parse( IFuturesSymbol oSymbol, JToken oToken )
+        {
+            if( !( oToken is JArray)) return null;
+            JArray oArray = (JArray)oToken;
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();    
+            foreach( var oItem in oArray )
+            {
+                BitgetTickerJson? oJson = oItem.ToObject<BitgetTickerJson>();
+                if (oJson == null) continue;
+                aResult.Add(new BitgetFundingRate(oSymbol, oJson));
+            }
+            return aResult.ToArray();
         }
     }
 }

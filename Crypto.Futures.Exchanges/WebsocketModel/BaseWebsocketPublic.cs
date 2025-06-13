@@ -1,6 +1,7 @@
 ﻿using Crypto.Futures.Exchanges.Model;
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
@@ -23,6 +24,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         private CancellationTokenSource m_oCancelToken = new CancellationTokenSource();
         private WebsocketClient? m_oWsClient = null;
 
+        public delegate Task<bool> StartStopDelegate();
+
+        public StartStopDelegate? StartTask { get; set; } = null;
+        public StartStopDelegate? StopTask { get; set; } = null;
         private class TimerData
         {
             public TimerData(WebsocketClient oClient, IWebsocketParser oParser )
@@ -68,9 +73,17 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             m_oWsClient = new WebsocketClient(new Uri(Url));
             m_oWsClient.MessageReceived.Subscribe(p => OnMessage(p));
             m_oWsClient.ReconnectionHappened.Subscribe(p => OnReconnection(p));
-            m_oTimer = new Timer(new TimerCallback(TimerTask), new TimerData(m_oWsClient, Parser), Parser.PingSeconds * 1000, Parser.PingSeconds * 1000);
+            if( Parser.PingSeconds > 0 )
+            {
+                m_oTimer = new Timer(new TimerCallback( TimerTask), new TimerData(m_oWsClient, Parser), Parser.PingSeconds * 1000, Parser.PingSeconds * 1000);
+            }
 
             await m_oWsClient.Start();
+            if( StartTask != null )
+            {
+                bool bResult = await StartTask();   
+                if( !bResult )  return false;
+            }
             await Task.Delay(1000);
             return true;
         }
@@ -88,6 +101,21 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             oData.WsClient.Send(strPing);
         }
 
+
+        private string? GetMessageText( ResponseMessage oMessage)
+        {
+            if (oMessage.MessageType == WebSocketMessageType.Text) return oMessage.Text;
+            if(oMessage.Binary == null) return null;
+            var oInput = new MemoryStream(oMessage.Binary);
+            if( oInput == null ) return null;
+            var oGzip = new GZipStream(oInput, CompressionMode.Decompress);
+            if( oGzip == null ) return null;    
+
+            using (var oReader = new StreamReader(oGzip, Encoding.UTF8))
+            {
+                return oReader.ReadToEnd();
+            }
+        }
         /// <summary>
         /// Message receiving
         /// </summary>
@@ -96,12 +124,17 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         {
             try
             {
-                if( oMessage.MessageType != WebSocketMessageType.Text || oMessage.Text == null) return;
-                IWebsocketMessage[]? aMessages = Parser.ParseMessage(oMessage.Text);
+                string? strMessage = GetMessageText(oMessage);
+                if (strMessage == null) return ;
+                IWebsocketMessage[]? aMessages = Parser.ParseMessage(strMessage);
                 if( aMessages == null || aMessages.Length == 0 ) return;
                 foreach (var oMsg in aMessages)
                 {
-                    DataManager.Put(oMsg);
+                    if( oMsg.MessageType == WsMessageType.Ping && m_oWsClient != null)
+                    {
+                        m_oWsClient.Send(Parser.ParsePong());
+                    }
+                    else DataManager.Put(oMsg);
                 }
 
             }
@@ -141,6 +174,11 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             {
                 m_oWsClient.Dispose();
                 m_oWsClient = null;
+            }
+            if (StopTask != null)
+            {
+                bool bResult = await StopTask();
+                if (!bResult) return false;
             }
             return true;
         }

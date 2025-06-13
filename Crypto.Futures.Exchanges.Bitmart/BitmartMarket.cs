@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bitmart.Ws;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,11 @@ namespace Crypto.Futures.Exchanges.Bitmart
         public BitmartMarket( BitmartFutures oExchange)
         {
             m_oExchange = oExchange;
+            Websocket = new BitmartWebsocketPublic(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
-        public IWebsocketPublic Websocket { get => throw new NotImplementedException(); }
+        public IWebsocketPublic Websocket { get; }
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {

@@ -81,15 +81,18 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
                 var oParamBar = new BarSubscriptionParam(oSymbol, eFrame);
                 JObject oParamBarJson = JObject.FromObject(oParamBar);
                 MexcMethod oMethodBar = new MexcMethod($"{METHOD_SUBSCRIBE}{BAR_METHOD}", oParamBarJson);
-                aResult.Add(JObject.FromObject(oMethodBar).ToString());
+                string strMethodBar = JsonConvert.SerializeObject(oMethodBar);
+                aResult.Add(strMethodBar);
                 // Trades subscription
                 var oSymbolParam = new SymbolSubscription(oSymbol);
                 JObject oSymbolJson = JObject.FromObject(oSymbolParam);
                 MexcMethod oMethodTrade = new MexcMethod($"{METHOD_SUBSCRIBE}{TRADE_METHOD}", oSymbolJson);
-                aResult.Add(JObject.FromObject(oMethodTrade).ToString());
+                string strMethodTrade = JsonConvert.SerializeObject(oMethodTrade);
+                aResult.Add(strMethodTrade);
                 // Funding rate
                 MexcMethod oMethodFunding = new MexcMethod($"{METHOD_SUBSCRIBE}{FUNDING_METHOD}", oSymbolJson);
-                aResult.Add(JObject.FromObject(oMethodFunding).ToString());
+                string strMethodFunding = JsonConvert.SerializeObject(oMethodFunding);
+                aResult.Add(strMethodFunding);
 
             }
             return aResult.ToArray();

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Coinex.Ws;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -16,11 +17,12 @@ namespace Crypto.Futures.Exchanges.Coinex
         public CoinexMarket( CoinexFutures oExchange)
         {
             m_oExchange = oExchange;
+            Websocket = new CoinexWebsocketPublic(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
 
-        public IWebsocketPublic Websocket { get => throw new NotImplementedException(); }
+        public IWebsocketPublic Websocket { get ; }
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
