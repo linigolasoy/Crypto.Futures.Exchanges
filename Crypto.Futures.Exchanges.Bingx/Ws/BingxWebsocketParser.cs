@@ -3,6 +3,7 @@ using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,14 +78,16 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                     {
                         return BingxTrade.Parse(Exchange, aSplit[0], oJson.Data);
                     }
-                    return null;
                 }
-                return null;
             }
             catch ( Exception ex) 
             { 
-                return null;
+                if( this.Exchange.Logger != null )
+                {
+                    this.Exchange.Logger.Error("Bingx. Error parsing message", ex);
+                }
             }
+            return null;
         }
 
         public string ParsePing()

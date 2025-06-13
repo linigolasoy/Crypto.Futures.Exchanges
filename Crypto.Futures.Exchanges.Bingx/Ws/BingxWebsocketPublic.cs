@@ -24,6 +24,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
         {
             m_oCancelSource = new CancellationTokenSource();
             m_oMainLoop = LoopFundings();
+            await Task.Delay(500);
             return true;
         }
         public async Task<bool> StopPostTask()

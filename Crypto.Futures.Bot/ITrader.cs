@@ -1,0 +1,39 @@
+﻿using Crypto.Futures.Exchanges.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Crypto.Futures.Bot
+{
+
+    public interface ITraderPosition
+    {
+        public IFuturesSymbol Symbol { get; }   
+        public bool IsLong {  get; } 
+        public decimal Volume { get; }  
+        public decimal PriceOpen { get; }
+        public decimal PriceClose { get; }
+
+        public decimal Profit { get;  }
+        public DateTime DateOpen { get; }
+        public DateTime? DateClose { get; }
+
+        public void Update();
+    }
+
+    /// <summary>
+    /// Trading interface
+    /// </summary>
+    public interface ITrader
+    {
+
+        public decimal Money { get; }   
+        public decimal Leverage { get; }
+        public ITradingBot Bot { get; } 
+        public Task<ITraderPosition?> Open( IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null);
+        public Task<bool> Close(ITraderPosition oPosition, decimal? nPrice = null);
+
+    }
+}

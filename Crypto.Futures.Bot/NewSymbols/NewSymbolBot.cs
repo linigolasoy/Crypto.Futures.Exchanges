@@ -25,7 +25,7 @@ namespace Crypto.Futures.Bot.NewSymbols
 
         public ICommonLogger Logger { get; }
 
-
+        public ITrader Trader { get=> throw new NotImplementedException(); }
         private async Task MainLoop()
         {
 

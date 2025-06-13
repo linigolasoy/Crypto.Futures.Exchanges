@@ -15,7 +15,7 @@ namespace Crypto.Futures.Bot
         public IExchangeSetup Setup { get; }    
         public ICommonLogger Logger { get; }
 
-
+        public ITrader Trader { get; }  
         public Task<bool> Start();
 
         public Task<bool> Stop();

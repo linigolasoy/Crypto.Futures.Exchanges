@@ -11,10 +11,11 @@ namespace Crypto.Futures.Bot
             return new NewSymbolBot( oSetup, oLogger ); 
         }
 
-        public static ITradingBot CreateArbitrageBot(IExchangeSetup oSetup, ICommonLogger oLogger)
+        public static ITradingBot CreateArbitrageBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading)
         {
-            return new ArbitrateBot(oSetup, oLogger);
+            return new ArbitrateBot(oSetup, oLogger, bPaperTrading);
         }
+
 
     }
 }

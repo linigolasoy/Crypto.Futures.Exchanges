@@ -1,7 +1,10 @@
-﻿using Crypto.Futures.Exchanges;
+﻿using Crypto.Futures.Bot.Trading;
+using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Factory;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,22 +19,33 @@ namespace Crypto.Futures.Bot.Arbitrage
 
         private CancellationTokenSource m_oCancelSource = new CancellationTokenSource();
 
-        private List<ArbitrageChance> m_aChances = new List<ArbitrageChance>(); 
+        private ConcurrentDictionary<string, ArbitrageChance> m_aChances = new ConcurrentDictionary<string, ArbitrageChance>();
 
-
-        public ArbitrateBot(IExchangeSetup oSetup, ICommonLogger oLogger)
+        private List<IFuturesSymbol> m_aSubscribed = new List<IFuturesSymbol>();    
+        public ArbitrateBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading )
         {
             Setup = oSetup;
-            Logger = oLogger;   
+            Logger = oLogger;
+            Trader = new PaperTrader(this);
         }
         public IExchangeSetup Setup { get; }
-
+        public ITrader Trader { get; }  
         public ICommonLogger Logger { get; }
 
+        private DateTime m_dLastChanceFind = DateTime.Today;
 
-        private async Task<ArbitrageChance?> FindChances()
+        private decimal m_nTotalProfit = 0;
+        private ArbitrageChance? m_oActiveChance = null;
+        /// <summary>
+        /// Chance finding
+        /// </summary>
+        /// <returns></returns>
+        private async Task FindChances()
         {
-            if (m_aExchanges == null) return null;
+            DateTime dNow = DateTime.Now;
+            if ((dNow - m_dLastChanceFind).TotalSeconds < 3) return;
+            m_dLastChanceFind = dNow;
+            if (m_aExchanges == null) return ;
             try
             {
                 List<ITicker> aAllTickers = new List<ITicker>();
@@ -91,22 +105,221 @@ namespace Crypto.Futures.Bot.Arbitrage
                 }
                 if (oBestChance != null)
                 {
-                    if (oBestChance.Percentage < 1.0M) return null;
-                    ArbitrageChance? oFound = m_aChances.FirstOrDefault(p =>
-                                                        p.SymbolLong.Exchange.ExchangeType == oBestChance.SymbolLong.Exchange.ExchangeType &&
-                                                        p.SymbolLong.Symbol == oBestChance.SymbolLong.Symbol &&
-                                                        p.SymbolShort.Exchange.ExchangeType == oBestChance.SymbolShort.Exchange.ExchangeType &&
-                                                        p.SymbolShort.Symbol == oBestChance.SymbolShort.Symbol);
-                    if (oFound != null) oFound.Update(oBestChance);
-                    else m_aChances.Add(oBestChance);
+                    if (oBestChance.Percentage < 1.0M) return;
+                    string strCurrency = oBestChance.LongData.Symbol.Base;
+
+                    ArbitrageChance? oFound = null;
+                    if( m_aChances.TryGetValue(strCurrency, out oFound) )
+                    {
+                        if (oFound.Equals(oBestChance))
+                        {
+                            oFound.Update(oBestChance); 
+                        }
+                        else
+                        {
+                            m_aChances[strCurrency] = oBestChance;
+                        }
+                    }
+                    else
+                    {
+                        m_aChances[strCurrency] = oBestChance;
+                    }
                 }
-                return oBestChance;
             }
             catch ( Exception ex ) 
             {
                 Logger.Error("Error evaluating chances", ex);
-                return null;    
             }
+        }
+
+        /// <summary>
+        /// Subscribe to symbol if needed
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
+        private async Task<bool> DoSubscribe( IFuturesSymbol oSymbol )
+        {
+            IFuturesExchange oExchange = oSymbol.Exchange;
+            if( m_aSubscribed.Any(p=> p.Exchange.ExchangeType == oExchange.ExchangeType && p.Symbol == oSymbol.Symbol) ) return false;
+            if( !m_aSubscribed.Any(p=> p.Exchange.ExchangeType == oExchange.ExchangeType ) )
+            {
+                await oExchange.Market.Websocket.Start();
+            }
+            bool bResult = await oExchange.Market.Websocket.Subscribe(oSymbol);
+            if( bResult ) m_aSubscribed.Add(oSymbol);   
+            return bResult;
+        }
+
+        /// <summary>
+        /// Buy check
+        /// </summary>
+        /// <param name="oChance"></param>
+        /// <returns></returns>
+        private async Task CheckForBuy( ArbitrageChance oChance )
+        {
+            if( oChance.LongData.FundingRate == null ) return;
+            if (oChance.LongData.LastTrade == null) return;
+            if (oChance.ShortData.FundingRate == null) return;
+            if (oChance.ShortData.LastTrade == null) return;
+
+            // Funding rate check
+            DateTime dNow = DateTime.Now;
+            if( (oChance.LongData.FundingRate.Next - dNow).TotalHours < 0.25 ) return;
+            if ((oChance.ShortData.FundingRate.Next - dNow).TotalHours < 0.25) return;
+
+            try
+            {
+                // Price check
+                decimal nPriceLong = oChance.LongData.LastTrade.Price;
+                decimal nPriceShort = oChance.ShortData.LastTrade.Price;
+                decimal nDiff = nPriceShort - nPriceLong;
+                if (nDiff <= 0) return;
+
+                decimal nPercent = 100.0M * nDiff / nPriceLong;
+                if (nPercent <= 1) return;
+                oChance.Percentage = nPercent;
+
+                decimal nQuantity = Trader.Money * Trader.Leverage / nPriceLong;
+                int nDecimals = oChance.ShortData.Symbol.QuantityDecimals;
+                if (oChance.LongData.Symbol.QuantityDecimals < oChance.ShortData.Symbol.QuantityDecimals)
+                {
+                    nDecimals = oChance.LongData.Symbol.QuantityDecimals;
+                }
+                nQuantity = Math.Round(nQuantity, nDecimals);
+
+                List<Task<ITraderPosition?>> aTasks = new List<Task<ITraderPosition?>>();
+                aTasks.Add(Trader.Open(oChance.LongData.Symbol, true, nQuantity));
+                aTasks.Add(Trader.Open(oChance.ShortData.Symbol, false, nQuantity));
+
+                await Task.WhenAll(aTasks);
+                ITraderPosition? oPositionLong = null;  
+                ITraderPosition? oPositionShort = null;
+                foreach (var oTask in aTasks)
+                {
+                    if( oTask.Result == null ) continue;
+                    if( oTask.Result.Symbol.Symbol == oChance.LongData.Symbol.Symbol && 
+                        oTask.Result.Symbol.Exchange.ExchangeType == oChance.LongData.Symbol.Exchange.ExchangeType )
+                    { 
+                        oPositionLong = oTask.Result;
+                    }
+                    if (oTask.Result.Symbol.Symbol == oChance.ShortData.Symbol.Symbol &&
+                        oTask.Result.Symbol.Exchange.ExchangeType == oChance.ShortData.Symbol.Exchange.ExchangeType)
+                    {
+                        oPositionShort = oTask.Result;
+                    }
+                }
+                if( oPositionLong != null && oPositionShort != null )
+                {
+                    oChance.LongData.Position = oPositionLong;  
+                    oChance.ShortData.Position = oPositionShort;
+
+                    Logger.Info($"====> Open position in {oChance.ToString()}");
+                    m_oActiveChance = oChance;
+                }
+                // ITraderPosition? oPosition = await Trader.
+                // Logger.Info( oChance.ToString() );  
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Trade error : ", ex);
+            }
+
+        }
+
+        private async Task LoopChances()
+        {
+            foreach (var oChance in m_aChances.Values)
+            {
+                bool bSubscribed = false;
+                // Subscribe check Long
+                bSubscribed |= await DoSubscribe(oChance.LongData.Symbol);
+                // Subscribe check Short
+                bSubscribed |= await DoSubscribe(oChance.ShortData.Symbol);
+                if (bSubscribed) continue;
+
+                // Data update for long
+                if( oChance.LongData.LastTrade == null || oChance.LongData.FundingRate == null )
+                {
+                    IWebsocketSymbolData? oData = oChance.LongData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.LongData.Symbol);
+                    if( oData != null )
+                    {
+                        if (oChance.LongData.LastTrade == null) oChance.LongData.LastTrade = oData.LastTrade;
+                        if (oChance.LongData.FundingRate == null) oChance.LongData.FundingRate = oData.FundingRate;
+                    }
+
+                }
+                // Data update for short
+                if (oChance.ShortData.LastTrade == null || oChance.ShortData.FundingRate == null)
+                {
+                    IWebsocketSymbolData? oData = oChance.ShortData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.ShortData.Symbol);
+                    if (oData != null)
+                    {
+                        if (oChance.ShortData.LastTrade == null) oChance.ShortData.LastTrade = oData.LastTrade;
+                        if (oChance.ShortData.FundingRate == null) oChance.ShortData.FundingRate = oData.FundingRate;
+                    }
+
+                }
+
+                // Check if buy
+                await CheckForBuy(oChance);
+                if (m_oActiveChance != null) break;
+
+            }
+            return;
+        }
+
+        private void RemoveChance(ArbitrageChance oChance)
+        {
+            ArbitrageChance? oRemoved = null;
+            m_aChances.TryRemove(oChance.LongData.Symbol.Base, out oRemoved);
+        }
+        private async Task ProcessActive()
+        {
+            if (m_oActiveChance == null) return;
+            decimal nMoney = Trader.Money * Trader.Leverage;
+            decimal nDesired = 0.01M * nMoney;
+
+            if (m_oActiveChance.LongData.Position == null) return;
+            if (m_oActiveChance.ShortData.Position == null) return;
+
+            m_oActiveChance.LongData.Position.Update();
+            m_oActiveChance.ShortData.Position.Update();
+
+            decimal nProfit = m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit;
+            if (nProfit > nDesired)
+            {
+                List<Task<bool>> aCloseTasks = new List<Task<bool>>();
+                aCloseTasks.Add(Trader.Close(m_oActiveChance.LongData.Position));
+                aCloseTasks.Add(Trader.Close(m_oActiveChance.ShortData.Position));
+                await Task.WhenAll(aCloseTasks);
+                m_oActiveChance.Profit = (m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit);
+                Logger.Info($"====<  Closed {m_oActiveChance.ToString()} => Profit {m_oActiveChance.Profit}");
+                m_nTotalProfit += m_oActiveChance.Profit.Value;
+
+                Logger.Info($"[{m_nTotalProfit}] TOTAL PROFIT");
+                RemoveChance(m_oActiveChance);
+                m_oActiveChance = null;
+            }
+            else
+            {
+                if( nProfit > m_oActiveChance.MaxProfit )
+                {
+                    m_oActiveChance.MaxProfit = nProfit;
+                    Logger.Info($"     {m_oActiveChance.ToString()} => Profit {nProfit}");
+                }
+                else
+                {
+                    DateTime dNow = DateTime.Now;
+                    if( (dNow - m_oActiveChance.LastLog ).TotalMinutes > 1 )
+                    {
+                        m_oActiveChance.LastLog = dNow;
+                        Logger.Info($"     {m_oActiveChance.ToString()} => Profit {nProfit}");
+
+                    }
+                }
+            }
+
+            await Task.Delay(200);
         }
 
         private async Task MainLoop()
@@ -117,54 +330,27 @@ namespace Crypto.Futures.Bot.Arbitrage
             {
                 if (m_aExchanges == null) continue;
 
-                ArbitrageChance? oChance = await FindChances();    
-                if( oChance != null ) 
+                try
                 {
-                    Logger.Info(oChance.ToString()!);    
-                }
-                /*
-                foreach (var oExchange in m_aExchanges)
-                {
-                    try
+                    List<Task> aTasks = new List<Task>();
+                    if (m_oActiveChance == null)
                     {
-                        IFuturesSymbol[] aPrevious = oExchange.SymbolManager.GetAllValues();
-
-                        IFuturesSymbol[]? aActual = await oExchange.RefreshSymbols();
-                        if (aActual == null) continue;
-
-                        IFuturesSymbol[] aNews = aActual.Where(p => !aPrevious.Any(q => p.Symbol == q.Symbol)).ToArray();
-                        if (bFirst)
-                        {
-                            IFuturesSymbol[] aToday = aActual.Where(p => p.ListDate.Date == DateTime.Today).ToArray();
-                            if (aToday.Length > 0)
-                            {
-                                foreach (var oSymbol in aToday)
-                                {
-                                    Logger.Info($"Today Symbol {oSymbol.ToString()} {oSymbol.ListDate.ToShortTimeString()}");
-                                }
-                            }
-                        }
-
-                        if (aNews == null || aNews.Length <= 0) continue;
-                        foreach (var oSymbol in aNews)
-                        {
-                            Logger.Info($"New symbol {oSymbol.ToString()}");
-                        }
+                        aTasks.Add(FindChances());
+                        aTasks.Add(LoopChances());
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Logger.Error($"Error on exchange {oExchange.ExchangeType.ToString()}", ex);
+                        aTasks.Add(ProcessActive());    
                     }
+
+                    await Task.WhenAll(aTasks);
+
                 }
-                bFirst = false;
-                DateTime dNow = DateTime.Now;
-                if ((dNow - dLastLog).TotalMinutes >= nMinutes)
+                catch (Exception ex)
                 {
-                    dLastLog = dNow;
-                    Logger.Info("...Checking");
+                    Logger.Error("ArbitrageBot. Error on main loop", ex);  
                 }
-                */
-                await Task.Delay(3000);
+                await Task.Delay(200);
             }
         }
 

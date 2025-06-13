@@ -205,6 +205,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         }
         public async Task<bool> UnSubscribe(IFuturesSymbol oSymbol)
         {
+            await Task.Delay(500);
             throw new NotImplementedException();
         }
 

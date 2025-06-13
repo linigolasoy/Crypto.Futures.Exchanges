@@ -44,7 +44,7 @@ public class Program
         ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "ArbitrageBot");
 
         // ITradingBot oBot = BotFactory.CreateNewSymbolBot(oSetup, oLogger);
-        ITradingBot oBot = BotFactory.CreateArbitrageBot(oSetup, oLogger);
+        ITradingBot oBot = BotFactory.CreateArbitrageBot(oSetup, oLogger, true);
 
         try
         {
