@@ -37,9 +37,12 @@ namespace Crypto.Futures.Exchanges.Bitmart
             {
                 nFrom = nFromMin;
             }
-
-            string strEndPoint = $"{ENDP_BARS}?symbol={oSymbol.Symbol}&step={nInterval}&start_time={nFrom}&end_time={nTo}";
-            var oResult = await m_oExchange.RestClient.DoGetArray<IBar?>(strEndPoint, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p));
+            Dictionary<string,string> aParams = new Dictionary<string,string>();
+            aParams.Add("symbol", oSymbol.Symbol);
+            aParams.Add("step", nInterval.ToString());
+            aParams.Add("start_time", nFrom.ToString());
+            aParams.Add("end_time", nTo.ToString());
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IBar?>(ENDP_BARS, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p), aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             List<IBar> aResult = new List<IBar>();

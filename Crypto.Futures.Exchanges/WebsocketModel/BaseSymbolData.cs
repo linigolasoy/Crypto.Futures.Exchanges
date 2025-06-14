@@ -13,6 +13,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         { 
             Symbol = oSymbol;   
         }
+
+        public DateTime LastUpdate { get; internal set; }
         public IFuturesSymbol Symbol { get; }
 
         public ITrade? LastTrade { get; internal set; } = null;

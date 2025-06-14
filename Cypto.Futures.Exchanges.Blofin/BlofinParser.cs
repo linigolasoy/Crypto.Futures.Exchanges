@@ -40,5 +40,10 @@ namespace Cypto.Futures.Exchanges.Blofin
         {
             return BlofinTicker.Parse(Exchange, oJson);
         }
+
+        public IBalance? ParseBalance(JToken? oJson)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -47,7 +47,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         public BitmartTrade( IFuturesSymbol oSymbol, BitmartTradeJson oJson )
         {
             Symbol = oSymbol;
-            DateTime = DateTime.Parse(oJson.Timestamp);
+            DateTime = DateTime.Parse(oJson.Timestamp, CultureInfo.InvariantCulture);
             IsBuy = (oJson.Way < 5);
             Price = decimal.Parse(oJson.Price, CultureInfo.InvariantCulture);
             Volume = decimal.Parse(oJson.Volume, CultureInfo.InvariantCulture) * oSymbol.ContractSize;

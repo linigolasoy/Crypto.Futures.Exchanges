@@ -16,6 +16,8 @@ namespace Crypto.Futures.Exchanges.Factory
         public string ApiKey { get; set; } = string.Empty;
         [JsonProperty("ApiSecret")]
         public string ApiSecret { get; set; } = string.Empty;
+        [JsonProperty("ApiPassword")]
+        public string? ApiPassword { get; set; } = string.Empty;
     }
 
     internal class SetupMoneyParsed
@@ -24,10 +26,14 @@ namespace Crypto.Futures.Exchanges.Factory
         public int Leverage { get; set; } = 1;
         [JsonProperty("Amount")]
         public decimal Amount { get; set; } = 0;
-        [JsonProperty("Threshold")]
-        public decimal Threshold { get; set; } = 1;
-        [JsonProperty("CloseOnProfit")]
-        public decimal CloseOnProfit { get; set; } = 0.5M;
+    }
+
+    internal class ArbitrageParsed
+    {
+        [JsonProperty("MinimumPercent")]
+        public decimal Percent { get; set; } = 1;
+        [JsonProperty("MaxOperations")]
+        public int MaxOperations { get; set; } = 0;
     }
 
     internal class SetupParsed
@@ -42,6 +48,11 @@ namespace Crypto.Futures.Exchanges.Factory
         [JsonProperty("HistoryPath")]
         public string HistoryPath { get; set; } = String.Empty;
 
+        [JsonProperty("MoneyDefinition")]
+        public SetupMoneyParsed MoneyParsed { get; set; } = new SetupMoneyParsed();
+        [JsonProperty("Arbitrage")]
+        public ArbitrageParsed Arbitrage { get; set; } = new ArbitrageParsed();
+
     }
 
     /// <summary>
@@ -49,17 +60,44 @@ namespace Crypto.Futures.Exchanges.Factory
     /// </summary>
     internal class CryptoApiKey : IApiKey
     {
-        public CryptoApiKey(ExchangeType eType, string strKey, string strSecret)
+        public CryptoApiKey(ExchangeType eType, string strKey, string strSecret, string? strPassword)
         {
             ExchangeType = eType;
             ApiKey = strKey;
             ApiSecret = strSecret;
+            ApiPassword = strPassword;
         }
         public string ApiKey { get; }
         public string ApiSecret { get; }
+        public string? ApiPassword { get; } 
         public ExchangeType ExchangeType { get; }
     }
 
+
+    internal class MoneySetup : IMoneySetup
+    {
+        public MoneySetup( SetupMoneyParsed oParsed )
+        {
+            Money = oParsed.Amount;
+            Leverage = oParsed.Leverage;
+        }
+
+        public decimal Money { get; }
+
+        public decimal Leverage { get; }
+    }
+
+    internal class ArbitrageSetup : IArbitrageSetup
+    {
+        public ArbitrageSetup(ArbitrageParsed oParsed )
+        {
+            MinimumPercent = oParsed.Percent;
+            MaxOperations = oParsed.MaxOperations;
+        }
+        public decimal MinimumPercent { get; }
+
+        public int MaxOperations { get; }
+    }
     /// <summary>
     /// BaseSetup is a placeholder implementation of IExchangeSetup.
     /// </summary>
@@ -79,7 +117,7 @@ namespace Crypto.Futures.Exchanges.Factory
                     ExchangeType eType = ExchangeType.BingxFutures;
                     if (Enum.TryParse<ExchangeType>(oKey.ExchangeType, out eType))
                     {
-                        aFound.Add(new CryptoApiKey(eType, oKey.ApiKey, oKey.ApiSecret));
+                        aFound.Add(new CryptoApiKey(eType, oKey.ApiKey, oKey.ApiSecret, oKey.ApiPassword));
                     }
                 }
 
@@ -93,6 +131,8 @@ namespace Crypto.Futures.Exchanges.Factory
                 .ToArray();
 
             // This constructor is intentionally left empty.
+            MoneyDefinition = new MoneySetup(oParsed!.MoneyParsed);
+            Arbitrage = new ArbitrageSetup(oParsed!.Arbitrage);
         }
 
         public IApiKey[] ApiKeys { get; }
@@ -100,5 +140,9 @@ namespace Crypto.Futures.Exchanges.Factory
         public ExchangeType[] ExchangeTypes { get; }
 
         public string LogPath { get; }
+
+        public IMoneySetup MoneyDefinition { get; } 
+
+        public IArbitrageSetup Arbitrage { get; }
     }
 }

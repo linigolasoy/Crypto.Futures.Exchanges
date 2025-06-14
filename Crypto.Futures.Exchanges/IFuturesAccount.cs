@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypto.Futures.Exchanges.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,5 +14,10 @@ namespace Crypto.Futures.Exchanges
     public interface IFuturesAccount
     {
         // TODO: Methods
+        public IFuturesExchange Exchange { get; }
+
+
+        public Task<IBalance[]?> GetBalances();
+
     }
 }

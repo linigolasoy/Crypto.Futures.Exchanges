@@ -51,8 +51,14 @@ namespace Crypto.Futures.Exchanges.Bingx
             DateTimeOffset oOffsetTo = new DateTimeOffset(dTo.ToUniversalTime());
             long nFrom = oOffsetFrom.ToUnixTimeMilliseconds();
             long nTo = oOffsetTo.ToUnixTimeMilliseconds();
-            string strEndPoint = $"{ENDP_BARS}?symbol={oSymbol.Symbol}&interval={strInterval}&startTime={nFrom}&endTime={nTo}&limit=1440";
-            var oResult = await m_oExchange.RestClient.DoGetArray<IBar?>(strEndPoint, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p));
+            Dictionary<string, string> aParams = new Dictionary<string, string>();
+            aParams.Add("symbol", oSymbol.Symbol);
+            aParams.Add("interval", strInterval);
+            aParams.Add("startTime", nFrom.ToString());
+            aParams.Add("endTime", nTo.ToString());
+            aParams.Add("limit", "1440");
+            // string strEndPoint = $"{ENDP_BARS}?symbol={oSymbol.Symbol}&interval={strInterval}&startTime={nFrom}&endTime={nTo}&limit=1440";
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IBar?>(ENDP_BARS, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p), aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             List<IBar> aResult = new List<IBar>();  

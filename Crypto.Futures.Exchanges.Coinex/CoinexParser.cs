@@ -42,5 +42,10 @@ namespace Crypto.Futures.Exchanges.Coinex
         {
             return CoinexBar.Parse(Exchange, oSymbol, eFrame, oJson);
         }
+
+        public IBalance? ParseBalance(JToken? oJson)
+        {
+            return CoinexBalance.Parse(Exchange, oJson);
+        }
     }
 }

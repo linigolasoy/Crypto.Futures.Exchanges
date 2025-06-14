@@ -13,10 +13,11 @@ namespace Crypto.Futures.Exchanges
     public interface IFuturesExchange
     {
         public IExchangeSetup Setup { get; }
-
+        public IApiKey ApiKey { get; }  
         public ICommonLogger? Logger { get; }
         public ExchangeType ExchangeType { get; }
 
+        public bool Tradeable { get; }
         // Market rest calls and public websocket calls
         public IFuturesMarket Market { get; }
         // History, tickers, funding, etc.  

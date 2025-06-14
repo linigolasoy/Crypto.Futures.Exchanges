@@ -68,8 +68,11 @@ namespace Crypto.Futures.Exchanges.Mexc
             DateTimeOffset oOffsetTo = new DateTimeOffset(dTo.ToUniversalTime());
             long nFrom = oOffsetFrom.ToUnixTimeSeconds();
             long nTo = oOffsetTo.ToUnixTimeSeconds(); 
-            string strEndPoint = $"{ENDP_BARS}{oSymbol.Symbol}?interval={oInterval.Value.ToString()}&start={nFrom}&end={nTo}";
-            var oResult = await m_oExchange.RestClient.DoGet<JToken?>(strEndPoint, p => p);
+            Dictionary<string,string> aParams = new Dictionary<string,string>();
+            aParams.Add("interval", oInterval.Value.ToString());
+            aParams.Add("start", nFrom.ToString());
+            aParams.Add("end", nTo.ToString());
+            var oResult = await m_oExchange.RestClient.DoGetParams<JToken?>($"{ENDP_BARS}{oSymbol.Symbol}", p => p, aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             return m_oExchange.Parser.ParseBars(oSymbol, eFrame, oResult.Data);

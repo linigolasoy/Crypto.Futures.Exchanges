@@ -11,7 +11,6 @@ namespace Crypto.Futures.Exchanges.Bitget
     public class BitgetFutures : IFuturesExchange
     {
         // https://api.bitget.com/api/v2/mix/market/contracts?productType=usdt-futures
-        private CryptoRestClient m_oRestClient;
         private BitgetParser m_oParser;
         private const string BASE_URL = "https://api.bitget.com/api/v2";
         private const string ENDP_SYMBOLS = "/mix/market/contracts?productType=usdt-futures";
@@ -21,17 +20,21 @@ namespace Crypto.Futures.Exchanges.Bitget
             Setup = oSetup;
             Logger = oLogger;
             m_oParser = new BitgetParser(this);
-            m_oRestClient = new CryptoRestClient(BASE_URL, m_oParser);
+            ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
+            
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BitgetMarket(this);
             History = new BitgetHistory(this);
+            Account = new BitgetAccount(this);
         }
 
-        internal CryptoRestClient RestClient { get => m_oRestClient; }
+        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser);  } }
         internal BitgetParser Parser { get => m_oParser; }
         public IExchangeSetup Setup { get; }
+        public IApiKey ApiKey { get; }
+        public bool Tradeable { get => true; }
 
         public ICommonLogger? Logger { get; }
 
@@ -43,7 +46,7 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -51,7 +54,7 @@ namespace Crypto.Futures.Exchanges.Bitget
         {
             try
             {
-                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;

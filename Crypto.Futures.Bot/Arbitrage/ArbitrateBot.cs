@@ -34,6 +34,7 @@ namespace Crypto.Futures.Bot.Arbitrage
 
         private DateTime m_dLastChanceFind = DateTime.Today;
 
+        private decimal MINIMUM_PERCENT = 1.3M;
         private decimal m_nTotalProfit = 0;
         private ArbitrageChance? m_oActiveChance = null;
         /// <summary>
@@ -105,7 +106,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                 }
                 if (oBestChance != null)
                 {
-                    if (oBestChance.Percentage < 1.0M) return;
+                    if (oBestChance.Percentage < MINIMUM_PERCENT) return;
                     string strCurrency = oBestChance.LongData.Symbol.Base;
 
                     ArbitrageChance? oFound = null;
@@ -157,26 +158,23 @@ namespace Crypto.Futures.Bot.Arbitrage
         /// <returns></returns>
         private async Task CheckForBuy( ArbitrageChance oChance )
         {
-            if( oChance.LongData.FundingRate == null ) return;
-            if (oChance.LongData.LastTrade == null) return;
-            if (oChance.ShortData.FundingRate == null) return;
-            if (oChance.ShortData.LastTrade == null) return;
+            if (!oChance.IsDataValid) return;
 
             // Funding rate check
             DateTime dNow = DateTime.Now;
-            if( (oChance.LongData.FundingRate.Next - dNow).TotalHours < 0.25 ) return;
-            if ((oChance.ShortData.FundingRate.Next - dNow).TotalHours < 0.25) return;
+            if( (oChance.LongData.WsSymbolData!.FundingRate!.Next - dNow).TotalHours < 0.25 ) return;
+            if ((oChance.ShortData.WsSymbolData!.FundingRate!.Next - dNow).TotalHours < 0.25) return;
 
             try
             {
                 // Price check
-                decimal nPriceLong = oChance.LongData.LastTrade.Price;
-                decimal nPriceShort = oChance.ShortData.LastTrade.Price;
+                decimal nPriceLong = oChance.LongData.WsSymbolData!.LastTrade!.Price;
+                decimal nPriceShort = oChance.ShortData.WsSymbolData!.LastTrade!.Price;
                 decimal nDiff = nPriceShort - nPriceLong;
                 if (nDiff <= 0) return;
 
                 decimal nPercent = 100.0M * nDiff / nPriceLong;
-                if (nPercent <= 1) return;
+                if (nPercent <= MINIMUM_PERCENT) return;
                 oChance.Percentage = nPercent;
 
                 decimal nQuantity = Trader.Money * Trader.Leverage / nPriceLong;
@@ -238,25 +236,14 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if (bSubscribed) continue;
 
                 // Data update for long
-                if( oChance.LongData.LastTrade == null || oChance.LongData.FundingRate == null )
+                if( oChance.LongData.WsSymbolData == null )
                 {
-                    IWebsocketSymbolData? oData = oChance.LongData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.LongData.Symbol);
-                    if( oData != null )
-                    {
-                        if (oChance.LongData.LastTrade == null) oChance.LongData.LastTrade = oData.LastTrade;
-                        if (oChance.LongData.FundingRate == null) oChance.LongData.FundingRate = oData.FundingRate;
-                    }
-
+                    oChance.LongData.WsSymbolData = oChance.LongData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.LongData.Symbol);
                 }
                 // Data update for short
-                if (oChance.ShortData.LastTrade == null || oChance.ShortData.FundingRate == null)
+                if (oChance.ShortData.WsSymbolData == null)
                 {
-                    IWebsocketSymbolData? oData = oChance.ShortData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.ShortData.Symbol);
-                    if (oData != null)
-                    {
-                        if (oChance.ShortData.LastTrade == null) oChance.ShortData.LastTrade = oData.LastTrade;
-                        if (oChance.ShortData.FundingRate == null) oChance.ShortData.FundingRate = oData.FundingRate;
-                    }
+                    oChance.ShortData.WsSymbolData = oChance.ShortData.Symbol.Exchange.Market.Websocket.DataManager.GetData(oChance.ShortData.Symbol);
 
                 }
 
@@ -277,7 +264,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         {
             if (m_oActiveChance == null) return;
             decimal nMoney = Trader.Money * Trader.Leverage;
-            decimal nDesired = 0.01M * nMoney;
+            decimal nDesired = (MINIMUM_PERCENT * nMoney) / 200.0M;
 
             if (m_oActiveChance.LongData.Position == null) return;
             if (m_oActiveChance.ShortData.Position == null) return;
@@ -285,7 +272,7 @@ namespace Crypto.Futures.Bot.Arbitrage
             m_oActiveChance.LongData.Position.Update();
             m_oActiveChance.ShortData.Position.Update();
 
-            decimal nProfit = m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit;
+            decimal nProfit = Math.Round( m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit, 2);
             if (nProfit > nDesired)
             {
                 List<Task<bool>> aCloseTasks = new List<Task<bool>>();
@@ -293,10 +280,10 @@ namespace Crypto.Futures.Bot.Arbitrage
                 aCloseTasks.Add(Trader.Close(m_oActiveChance.ShortData.Position));
                 await Task.WhenAll(aCloseTasks);
                 m_oActiveChance.Profit = (m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit);
-                Logger.Info($"====<  Closed {m_oActiveChance.ToString()} => Profit {m_oActiveChance.Profit}");
+                Logger.Info($"====<  Closed {m_oActiveChance.ToString()} => Profit {Math.Round(m_oActiveChance.Profit.Value,2)}");
                 m_nTotalProfit += m_oActiveChance.Profit.Value;
 
-                Logger.Info($"[{m_nTotalProfit}] TOTAL PROFIT");
+                Logger.Info($"[{Math.Round(m_nTotalProfit,2)}] TOTAL PROFIT");
                 RemoveChance(m_oActiveChance);
                 m_oActiveChance = null;
             }
@@ -367,7 +354,7 @@ namespace Crypto.Futures.Bot.Arbitrage
 
             foreach (var eType in Setup.ExchangeTypes)
             {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(Setup, eType);
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(Setup, eType, Logger);
                 aExchanges.Add(oExchange);
             }
             m_aExchanges = aExchanges.ToArray();

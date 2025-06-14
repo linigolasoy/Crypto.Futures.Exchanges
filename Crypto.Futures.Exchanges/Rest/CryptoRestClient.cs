@@ -9,15 +9,19 @@ namespace Crypto.Futures.Exchanges.Rest
 {
     public class CryptoRestClient : ICryptoRestClient
     {
-        public CryptoRestClient(string strUrl, ICryptoRestParser oParser)
+        public CryptoRestClient(string strUrl, IApiKey oApiKey, ICryptoRestParser oParser)
         {
             BaseUrl = strUrl;
             Parser = oParser;
+            ApiKey = oApiKey;
         }
         public string BaseUrl { get; }
+        public IApiKey ApiKey { get; }  
 
         public ICryptoRestParser Parser { get; }
+        // public event RequestHeaderDelegate? OnRequestHeader = null;
 
+        public Func<HttpMethod, string, Dictionary<string, string>?, string?, HttpRequestMessage?>? RequestEvaluator { get; set; } = null;
         private HttpClient CreateClient()
         {
             HttpClient oResult = new HttpClient();
@@ -25,18 +29,50 @@ namespace Crypto.Futures.Exchanges.Rest
             return new HttpClient();
         }
 
-        public async Task<ICryptoRestResult<T>> DoGet<T>(string strEndpoint, Func<JToken?, T> oParserAction, Dictionary<string, object>? aParameters = null)
+
+        private HttpRequestMessage CreateRequestMessage(HttpMethod oMethod, string strEndPoint, Dictionary<string, string>? aParameters )
+        {
+            HttpRequestMessage? oMsg = null;
+            string strUrl = $"{BaseUrl}{strEndPoint}";
+            if (RequestEvaluator != null)
+            {
+                oMsg = RequestEvaluator(oMethod, strUrl, aParameters, null);
+            }
+            else
+            {
+                // TODO: Put params
+                if (aParameters == null || aParameters.Count <= 0 )
+                {
+                    oMsg = new HttpRequestMessage(oMethod, strUrl);
+                }
+                else
+                {
+                    StringBuilder oBuildParams = new StringBuilder();   
+                    foreach (var aParam in aParameters)
+                    {
+                        if( oBuildParams.Length > 0 ) oBuildParams.Append("&");
+                        oBuildParams.Append(aParam.Key);
+                        oBuildParams.Append("=");
+                        oBuildParams.Append(aParam.Value);
+                    }
+                    string strUrlNew = $"{strUrl}?{oBuildParams.ToString()}";
+                    oMsg = new HttpRequestMessage(oMethod, strUrlNew);
+                }
+            }
+            if (oMsg == null) throw new Exception("Invalid request message");
+            return oMsg;    
+        }
+        public async Task<ICryptoRestResult<T>> DoGetParams<T>(
+            string strEndpoint, 
+            Func<JToken?, T> oParserAction, 
+            Dictionary<string, string>? aParameters = null)
         {
             try
             {
-                string strUrl = $"{BaseUrl}{strEndpoint}";
-                if (aParameters != null)
-                {
-                    throw new NotImplementedException();
-                }
-
                 var oClient = CreateClient();
-                var oResponse = await oClient.GetAsync(strUrl);
+                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters );
+
+                var oResponse = await oClient.SendAsync(oMsg); // await oClient.GetAsync(strUrl);
                 ICryptoRestResult<T> oResult = await CryptoRestResult<T>.CreateFromResponse(oResponse, oParserAction);
                 return oResult;
             }
@@ -47,18 +83,17 @@ namespace Crypto.Futures.Exchanges.Rest
             }
         }
 
-        public async Task<ICryptoRestResult<T[]>> DoGetArray<T>(string strEndpoint, string? strField, Func<JToken, T> oParserAction, Dictionary<string, Object>? aParameters = null)
+        public async Task<ICryptoRestResult<T[]>> DoGetArrayParams<T>(
+            string strEndpoint, string? strField, 
+            Func<JToken, T> oParserAction, 
+            Dictionary<string, string>? aParameters = null)
         {
             try
             {
-                string strUrl = $"{BaseUrl}{strEndpoint}";
-                if (aParameters != null)
-                {
-                    throw new NotImplementedException();
-                }
-
                 var oClient = CreateClient();
-                var oResponse = await oClient.GetAsync(strUrl);
+
+                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters);
+                var oResponse = await oClient.SendAsync(oMsg); // await oClient.GetAsync(strUrl);
                 ICryptoRestResult<T[]> oResult = await CryptoRestResult<T>.CreateFromResponseArray(oResponse, strField, oParserAction);
                 return oResult;
             }

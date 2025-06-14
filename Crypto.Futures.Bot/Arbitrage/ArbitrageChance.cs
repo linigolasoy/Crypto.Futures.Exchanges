@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,14 @@ namespace Crypto.Futures.Bot.Arbitrage
             Symbol = oSymbol;   
         }
 
+
         public IFuturesSymbol Symbol { get; }
 
+        public IWebsocketSymbolData? WsSymbolData { get; set; } = null;
+        /*
         public ITrade? LastTrade { get; set; }  = null;
         public IFundingRate? FundingRate { get; set; } = null;
+        */
 
         public ITraderPosition? Position { get; set; } = null;
     }
@@ -41,6 +46,25 @@ namespace Crypto.Futures.Bot.Arbitrage
         public DateTime LastLog { get; internal set;}
         public decimal? Profit { get; internal set; } = null;
         public decimal MaxProfit { get; internal set; } = -1000;
+
+        public bool IsDataValid
+        {
+            get
+            {
+                if( LongData.WsSymbolData == null ) return false;
+                if (ShortData.WsSymbolData == null) return false;
+                if (LongData.WsSymbolData.FundingRate == null) return false;
+                if (ShortData.WsSymbolData.FundingRate == null) return false;
+                if (LongData.WsSymbolData.LastTrade == null) return false;
+                if (ShortData.WsSymbolData.LastTrade == null) return false;
+                DateTime dNow = DateTime.Now;
+                double nDiffLong  = (dNow - LongData.WsSymbolData.LastUpdate).TotalMilliseconds;
+                double nDiffShort = (dNow - ShortData.WsSymbolData.LastUpdate).TotalMilliseconds;
+                if( nDiffLong > 1000 || nDiffShort > 1000 ) return false;
+                return true;
+            }
+        }
+
         public void Update( ArbitrageChance oChance )
         {
             DateTime = oChance.DateTime;    
@@ -70,7 +94,8 @@ namespace Crypto.Futures.Bot.Arbitrage
 
         public override string ToString()
         {
-            return $"Long [{LongData.Symbol.ToString()}] Short [{ShortData.Symbol.ToString()}] Percent {Percentage}";
+            decimal nPercent = Math.Round(Percentage, 2);
+            return $"Long [{LongData.Symbol.ToString()}] Short [{ShortData.Symbol.ToString()}] Percent {nPercent}%";
         }
     }
 }

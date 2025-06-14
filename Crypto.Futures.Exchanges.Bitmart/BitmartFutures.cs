@@ -10,7 +10,6 @@ namespace Crypto.Futures.Exchanges.Bitmart
 {
     public class BitmartFutures : IFuturesExchange
     {
-        private CryptoRestClient m_oRestClient;
         private BitmartParser m_oParser;
         internal const string BASE_URL = "https://api-cloud-v2.bitmart.com";
         internal const string ENDP_SYMBOLS = "/contract/public/details";
@@ -20,17 +19,21 @@ namespace Crypto.Futures.Exchanges.Bitmart
             Setup = oSetup;
             Logger = oLogger;
             m_oParser = new BitmartParser(this);
-            m_oRestClient = new CryptoRestClient(BASE_URL, m_oParser);
+            ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
+            
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BitmartMarket(this);  
             History = new BitmartHistory(this);
+            Account = new BitmartAccount(this);
         }
 
-        internal CryptoRestClient RestClient { get=> m_oRestClient; }   
+        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }   
         internal BitmartParser Parser { get => m_oParser; } 
         public IExchangeSetup Setup { get; }
+        public IApiKey ApiKey { get; }
+        public bool Tradeable { get => true; }
 
         public ICommonLogger? Logger { get; }
 
@@ -42,7 +45,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -50,7 +53,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
         {
             try
             { 
-                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, "symbols", p => m_oParser.ParseSymbols(p));
+                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, "symbols", p => m_oParser.ParseSymbols(p));
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;

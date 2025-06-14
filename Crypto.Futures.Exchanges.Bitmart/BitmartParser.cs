@@ -41,5 +41,9 @@ namespace Crypto.Futures.Exchanges.Bitmart
         {
             return BitmartTicker.Parse(Exchange, oJson);
         }
+        public IBalance? ParseBalance(JToken? oJson)
+        {
+            return BitmartBalance.Parse(Exchange, oJson);
+        }
     }
 }

@@ -56,10 +56,10 @@ namespace Crypto.Futures.Exchanges.Rest
 
         public static async Task<ICryptoRestResult<T[]>> CreateFromResponseArray(HttpResponseMessage oResponse, string? strField, Func<JToken, T?> oParserAction)
         {
+            string strResponse = await oResponse.Content.ReadAsStringAsync();
             ICryptoErrorCode? oHttpError = CryptoRestError.Create(oResponse);
             if (oHttpError != null) return new CryptoRestResult<T[]>(oHttpError);
 
-            string strResponse = await oResponse.Content.ReadAsStringAsync();
             StdResultResponse? oStdResponse = JsonConvert.DeserializeObject<StdResultResponse>(strResponse);
 
 

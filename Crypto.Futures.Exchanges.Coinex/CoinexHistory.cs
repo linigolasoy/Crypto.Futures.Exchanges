@@ -45,9 +45,11 @@ namespace Crypto.Futures.Exchanges.Coinex
         {
             string? strInterval = TimeframeToCoinex(eFrame);
             if (strInterval == null) return null;
-
-            string strEndPoint = $"{ENDP_BARS}?market={oSymbol.Symbol}&period={strInterval}&limit=1000";
-            var oResult = await m_oExchange.RestClient.DoGetArray<IBar?>(strEndPoint, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p));
+            Dictionary<string,string> aParams = new Dictionary<string,string>();
+            aParams.Add("market", oSymbol.Symbol);
+            aParams.Add("period", strInterval);
+            aParams.Add("limit", "1000");
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IBar?>(ENDP_BARS, null, p => m_oExchange.Parser.ParseBar(oSymbol, eFrame, p), aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             List<IBar> aResult = new List<IBar>();

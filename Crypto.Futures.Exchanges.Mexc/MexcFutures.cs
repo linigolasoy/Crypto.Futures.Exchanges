@@ -10,25 +10,28 @@ namespace Crypto.Futures.Exchanges.Mexc
         public const string BASE_URL = "https://contract.mexc.com";
         private const string ENDP_SYMBOLS = "/api/v1/contract/detail";
 
-        internal CryptoRestClient m_oRestClient;
         internal MexcParser m_oParser;
         public MexcFutures(IExchangeSetup oSetup, ICommonLogger? logger = null)
         {
             Setup = oSetup;
             Logger = logger;
             m_oParser = new MexcParser(this);
-            m_oRestClient = new CryptoRestClient(BASE_URL, m_oParser);
+            ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);  
+            
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new MexcMarket(this);
             History = new MexcHistory(this);
+            Account = new MexcAccount(this);
         }
 
 
-        internal CryptoRestClient RestClient { get => m_oRestClient; }
+        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser);  } }
         internal MexcParser Parser { get => m_oParser; }
         public IExchangeSetup Setup { get; }
+        public IApiKey ApiKey { get; }
+        public bool Tradeable { get => true; }
 
         public ICommonLogger? Logger { get; }
 
@@ -40,7 +43,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -53,7 +56,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         {
             try
             { 
-                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;

@@ -27,7 +27,7 @@ namespace Crypto.Futures.Exchanges.Bingx
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            var oResult = await m_oExchange.RestClient.DoGetArray<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;
@@ -62,7 +62,7 @@ namespace Crypto.Futures.Exchanges.Bingx
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;

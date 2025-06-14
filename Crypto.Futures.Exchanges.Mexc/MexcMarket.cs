@@ -39,7 +39,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
         {
             string strEndPoint = $"{ENDP_FUNDING_RATE}{oSymbol.Symbol}";
-            var oResult = await m_oExchange.RestClient.DoGet<IFundingRate?>(strEndPoint, p => m_oExchange.Parser.ParseFundingRate(p, false));
+            var oResult = await m_oExchange.RestClient.DoGetParams<IFundingRate?>(strEndPoint, p => m_oExchange.Parser.ParseFundingRate(p, false));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             return oResult.Data;    
@@ -54,7 +54,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         {
 
             string strEndPoint = ENDP_TICKER;
-            var oResult = await m_oExchange.RestClient.DoGetArray<IFundingRate?>(strEndPoint, null, p => m_oExchange.Parser.ParseFundingRate(p, true));
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(strEndPoint, null, p => m_oExchange.Parser.ParseFundingRate(p, true));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
 
@@ -72,7 +72,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;

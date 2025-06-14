@@ -197,7 +197,7 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
 
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.BitmartFutures))
             {
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
                 IFuturesSymbol[] aFirst = oExchange.SymbolManager.GetAllValues().Take(10).ToArray();   

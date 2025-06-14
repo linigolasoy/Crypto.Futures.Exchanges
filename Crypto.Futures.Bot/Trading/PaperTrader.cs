@@ -15,8 +15,8 @@ namespace Crypto.Futures.Bot.Trading
             Bot = oBot;
         }
         public ITradingBot Bot { get; }
-        public decimal Money { get => 10; }
-        public decimal Leverage { get => 10; }
+        public decimal Money { get => Bot.Setup.MoneyDefinition.Money; }
+        public decimal Leverage { get => Bot.Setup.MoneyDefinition.Leverage; }
 
         public async Task<bool> Close(ITraderPosition oPosition, decimal? nPrice = null)
         {

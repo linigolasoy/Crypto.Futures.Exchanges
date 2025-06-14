@@ -13,6 +13,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
     internal class BitgetWebsocketParser : IWebsocketParser
     {
         private const string PING = "ping";
+        private const string PONG = "pong";
 
         public BitgetWebsocketParser(IFuturesExchange oExchange) 
         { 
@@ -24,6 +25,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
 
         public IWebsocketMessage[]? ParseMessage(string strMessage)
         {
+            if (strMessage == PONG) return null;
             BitgetMessage? oMessage = JsonConvert.DeserializeObject<BitgetMessage>(strMessage);
             if (oMessage == null) return null;
             if( oMessage.Action == null || oMessage.Data == null) return null;

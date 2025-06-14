@@ -1,0 +1,60 @@
+﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.Rest;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Crypto.Futures.Exchanges.Mexc
+{
+    internal class MexcAccount : IFuturesAccount
+    {
+        private MexcFutures m_oExchange;
+
+        private MexcPrivate m_oExchangePrivate;
+
+        private const string ENDP_BALANCES = "/api/v1/private/account/assets";
+        public MexcAccount(MexcFutures oExchange)
+        {
+            m_oExchange = oExchange;
+            m_oExchangePrivate = new MexcPrivate(oExchange);
+        }
+
+        public IFuturesExchange Exchange { get => m_oExchange; }
+
+        /*
+ApiKey, Request-Time, Signature
+        */
+        public async Task<IBalance[]?> GetBalances()
+        {
+            
+            try
+            {
+                CryptoRestClient oClient = m_oExchange.RestClient;
+
+                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
+
+                var oResult = await oClient.DoGetArrayParams<IBalance?>(ENDP_BALANCES, null, p => m_oExchange.Parser.ParseBalance(p));
+                if (oResult == null || !oResult.Success) return null;
+                if (oResult.Data == null) return null;
+                if (oResult.Data.Count() <= 0) return null;
+                List<IBalance> aResult = new List<IBalance>();
+                foreach (var oItem in oResult.Data)
+                {
+                    if( oItem == null) continue;
+                    aResult.Add(oItem);
+                }
+                return aResult.ToArray();
+            }
+            catch (Exception ex)
+            {
+                if (Exchange.Logger != null)
+                {
+                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
+                }
+            }
+            return null;
+        }
+    }
+}

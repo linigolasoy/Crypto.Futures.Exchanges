@@ -60,12 +60,14 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         private IWebsocketSymbolData CreateData( string strSymbol, IWebsocketMessage oMessage )
         {
             BaseSymbolData oData = new BaseSymbolData(oMessage.Symbol);
+            oData.LastUpdate = DateTime.Now;    
             UpdateSymbolData(oData, oMessage);
             return oData;   
         }
         private IWebsocketSymbolData UpdateData(string strSymbol, IWebsocketSymbolData oOld, IWebsocketMessage oMessage)
         {
             BaseSymbolData oData = (BaseSymbolData)oOld;
+            oData.LastUpdate = DateTime.Now;
             UpdateSymbolData(oData, oMessage);
             return oOld;
         }

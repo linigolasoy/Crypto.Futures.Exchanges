@@ -1,6 +1,8 @@
 ﻿using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Rest;
+using System.Net.Http.Headers;
+using Crypto.Futures.Exchanges.Blofin;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
@@ -11,7 +13,6 @@ namespace Cypto.Futures.Exchanges.Blofin
         private const string BASE_URL = "https://openapi.blofin.com";
         private const string ENDP_SYMBOLS = "/api/v1/market/instruments";
 
-        internal CryptoRestClient m_oRestClient;
         internal BlofinParser m_oParser;
 
         public BlofinFutures(IExchangeSetup oSetup, ICommonLogger? oLogger)
@@ -19,14 +20,18 @@ namespace Cypto.Futures.Exchanges.Blofin
             Setup = oSetup;
             Logger = oLogger;
             m_oParser = new BlofinParser(this);
-            m_oRestClient = new CryptoRestClient(BASE_URL, m_oParser);
+            ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
+            
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BlofinMarket(this);
+            Account = new BlofinAccount(this);
         }
         public IExchangeSetup Setup { get; }
-        internal CryptoRestClient RestClient { get => m_oRestClient; }
+        public IApiKey ApiKey { get; }
+        public bool Tradeable { get => false; }
+        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
         internal BlofinParser Parser { get => m_oParser; }
 
         public ICommonLogger? Logger { get; }
@@ -39,7 +44,7 @@ namespace Cypto.Futures.Exchanges.Blofin
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -47,7 +52,7 @@ namespace Cypto.Futures.Exchanges.Blofin
         {
             try
             {
-                var oResult = await m_oRestClient.DoGetArray<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;

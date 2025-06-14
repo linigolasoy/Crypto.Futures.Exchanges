@@ -41,5 +41,10 @@ namespace Crypto.Futures.Exchanges.Bitget
         {
             return BitgetBar.Parse(Exchange, oSymbol, eFrame, oJson);
         }
+
+        public IBalance? ParseBalance(JToken? oJson)
+        {
+            return BitgetBalance.Parse(Exchange, oJson);
+        }
     }
 }

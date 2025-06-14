@@ -40,7 +40,12 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         {
             Symbol = oSymbol;
             Next = Util.FromUnixTimestamp(oJson.NextFundingTime, true);
-            Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+            decimal nRate = 0;
+            if( !string.IsNullOrEmpty(oJson.NextFundingRate) && oJson.NextFundingRate.Length > 2)
+            {
+                nRate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+            }
+            Rate = nRate;
         }
 
         public BitmartFundingRate( IFuturesSymbol oSymbol, BitmartSymbolJson oJson) 

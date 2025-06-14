@@ -122,9 +122,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         /// <param name="oMessage"></param>
         private void OnMessage(ResponseMessage oMessage)
         {
+            string? strMessage = null;
             try
             {
-                string? strMessage = GetMessageText(oMessage);
+                strMessage = GetMessageText(oMessage);
                 if (strMessage == null) return ;
                 IWebsocketMessage[]? aMessages = Parser.ParseMessage(strMessage);
                 if( aMessages == null || aMessages.Length == 0 ) return;
@@ -143,6 +144,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
                 if( Market.Exchange.Logger != null )
                 {
                     Market.Exchange.Logger.Error("WsOnMessage error", e);
+                    if( strMessage != null ) Market.Exchange.Logger.Error(strMessage);
                 }
             }
         }
@@ -154,6 +156,32 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         private void OnReconnection(ReconnectionInfo oInfo)
         {
             if (oInfo.Type == ReconnectionType.Initial) return;
+            if (Market.Exchange.Logger != null)
+            {
+                Market.Exchange.Logger.Info($"Reconnect happened on {Market.Exchange.ExchangeType.ToString()}, Resubscribing...");
+            }
+            try
+            {
+                Task<bool> oTask = SendSubscriptions(m_aSubscribed.ToArray());
+                oTask.Wait();
+                if (oTask.Result)
+                {
+                    if (Market.Exchange.Logger != null)
+                    {
+                        Market.Exchange.Logger.Info($"Resubscribed on {Market.Exchange.ExchangeType.ToString()}");
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                if (Market.Exchange.Logger != null)
+                {
+                    Market.Exchange.Logger.Error($"Error resubscribing {Market.Exchange.ExchangeType.ToString()}", e);
+                }
+            }
+
+
 
         }
 
@@ -183,6 +211,20 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             return true;
         }
 
+
+        private async Task<bool> SendSubscriptions(IFuturesSymbol[] aSymbols)
+        {
+            if( m_oWsClient == null ) return false;
+            string[] aMessages = Parser.ParseSubscription(aSymbols, this.Timeframe);
+
+            foreach (string strMessage in aMessages)
+            {
+                m_oWsClient.Send(strMessage);
+                await Task.Delay(500);
+            }
+            return true;    
+
+        }
         public async Task<bool> Subscribe(IFuturesSymbol oSymbol)
         {
             return await Subscribe( new IFuturesSymbol[] { oSymbol });
@@ -193,14 +235,9 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             if( m_oWsClient == null ) return false; 
             IFuturesSymbol[] aNew = aSymbols.Where( p=> !m_aSubscribed.Any(q=> p.Symbol == q.Symbol)).ToArray();
             if (aNew.Length <= 0) return true;
-
-            string[] aMessages = Parser.ParseSubscription(aNew, this.Timeframe);
-
-            foreach (string strMessage in aMessages)
-            {
-                m_oWsClient.Send(strMessage);
-                await Task.Delay(500);
-            }
+            bool bResult = await SendSubscriptions(aNew);
+            if (!bResult) return false;
+            m_aSubscribed.AddRange(aNew);
             return true;
         }
         public async Task<bool> UnSubscribe(IFuturesSymbol oSymbol)

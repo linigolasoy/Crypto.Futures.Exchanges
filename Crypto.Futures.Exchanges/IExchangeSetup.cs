@@ -24,6 +24,19 @@ namespace Crypto.Futures.Exchanges
         public ExchangeType ExchangeType { get; }
         public string ApiKey { get; }
         public string ApiSecret { get; }
+        public string? ApiPassword { get; } 
+    }
+
+    public interface IMoneySetup
+    {
+        public decimal Money { get; }   
+        public decimal Leverage { get; }
+    }
+
+    public interface IArbitrageSetup
+    {
+        public decimal MinimumPercent { get; }
+        public int MaxOperations { get; }
     }
 
     public interface IExchangeSetup
@@ -33,5 +46,8 @@ namespace Crypto.Futures.Exchanges
 
         public ExchangeType[] ExchangeTypes { get; }
         public string LogPath { get; }
+
+        public IMoneySetup MoneyDefinition { get; }
+        public IArbitrageSetup Arbitrage { get; }
     }
 }

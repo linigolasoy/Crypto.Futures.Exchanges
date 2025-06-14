@@ -13,8 +13,8 @@ namespace Crypto.Futures.Exchanges.Bitget
     {
         private BitgetFutures m_oExchange;
 
-        private const string ENDP_FUNDINGRATE = "/mix/market/current-fund-rate?productType=usdt-futures";
-        private const string ENDP_TICKERS = "/mix/market/tickers?productType=usdt-futures";
+        private const string ENDP_FUNDINGRATE = "/mix/market/current-fund-rate";
+        private const string ENDP_TICKERS = "/mix/market/tickers";
         // curl "https://api.bitget.com/api/v2/mix/market/current-fund-rate?symbol=BTCUSDT&productType=usdt-futures"
         public BitgetMarket(BitgetFutures oExchange)
         {
@@ -27,7 +27,9 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            var oResult = await m_oExchange.RestClient.DoGetArray<IFundingRate?>(ENDP_FUNDINGRATE, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            Dictionary<string, string> aParams = new Dictionary<string, string>();
+            aParams.Add("productType", "usdt-futures");
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDINGRATE, null, p => m_oExchange.Parser.ParseFundingRate(p), aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;
@@ -57,7 +59,9 @@ namespace Crypto.Futures.Exchanges.Bitget
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArray<ITicker?>(ENDP_TICKERS, null, p => m_oExchange.Parser.ParseTicker(p));
+            Dictionary<string, string> aParams = new Dictionary<string, string>();
+            aParams.Add("productType", "usdt-futures");
+            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKERS, null, p => m_oExchange.Parser.ParseTicker(p), aParams);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;

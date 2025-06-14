@@ -40,5 +40,10 @@ namespace Crypto.Futures.Exchanges.Bingx
         {
             return BingxTicker.Parse(this.Exchange, oJson);
         }
+
+        public IBalance? ParseBalance(JToken? oJson)
+        {
+            return BingxBalance.Parse(this.Exchange, oJson);
+        }
     }
 }
