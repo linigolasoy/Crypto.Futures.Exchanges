@@ -75,6 +75,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
 
         public IFuturesSymbol Symbol { get; }
 
+        
         public void Update(IWebsocketMessage oMessage)
         {
             if (!(oMessage is ITicker)) return;
@@ -97,5 +98,23 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
             if( oSymbol == null ) return null;
             return new BlofinTicker( oSymbol, oJson );
         }
+
+        public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, JToken? oToken)
+        {
+            if (oToken == null) return null;
+            if( !( oToken is JArray) ) return null; 
+            JArray oArray = (JArray)oToken; 
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();    
+            foreach( var oItem in oArray )
+            {
+                if( !(oItem is JObject) ) continue;
+                ITicker? oTicker = Parse(oExchange, oItem); 
+                if( oTicker == null ) continue;
+                aResult.Add( new BlofinOrderbookPrice(oTicker) );
+                aResult.Add(new BlofinLastPrice(oTicker));
+            }
+            return aResult.ToArray();
+        }
+
     }
 }

@@ -30,7 +30,11 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
         public const string UNSUBSCRIBE = "unsubscribe";
 
         public const string CHANNEL_FUNDING = "futures/fundingRate";
-        public const string CHANNEL_TRADE = "futures/trade";
+        // public const string CHANNEL_TRADE = "futures/trade";
+        public const string CHANNEL_ORDERBOOK = "futures/bookticker";
+        public const string CHANNEL_TICKER = "futures/ticker";
+
+        // 
         public BitmartSubscription(IFuturesSymbol[] aSymbols, string strChannel, bool bSubscribe) 
         {
             Action = (bSubscribe ? SUBSCRIBE : UNSUBSCRIBE);

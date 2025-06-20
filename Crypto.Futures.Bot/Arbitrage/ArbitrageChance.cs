@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace Crypto.Futures.Bot.Arbitrage
 {
 
-    internal class ArbitrageSymbolData
+    internal class PArbitrageSymbolData
     {
-        public ArbitrageSymbolData( IFuturesSymbol oSymbol ) 
+        public PArbitrageSymbolData( IFuturesSymbol oSymbol ) 
         { 
             Symbol = oSymbol;   
         }
@@ -20,28 +20,26 @@ namespace Crypto.Futures.Bot.Arbitrage
         public IFuturesSymbol Symbol { get; }
 
         public IWebsocketSymbolData? WsSymbolData { get; set; } = null;
-        /*
-        public ITrade? LastTrade { get; set; }  = null;
-        public IFundingRate? FundingRate { get; set; } = null;
-        */
 
         public ITraderPosition? Position { get; set; } = null;
     }
-    internal class ArbitrageChance
+    internal class PArbitrageChance
     {
-        private ArbitrageChance( IFuturesSymbol oSymbolLong, IFuturesSymbol oSymbolShort, decimal nPercent ) 
+        private PArbitrageChance( IFuturesSymbol oSymbolLong, IFuturesSymbol oSymbolShort, decimal nPercent ) 
         { 
-            LongData = new ArbitrageSymbolData(oSymbolLong);
-            ShortData = new ArbitrageSymbolData(oSymbolShort);
+            LongData = new PArbitrageSymbolData(oSymbolLong);
+            ShortData = new PArbitrageSymbolData(oSymbolShort);
             Percentage = nPercent;
             DateTime = DateTime.Now;
             LastLog = DateTime.Now;
         }
 
         public DateTime DateTime { get; private set; }
+        public DateTime? DateOpen { get; internal set; } = null; 
         public decimal Percentage { get; internal set; } = 0;
-        public ArbitrageSymbolData LongData { get; }
-        public ArbitrageSymbolData ShortData { get; }
+        public decimal PercentageClose { get; internal set; } = 0;
+        public PArbitrageSymbolData LongData { get; }
+        public PArbitrageSymbolData ShortData { get; }
 
         public DateTime LastLog { get; internal set;}
         public decimal? Profit { get; internal set; } = null;
@@ -55,8 +53,8 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if (ShortData.WsSymbolData == null) return false;
                 if (LongData.WsSymbolData.FundingRate == null) return false;
                 if (ShortData.WsSymbolData.FundingRate == null) return false;
-                if (LongData.WsSymbolData.LastTrade == null) return false;
-                if (ShortData.WsSymbolData.LastTrade == null) return false;
+                if (LongData.WsSymbolData.LastPrice == null) return false;
+                if (ShortData.WsSymbolData.LastPrice == null) return false;
                 DateTime dNow = DateTime.Now;
                 double nDiffLong  = (dNow - LongData.WsSymbolData.LastUpdate).TotalMilliseconds;
                 double nDiffShort = (dNow - ShortData.WsSymbolData.LastUpdate).TotalMilliseconds;
@@ -65,23 +63,23 @@ namespace Crypto.Futures.Bot.Arbitrage
             }
         }
 
-        public void Update( ArbitrageChance oChance )
+        public void Update( PArbitrageChance oChance )
         {
             DateTime = oChance.DateTime;    
             Percentage = oChance.Percentage;
         }
 
-        public static ArbitrageChance? Create( ITicker oTicker1, ITicker oTicker2 )
+        public static PArbitrageChance? Create( ITicker oTicker1, ITicker oTicker2 )
         {
             ITicker oTickerMin = (oTicker1.LastPrice < oTicker2.LastPrice ? oTicker1: oTicker2);
             ITicker oTickerMax = (oTicker1.LastPrice > oTicker2.LastPrice ? oTicker1 : oTicker2);
             if (oTickerMin.LastPrice == 0 || oTickerMax.LastPrice == 0) return null;
             decimal nPercent = 100.0M * (oTickerMax.LastPrice - oTickerMin.LastPrice) / oTickerMin.LastPrice;
             if (nPercent > 10.0M) return null;
-            return new ArbitrageChance(oTickerMin.Symbol, oTickerMax.Symbol, nPercent);
+            return new PArbitrageChance(oTickerMin.Symbol, oTickerMax.Symbol, nPercent);
         }
 
-        public bool Equals( ArbitrageChance oOther )
+        public bool Equals( PArbitrageChance oOther )
         {
             if( oOther.LongData.Symbol.Symbol != LongData.Symbol.Symbol ) return false;
             if (oOther.LongData.Symbol.Exchange.ExchangeType != LongData.Symbol.Exchange.ExchangeType) return false;

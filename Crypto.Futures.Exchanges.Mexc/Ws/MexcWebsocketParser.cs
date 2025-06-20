@@ -18,12 +18,13 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
     {
         private const string PING_METHOD = "ping";
         private const string BAR_METHOD = "kline";
-        private const string TRADE_METHOD = "deal";
+        private const string TICKER_METHOD = "tickers";
         private const string FUNDING_METHOD = "funding.rate";
         private const string METHOD_SUBSCRIBE = "sub.";
         private const string METHOD_UNSUBSCRIBE = "unsub.";
 
-        private const string CHANNEL_TRADE = "push.deal";
+        // private const string CHANNEL_TRADE = "push.deal";
+        private const string CHANNEL_TICKER = "push.tickers";
         private const string CHANNEL_FUNDING = "push.funding.rate";
         private const string CHANNEL_KLINE = "push.kline";
 
@@ -39,9 +40,9 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
             MexcMessage? oMessage = JsonConvert.DeserializeObject<MexcMessage>(strMessage);
             if (oMessage == null) return null;
 
-            if (oMessage.Channel == CHANNEL_TRADE)
+            if (oMessage.Channel == CHANNEL_TICKER)
             {
-                return MexcTrade.ParseWs(Exchange, oMessage.Symbol, oMessage.Data);
+                return MexcTicker.ParseWs(Exchange, oMessage.Data);
             }
             else if (oMessage.Channel == CHANNEL_FUNDING)
             {
@@ -86,7 +87,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
                 // Trades subscription
                 var oSymbolParam = new SymbolSubscription(oSymbol);
                 JObject oSymbolJson = JObject.FromObject(oSymbolParam);
-                MexcMethod oMethodTrade = new MexcMethod($"{METHOD_SUBSCRIBE}{TRADE_METHOD}", oSymbolJson);
+                MexcMethod oMethodTrade = new MexcMethod($"{METHOD_SUBSCRIBE}{TICKER_METHOD}", oSymbolJson);
                 string strMethodTrade = JsonConvert.SerializeObject(oMethodTrade);
                 aResult.Add(strMethodTrade);
                 // Funding rate

@@ -17,6 +17,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IWebsocketSymbolData? GetData(string strSymbol);
         public IWebsocketSymbolData? GetData(IFuturesSymbol oSymbol);
 
+        public DateTime LastUpdate { get; } 
         public void Put(IWebsocketMessage oMessage);
     }
 }

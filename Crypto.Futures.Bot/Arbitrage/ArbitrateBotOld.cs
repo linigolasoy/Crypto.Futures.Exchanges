@@ -12,8 +12,13 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Arbitrage
 {
-    internal class ArbitrateBot: ITradingBot
+    /*
+    /// <summary>
+    /// Futures arbitrage between exchanges
+    /// </summary>
+    internal class ArbitrateBotOld: ITradingBot
     {
+
         private IFuturesExchange[]? m_aExchanges = null;
         private Task? m_oMainLoop = null;
 
@@ -22,7 +27,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         private ConcurrentDictionary<string, ArbitrageChance> m_aChances = new ConcurrentDictionary<string, ArbitrageChance>();
 
         private List<IFuturesSymbol> m_aSubscribed = new List<IFuturesSymbol>();    
-        public ArbitrateBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading )
+        public ArbitrateBotOld(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading )
         {
             Setup = oSetup;
             Logger = oLogger;
@@ -211,6 +216,11 @@ namespace Crypto.Futures.Bot.Arbitrage
                     oChance.LongData.Position = oPositionLong;  
                     oChance.ShortData.Position = oPositionShort;
 
+                    decimal nDiffReal = oChance.ShortData.Position.PriceOpen - oChance.LongData.Position.PriceOpen;
+                    decimal nPercentReal = 100.0M * nDiffReal / oChance.LongData.Position.PriceOpen;
+                    oChance.Percentage = nPercentReal;
+                    oChance.PercentageClose = nPercentReal;
+                    oChance.DateOpen = DateTime.Now;
                     Logger.Info($"====> Open position in {oChance.ToString()}");
                     m_oActiveChance = oChance;
                 }
@@ -260,11 +270,30 @@ namespace Crypto.Futures.Bot.Arbitrage
             ArbitrageChance? oRemoved = null;
             m_aChances.TryRemove(oChance.LongData.Symbol.Base, out oRemoved);
         }
+
+
+        /// <summary>
+        /// Calculate percent desired
+        /// </summary>
+        /// <param name="oChance"></param>
+        /// <returns></returns>
+        private decimal CalculatePercentDesired(ArbitrageChance oChance)
+        {
+            if (oChance.DateOpen == null) return 0;
+            if( oChance.PercentageClose < 0 ) return 0.01M;
+            DateTime dNow = DateTime.Now;   
+            double nMinutes = (dNow - oChance.DateOpen.Value).TotalMinutes;
+            int nFraction = (int)(nMinutes / 20);
+            decimal nPow = (decimal)Math.Pow(2, nFraction);
+            return Math.Round( oChance.PercentageClose / nPow, 3);
+        }
         private async Task ProcessActive()
         {
             if (m_oActiveChance == null) return;
+
             decimal nMoney = Trader.Money * Trader.Leverage;
-            decimal nDesired = (MINIMUM_PERCENT * nMoney) / 200.0M;
+            decimal nPercentDesired = CalculatePercentDesired(m_oActiveChance);
+            decimal nDesired = (nPercentDesired * nMoney) / 100.0M;
 
             if (m_oActiveChance.LongData.Position == null) return;
             if (m_oActiveChance.ShortData.Position == null) return;
@@ -273,6 +302,8 @@ namespace Crypto.Futures.Bot.Arbitrage
             m_oActiveChance.ShortData.Position.Update();
 
             decimal nProfit = Math.Round( m_oActiveChance.LongData.Position.Profit - m_oActiveChance.ShortData.Position.Profit, 2);
+            decimal nPercentProfit = Math.Round( 100.0M * nProfit / nMoney, 3);
+
             if (nProfit > nDesired)
             {
                 List<Task<bool>> aCloseTasks = new List<Task<bool>>();
@@ -292,7 +323,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if( nProfit > m_oActiveChance.MaxProfit )
                 {
                     m_oActiveChance.MaxProfit = nProfit;
-                    Logger.Info($"     {m_oActiveChance.ToString()} => Profit {nProfit}");
+                    Logger.Info($"     {m_oActiveChance.ToString()} => ({nPercentProfit}% / {nPercentDesired}%) Profit {nProfit}");
                 }
                 else
                 {
@@ -300,7 +331,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                     if( (dNow - m_oActiveChance.LastLog ).TotalMinutes > 1 )
                     {
                         m_oActiveChance.LastLog = dNow;
-                        Logger.Info($"     {m_oActiveChance.ToString()} => Profit {nProfit}");
+                        Logger.Info($"     {m_oActiveChance.ToString()} => ({nPercentProfit}% / {nPercentDesired}%) Profit {nProfit}");
 
                     }
                 }
@@ -380,4 +411,5 @@ namespace Crypto.Futures.Bot.Arbitrage
         }
 
     }
+    */
 }

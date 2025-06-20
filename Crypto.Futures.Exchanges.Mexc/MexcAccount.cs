@@ -15,6 +15,7 @@ namespace Crypto.Futures.Exchanges.Mexc
         private MexcPrivate m_oExchangePrivate;
 
         private const string ENDP_BALANCES = "/api/v1/private/account/assets";
+        private const string ENDP_LEVERAGE = "/api/v1/private/position/leverage";
         public MexcAccount(MexcFutures oExchange)
         {
             m_oExchange = oExchange;
@@ -55,6 +56,42 @@ ApiKey, Request-Time, Signature
                 }
             }
             return null;
+        }
+        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
+        {
+            try
+            {
+                CryptoRestClient oClient = m_oExchange.RestClient;
+
+                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
+
+                Dictionary<string, string> aParameters = new Dictionary<string, string>();  
+                aParameters.Add("symbol", oSymbol.Symbol);
+                var oResult = await oClient.DoGetArrayParams<IBalance?>(ENDP_LEVERAGE, null, p => m_oExchange.Parser.ParseBalance(p), aParameters);
+                if (oResult == null || !oResult.Success) return null;
+                if (oResult.Data == null) return null;
+                if (oResult.Data.Count() <= 0) return null;
+                List<IBalance> aResult = new List<IBalance>();
+                foreach (var oItem in oResult.Data)
+                {
+                    if (oItem == null) continue;
+                    aResult.Add(oItem);
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                if (Exchange.Logger != null)
+                {
+                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
+                }
+            }
+            return null;
+        }
+
+        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
+        {
+            throw new NotImplementedException();
         }
     }
 }

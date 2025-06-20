@@ -50,5 +50,15 @@ namespace Crypto.Futures.Exchanges.Bingx
             }
             return null;
         }
+
+        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

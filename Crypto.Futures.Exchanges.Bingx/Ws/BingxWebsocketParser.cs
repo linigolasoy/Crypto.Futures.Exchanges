@@ -55,8 +55,9 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
         private const string PONG = "Pong";
 
         private enum BingxChannels
-        { 
-            trade
+        {
+            lastPrice,
+            bookTicker
         }
 
         public IWebsocketMessage[]? ParseMessage(string strMessage)
@@ -74,9 +75,13 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                 {
                     string[] aSplit = oJson.DataType.Split('@');    
                     if( aSplit.Length != 2 ) return null;
-                    if (aSplit[1] == BingxChannels.trade.ToString())
+                    if (aSplit[1] == BingxChannels.lastPrice.ToString())
                     {
-                        return BingxTrade.Parse(Exchange, aSplit[0], oJson.Data);
+                        return BingxLastPrice.Parse(Exchange, aSplit[0], oJson.Data);
+                    }
+                    else if(aSplit[1] == BingxChannels.bookTicker.ToString())
+                    {
+                        return BingxOrderbookPrice.Parse(Exchange, aSplit[0], oJson.Data);
                     }
                 }
             }
@@ -105,9 +110,14 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
             List<string> aResult = new List<string>();  
             foreach (var oSymbol in aSymbols)
             {
-                BingxSubscriptionJson oJson = new BingxSubscriptionJson(oSymbol, true, WsMessageType.Trade);
-                string strMsg = JsonConvert.SerializeObject(oJson, Formatting.Indented);
-                aResult.Add(strMsg);
+                BingxSubscriptionJson oJsonPrice = new BingxSubscriptionJson(oSymbol, true, WsMessageType.LastPrice);
+                string strMsgPrice = JsonConvert.SerializeObject(oJsonPrice, Formatting.Indented);
+                aResult.Add(strMsgPrice);
+
+                BingxSubscriptionJson oJsonBook = new BingxSubscriptionJson(oSymbol, true, WsMessageType.OrderbookPrice);
+                string strMsgBook = JsonConvert.SerializeObject(oJsonBook, Formatting.Indented);
+                aResult.Add(strMsgBook);
+
             }
             return aResult.ToArray();   
         }

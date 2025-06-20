@@ -20,9 +20,10 @@ namespace Crypto.Futures.Exchanges.Tests
 
             foreach( ExchangeType eType in oSetup.ExchangeTypes )
             {
-                if (eType == ExchangeType.BlofinFutures) continue;
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+
+                if (!oExchange.Tradeable) continue;
 
                 IBalance[]? aBalances = await oExchange.Account.GetBalances();
                 Assert.IsNotNull(aBalances);
@@ -33,6 +34,33 @@ namespace Crypto.Futures.Exchanges.Tests
         }
 
 
+        [TestMethod]
+        public async Task LeverageTest()
+        {
+
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+            decimal nNewLeverage = 10;
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
+                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+
+                if (!oExchange.Tradeable) continue;
+
+                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "BTC" && p.Quote == "USDT");
+                Assert.IsNotNull(oBtc);
+
+                decimal? nLeverage = await oExchange.Account.GetLeverage(oBtc);
+                Assert.IsNotNull(nLeverage);
+
+                bool bSet = await oExchange.Account.SetLeverage(oBtc, nNewLeverage);
+                Assert.IsTrue(bSet);
+
+            }
+
+        }
 
     }
 }

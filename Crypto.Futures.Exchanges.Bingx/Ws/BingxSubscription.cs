@@ -25,8 +25,11 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
 
             switch (eType)
             {
-                case WsMessageType.Trade:
-                    strDataType = $"{oSymbol.Symbol}@trade";
+                case WsMessageType.LastPrice:
+                    strDataType = $"{oSymbol.Symbol}@lastPrice";
+                    break;
+                case WsMessageType.OrderbookPrice:
+                    strDataType = $"{oSymbol.Symbol}@bookTicker";
                     break;
                 default:
                     break;

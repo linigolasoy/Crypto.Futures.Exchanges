@@ -35,12 +35,14 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             if (oSymbol == null) return null;
             if( oMessage.Argument.Channel == ChannelType.ticker.ToString() )
             {
-                return BitgetFundingRate.Parse(oSymbol, oMessage.Data);
+                return BitgetTicker.ParseWs(oSymbol, oMessage.Data);
             }
+            /*
             else if( oMessage.Argument.Channel == ChannelType.trade.ToString() ) 
             {
                 return BitgetTrade.Parse(oSymbol, oMessage.Data);    
             }
+            */
             return null;
         }
 
@@ -62,10 +64,11 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             string strSubTicker = JsonConvert.SerializeObject(oSubTicker, Formatting.Indented); 
             aResult.Add(strSubTicker);
 
-            // Trades
+            /*
             BitgetSubscriptionJson oSubTrade = new BitgetSubscriptionJson(ChannelType.trade, true, aSymbols);
             string strSubTrade = JsonConvert.SerializeObject(oSubTrade, Formatting.Indented);
             aResult.Add(strSubTrade);
+            */
             return aResult.ToArray();
         }
     }

@@ -101,5 +101,16 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
 
             return new BingxTicker(oSymbol, oJson);
         }
+
+        public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, string strSymbol, JToken? oToken)
+        {
+            if( oToken == null) { return null; }
+            if( !(oToken is JObject)) return null;
+
+            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(strSymbol);
+            if (oSymbol == null) return null;
+
+            return null;
+        }
     }
 }

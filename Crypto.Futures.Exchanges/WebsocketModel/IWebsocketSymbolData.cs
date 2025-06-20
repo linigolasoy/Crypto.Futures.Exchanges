@@ -15,8 +15,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public DateTime LastUpdate { get; }
         public IFuturesSymbol Symbol { get; }
 
-        public ITrade? LastTrade { get; }   
-
+        public ILastPrice? LastPrice { get; }    
+        public IOrderbookPrice? LastOrderbookPrice { get; }
+        // public ITrade? LastTrade { get; }   
+        // public ITicker? Ticker { get; }
         public IFundingRate? FundingRate { get; }   
     }
 }

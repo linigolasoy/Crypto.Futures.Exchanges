@@ -73,6 +73,11 @@ namespace Crypto.Futures.Exchanges.Bitmart
         public string Change24h { get; set; } = string.Empty;
         [JsonProperty("funding_interval_hours")]
         public int FundingIntervalHours { get; set; } = 0;
+
+        [JsonProperty("status")]
+        public string Status { get; set; } = string.Empty;
+        [JsonProperty("delist_time")]
+        public long DelistTime { get; set; } = 0;
     }
 
     internal class BitmartSymbol : BaseSymbol
@@ -80,6 +85,11 @@ namespace Crypto.Futures.Exchanges.Bitmart
         public BitmartSymbol(IFuturesExchange oExchange, BitmartSymbolJson json):
             base(oExchange, json.Symbol, json.BaseCurrency, json.QuoteCurrency)
         {
+
+            if( json.BaseCurrency == "CUDIS")
+            {
+                Console.WriteLine("AAA");
+            }
             // Leverage
             LeverageMax = int.Parse(json.MaxLeverage);
             LeverageMin = int.Parse(json.MinLeverage);
@@ -118,7 +128,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
                 if (dDate > DateTime.Now.AddDays(1)) return null;
 
             }
-
+            if( oJson.Status != "Trading") return null;
             return new BitmartSymbol(oExchange, oJson);
         }
     }

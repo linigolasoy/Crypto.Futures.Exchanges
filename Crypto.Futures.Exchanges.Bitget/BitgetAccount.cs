@@ -53,5 +53,14 @@ namespace Crypto.Futures.Exchanges.Bitget
             }
             return null;
         }
+        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

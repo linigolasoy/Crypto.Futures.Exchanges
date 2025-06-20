@@ -208,18 +208,24 @@ namespace Crypto.Futures.Exchanges.Tests
 
                 await Task.Delay(25000);
 
+                DateTime dNow = DateTime.Now;
+                Assert.IsTrue( (dNow - oWs.DataManager.LastUpdate).TotalSeconds < 2 );
                 await oWs.Stop();
                 List<IFundingRate> aFunding = new List<IFundingRate>();
-                List<ITrade> aTrade = new List<ITrade>();
+                List<ILastPrice> aLast = new List<ILastPrice>();
+                List<IOrderbookPrice> aOrderbook = new List<IOrderbookPrice>();
                 foreach (var oSymbol in aFirst)
                 {
                     var oData = oWs.DataManager.GetData(oSymbol);
                     Assert.IsNotNull(oData);
                     if( oData.FundingRate != null ) aFunding.Add(oData.FundingRate);
-                    if (oData.LastTrade != null) aTrade.Add(oData.LastTrade);
+                    if (oData.LastPrice != null) aLast.Add(oData.LastPrice);
+                    if( oData.LastOrderbookPrice != null ) aOrderbook.Add(oData.LastOrderbookPrice);
                 }
                 Assert.IsTrue(aFunding.Count > 1);
-                Assert.IsTrue(aTrade.Count > 1);
+                Assert.IsTrue(aLast.Count > 1);
+                Assert.IsTrue(aOrderbook.Count > 1);
+
 
 
             }

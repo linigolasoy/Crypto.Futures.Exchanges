@@ -39,8 +39,8 @@ namespace Crypto.Futures.Bot.Trading
             // Get last trade
             IWebsocketSymbolData? oData = Symbol.Exchange.Market.Websocket.DataManager.GetData( Symbol );
             if (oData == null) return;
-            if( oData.LastTrade == null ) return;
-            decimal nPrice = oData.LastTrade.Price;
+            if( oData.LastPrice == null ) return;
+            decimal nPrice = oData.LastPrice.Price;
             decimal nDiff = nPrice - PriceOpen;
             if (!IsLong) nDiff *= -1.0M;
             PriceClose = nPrice;

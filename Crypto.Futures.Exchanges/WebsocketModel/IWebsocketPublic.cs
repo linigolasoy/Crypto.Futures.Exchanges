@@ -21,6 +21,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IWebsocketParser Parser { get; }
         public IWebsocketDataManager DataManager { get; }
         public string Url { get; }
+        public bool Started { get; }
         public Task<bool> Start();
         public Task<bool> Stop();
 

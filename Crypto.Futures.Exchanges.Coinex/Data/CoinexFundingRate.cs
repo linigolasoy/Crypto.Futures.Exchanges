@@ -50,6 +50,31 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
         public long LastFundingTime { get; set; } = 0;
         [JsonProperty("next_funding_time")]
         public long NextFundingTime { get; set; } = 0;
+
+        public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, JToken? oToken)
+        {
+            if (oToken == null) return null;
+            if (!(oToken is JObject)) return null;
+            JObject oObject = (JObject)oToken;
+            if (!oObject.ContainsKey("state_list")) return null;
+            JToken? oValue = oObject["state_list"];
+            if (oValue == null) return null;
+            if (!(oValue is JArray)) return null;
+            JArray oArray = (JArray)oValue;
+
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();
+            foreach (var oItem in oArray)
+            {
+                CoinexStateJson? oJson = oItem.ToObject<CoinexStateJson>();
+                if (oJson == null) continue;
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Market);
+                if (oSymbol == null) continue;
+                aResult.Add(new CoinexFundingRate(oSymbol, oJson));
+                aResult.Add(new CoinexLastPrice(oSymbol, oJson));   
+            }
+
+            return aResult.ToArray();
+        }
     }
 
     internal class CoinexFundingRateJson

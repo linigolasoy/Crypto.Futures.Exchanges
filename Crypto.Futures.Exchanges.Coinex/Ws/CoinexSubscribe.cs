@@ -40,6 +40,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
     {
         public const string METHOD_FUNDING  = "state";
         public const string METHOD_DEALS    = "deals";
+        public const string METHOD_BBO      = "bbo"; 
         public CoinexSubscribeJson(int nId, IFuturesSymbol[] aSymbols, string strMethod)
         {
             Id = nId;

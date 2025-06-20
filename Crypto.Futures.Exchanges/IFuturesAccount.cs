@@ -19,5 +19,7 @@ namespace Crypto.Futures.Exchanges
 
         public Task<IBalance[]?> GetBalances();
 
+        public Task<decimal?> GetLeverage(IFuturesSymbol oSymbol);
+        public Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage);
     }
 }

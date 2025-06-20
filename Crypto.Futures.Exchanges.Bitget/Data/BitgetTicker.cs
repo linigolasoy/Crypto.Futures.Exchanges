@@ -54,6 +54,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public string FundingRate { get; set; } = string.Empty;
         [JsonProperty("nextFundingTime")]
         public string NexFundingTime { get; set; } = string.Empty;
+
     }
     internal class BitgetTicker: ITicker
     {
@@ -108,5 +109,23 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
 
             return new BitgetTicker( oSymbol, oJson );  
         }
+
+        public static IWebsocketMessage[]? ParseWs(IFuturesSymbol oSymbol, JToken? oToken)
+        {
+            if (!(oToken is JArray)) return null;
+            JArray oArray = (JArray)oToken;
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();
+            foreach (var oItem in oArray)
+            {
+                BitgetTickerJson? oJson = oItem.ToObject<BitgetTickerJson>();
+                if (oJson == null) continue;
+
+                aResult.Add(new BitgetFundingRate(oSymbol, oJson));
+                aResult.Add(new BitgetLastPrice(oSymbol, oJson));
+                aResult.Add(new BitgetOrderbookPrice(oSymbol, oJson));
+            }
+            return aResult.ToArray();
+        }
+
     }
 }

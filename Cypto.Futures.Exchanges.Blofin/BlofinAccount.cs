@@ -49,5 +49,14 @@ namespace Crypto.Futures.Exchanges.Blofin
             await Task.Delay(200);
             throw new NotImplementedException();
         }
+        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

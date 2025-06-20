@@ -39,9 +39,10 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
             if (oMessage == null) return null;
             if( oMessage.Event != null ) return null;
             if( oMessage.Argument == null ) return null;
-            if( oMessage.Argument.Channel == BlofinSubscription.CHANNEL_TRADES )
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();    
+            if( oMessage.Argument.Channel == BlofinSubscription.CHANNEL_TICKERS )
             {
-                return BlofinTrade.ParseWs(Exchange, oMessage.Data);
+                return BlofinTicker.ParseWs(Exchange, oMessage.Data);
             }
            
             else if( oMessage.Argument.Channel == BlofinSubscription.CHANNEL_FUNDING )

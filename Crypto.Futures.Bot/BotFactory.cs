@@ -13,7 +13,7 @@ namespace Crypto.Futures.Bot
 
         public static ITradingBot CreateArbitrageBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading)
         {
-            return new ArbitrateBot(oSetup, oLogger, bPaperTrading);
+            return new ArbitrageBot(oSetup, oLogger, bPaperTrading);
         }
 
 

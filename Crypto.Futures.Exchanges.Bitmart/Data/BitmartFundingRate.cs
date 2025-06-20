@@ -41,9 +41,9 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Symbol = oSymbol;
             Next = Util.FromUnixTimestamp(oJson.NextFundingTime, true);
             decimal nRate = 0;
-            if( !string.IsNullOrEmpty(oJson.NextFundingRate) && oJson.NextFundingRate.Length > 2)
+            if( !decimal.TryParse(oJson.FundingRate, CultureInfo.InvariantCulture, out nRate))
             {
-                nRate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+                nRate = 0;
             }
             Rate = nRate;
         }

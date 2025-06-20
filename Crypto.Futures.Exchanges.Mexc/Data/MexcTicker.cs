@@ -98,5 +98,22 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
 
             return new MexcTicker(oSymbol, oJson);
         }
+
+        public static IWebsocketMessage[]? ParseWs( IFuturesExchange oExchange, JToken? oToken )
+        {
+            if( oToken == null) return null;
+            if( ! (oToken is JArray) ) return null;
+            JArray oArray = (JArray)oToken;
+            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();
+            foreach (var oItem in oArray)
+            {
+                if( !(oItem is JObject )) continue;
+                ITicker? oTicker = Parse(oExchange, oItem);
+                if (oTicker == null) continue;
+                aResult.Add( new MexcOrderbookPrice( oTicker));
+                aResult.Add( new MexcLastPrice( oTicker));
+            }
+            return aResult.ToArray();
+        }
     }
 }

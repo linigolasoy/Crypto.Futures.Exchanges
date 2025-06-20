@@ -14,8 +14,8 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
     {
         private static int m_nGlobalId = 1;
 
-        private const string METHOD_STATE = "state.update";
-        private const string METHOD_DEALS = "deals.update";
+        private const string METHOD_STATE   = "state.update";
+        private const string METHOD_BBO     = "bbo.update";
         public CoinexWebsocketParser(IFuturesExchange oExchange) 
         { 
             Exchange = oExchange;
@@ -31,11 +31,11 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
             if( oMessage.Method == null || oMessage.Data == null ) return null;
             if( oMessage.Method == METHOD_STATE )
             {
-                return CoinexFundingRate.ParseWs(Exchange, oMessage.Data);
+                return CoinexStateJson.ParseWs(Exchange, oMessage.Data);
             }
-            else if( oMessage.Method == METHOD_DEALS )
+            else if( oMessage.Method == METHOD_BBO )
             {
-                return CoinexTrade.Parse(Exchange, oMessage.Data);
+                return CoinexOrderbookPrice.ParseWs(Exchange, oMessage.Data);
             }
             return null;
         }
@@ -60,7 +60,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
             CoinexSubscribeJson oJsonFunding = new CoinexSubscribeJson(m_nGlobalId++, aSymbols, CoinexSubscribeJson.METHOD_FUNDING);
             aResult.Add(JsonConvert.SerializeObject( oJsonFunding));
 
-            CoinexSubscribeJson oJsonTrade = new CoinexSubscribeJson(m_nGlobalId++, aSymbols, CoinexSubscribeJson.METHOD_DEALS);
+            CoinexSubscribeJson oJsonTrade = new CoinexSubscribeJson(m_nGlobalId++, aSymbols, CoinexSubscribeJson.METHOD_BBO);
             aResult.Add(JsonConvert.SerializeObject(oJsonTrade));
 
             return aResult.ToArray();

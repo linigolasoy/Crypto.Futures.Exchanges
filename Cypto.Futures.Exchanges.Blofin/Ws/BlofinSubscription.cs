@@ -38,6 +38,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
         private const string OPTION_UNSUBSCRIBE = "unsubscribe";
 
         public const string CHANNEL_TRADES  = "trades";
+        public const string CHANNEL_TICKERS = "tickers";
         public const string CHANNEL_FUNDING = "funding-rate";
 
         // private const string CHANNEL_TRADE = "trades";
@@ -45,7 +46,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
         {
             Option = (bSubscibe ? OPTION_SUBSCRIBE : OPTION_UNSUBSCRIBE);
 
-            Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_TRADES, Symbol = oSymbol.Symbol });
+            Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_TICKERS, Symbol = oSymbol.Symbol });
             Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_FUNDING, Symbol = oSymbol.Symbol });
         }
         [JsonProperty("op")]

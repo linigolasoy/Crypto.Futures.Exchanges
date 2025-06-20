@@ -26,6 +26,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
         public delegate Task<bool> StartStopDelegate();
 
+        private bool m_bStarted = false;    
         public StartStopDelegate? StartTask { get; set; } = null;
         public StartStopDelegate? StopTask { get; set; } = null;
         private class TimerData
@@ -50,7 +51,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         }
 
         public IFuturesSymbol[] SubscribedSymbols { get => m_aSubscribed.ToArray(); }
-
+        public bool Started { get => m_bStarted; }
         public IFuturesMarket Market { get; }
         public BarTimeframe Timeframe { get; set; } = BarTimeframe.M1;
         public IWebsocketParser Parser { get; }
@@ -85,6 +86,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
                 if( !bResult )  return false;
             }
             await Task.Delay(1000);
+            m_bStarted = true;
             return true;
         }
 
@@ -208,6 +210,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
                 bool bResult = await StopTask();
                 if (!bResult) return false;
             }
+            m_bStarted = false;
+
             return true;
         }
 

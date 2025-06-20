@@ -23,7 +23,7 @@ namespace Crypto.Futures.Bot.Trading
             IWebsocketSymbolData? oData = oPosition.Symbol.Exchange.Market.Websocket.DataManager.GetData(oPosition.Symbol);
             if (oData == null) return false;
 
-            if (oData.LastTrade == null) return false;
+            if (oData.LastPrice == null) return false;
             await Task.Delay(1000);
             oPosition.Update();
             ((TraderPosition)oPosition).DateClose = DateTime.Now;
@@ -37,9 +37,9 @@ namespace Crypto.Futures.Bot.Trading
             IWebsocketSymbolData? oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
             if( oData == null ) return null;
 
-            if( oData.LastTrade == null ) return null;  
+            if( oData.LastPrice == null ) return null;  
             await Task.Delay(1000);
-            ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, oData.LastTrade.Price);
+            ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, oData.LastPrice.Price);
             return oPosition;   
         }
     }
