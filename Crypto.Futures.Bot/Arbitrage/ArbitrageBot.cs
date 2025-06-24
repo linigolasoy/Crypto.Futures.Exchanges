@@ -2,6 +2,7 @@
 using Crypto.Futures.Bot.Trading;
 using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Factory;
+using Crypto.Futures.Exchanges.Model;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -27,6 +28,8 @@ namespace Crypto.Futures.Bot.Arbitrage
         private int m_nTotal = 0;
         private int m_nOpen = 0;
 
+        private DateTime m_dLastBalance = DateTime.Now;
+
         public ArbitrageBot( IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading ) 
         { 
             Setup = oSetup;
@@ -40,7 +43,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         public ITrader Trader { get; }
 
         private ConcurrentDictionary<string, IArbitrageChance> m_aChances = new ConcurrentDictionary<string, IArbitrageChance>();
-        private ConcurrentDictionary<string, int> m_aChancesCount = new ConcurrentDictionary<string, int>();
+        // private ConcurrentDictionary<string, int> m_aChancesCount = new ConcurrentDictionary<string, int>();
         private ConcurrentBag<IArbitrageChance> m_aClosed = new ConcurrentBag<IArbitrageChance>();
 
         /// <summary>
@@ -234,6 +237,24 @@ namespace Crypto.Futures.Bot.Arbitrage
         }
 
         /// <summary>
+        /// Update balances for all exchanges   
+        /// </summary>
+        private void UpdateBalances()
+        {
+            DateTime dNow = DateTime.Now;
+            if ((dNow - m_dLastBalance).TotalMinutes < 5) return; // Update every minute
+            m_dLastBalance = dNow;
+            Trader.Update();
+            IBalance[] aBalances = Trader.Balances;
+            decimal nTotal = aBalances.Sum(b => b.Balance); 
+            Logger.Info($"Balances TOTAL {nTotal}");
+            foreach (IBalance oBalance in aBalances)
+            {
+                Logger.Info($"  {oBalance.Exchange.ExchangeType} => {Math.Round(oBalance.Balance, 2)} ({Math.Round(oBalance.Locked, 2)} locked)");
+            }   
+
+        }
+        /// <summary>
         /// TODO: Main background loop
         /// </summary>
         /// <returns></returns>
@@ -257,20 +278,14 @@ namespace Crypto.Futures.Bot.Arbitrage
                                 oChance.TradeTask = ChanceTask(oChance);
                             }
                             */
-                            int nFound = 1;
-                            if (m_aChancesCount.TryGetValue(oChance.Currency, out nFound))
-                            {
-                                nFound++;
-                                if (nFound > 4) continue;
-                            }
                             if( m_aChances.TryAdd(oChance.Currency, oChance) )
                             {
                                 oChance.TradeTask = ChanceTask( oChance );
-                                m_aChancesCount[oChance.Currency] = nFound;
                             }
                         }
                     }
                 }
+                UpdateBalances();
                 await Task.Delay(200); 
             }
         }

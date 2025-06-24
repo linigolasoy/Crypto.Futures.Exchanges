@@ -46,8 +46,10 @@ namespace Crypto.Futures.Bot.Trading
             decimal nPrice = (IsLong ? oData.LastOrderbookPrice.BidPrice : oData.LastOrderbookPrice.AskPrice);
             decimal nDiff = nPrice - PriceOpen;
             if (!IsLong) nDiff *= -1.0M;
+            decimal nFeesOpen  = (IsLong ? Symbol.FeeTaker : Symbol.FeeMaker) * PriceOpen * Volume;
+            decimal nFeesClose = (IsLong ? Symbol.FeeMaker : Symbol.FeeTaker) * nPrice * Volume;
             PriceClose = nPrice;
-            Profit = nDiff * Volume;
+            Profit = nDiff * Volume - nFeesOpen- nFeesClose;
         }
     }
 }

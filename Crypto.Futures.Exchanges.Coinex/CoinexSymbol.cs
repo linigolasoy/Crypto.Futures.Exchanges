@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -53,8 +54,8 @@ namespace Crypto.Futures.Exchanges.Coinex
         {
             LeverageMax = json.Leverage.Max();
             LeverageMin = json.Leverage.Min();
-            FeeMaker = decimal.Parse(json.MakerFeeRate);
-            FeeTaker = decimal.Parse(json.TakerFeeRate);
+            FeeMaker = decimal.Parse(json.MakerFeeRate, CultureInfo.InvariantCulture);
+            FeeTaker = decimal.Parse(json.TakerFeeRate, CultureInfo.InvariantCulture);
             Decimals = json.BaseCcyPrecision;
             ContractSize = 1; // Coinex does not specify contract size, assume 1
             UseContractSize = false; // Not used

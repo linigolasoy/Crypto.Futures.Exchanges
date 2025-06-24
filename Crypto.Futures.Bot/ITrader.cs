@@ -40,5 +40,7 @@ namespace Crypto.Futures.Bot
         public Task<ITraderPosition?> Open( IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null);
         public Task<bool> Close(ITraderPosition oPosition, decimal? nPrice = null);
 
+        public bool Update();
+
     }
 }
