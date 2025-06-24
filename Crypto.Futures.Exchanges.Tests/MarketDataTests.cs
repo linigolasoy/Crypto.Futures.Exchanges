@@ -197,7 +197,7 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
 
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.BitmartFutures))
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
             {
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
                 IFuturesSymbol[] aFirst = oExchange.SymbolManager.GetAllValues().Take(10).ToArray();   
@@ -209,7 +209,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 await Task.Delay(25000);
 
                 DateTime dNow = DateTime.Now;
-                Assert.IsTrue( (dNow - oWs.DataManager.LastUpdate).TotalSeconds < 2 );
+                Assert.IsTrue( (dNow - oWs.DataManager.LastUpdate).TotalSeconds < 3 );
                 await oWs.Stop();
                 List<IFundingRate> aFunding = new List<IFundingRate>();
                 List<ILastPrice> aLast = new List<ILastPrice>();

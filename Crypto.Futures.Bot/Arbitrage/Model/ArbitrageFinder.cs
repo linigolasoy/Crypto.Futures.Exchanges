@@ -222,17 +222,24 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                     if (m_aSubscribed.TryGetValue(strKey, out aData))
                     {
                         // Find minimum and maximum
-                        IWebsocketSymbolData? oMin = aData.Where(p=> p.FundingRate != null && p.LastPrice != null ).OrderBy(p=> p.LastPrice!.Price).FirstOrDefault();
-                        IWebsocketSymbolData? oMax = aData.Where(p => p.FundingRate != null && p.LastPrice != null).OrderByDescending(p => p.LastPrice!.Price).FirstOrDefault();
+                        IWebsocketSymbolData? oMin = aData.Where(p=> p.FundingRate != null && p.LastOrderbookPrice != null ).OrderBy(p=> p.LastOrderbookPrice!.AskPrice).FirstOrDefault();
+                        IWebsocketSymbolData? oMax = aData.Where(p => p.FundingRate != null && p.LastOrderbookPrice != null).OrderByDescending(p => p.LastOrderbookPrice!.BidPrice).FirstOrDefault();
                         if (oMin == null || oMax == null) continue;
                         if (oMin.Symbol.Exchange.ExchangeType == oMax.Symbol.Exchange.ExchangeType) continue;
 
-                        decimal nPriceMin = oMin.LastPrice!.Price;
-                        decimal nPriceMax = oMax.LastPrice!.Price;
-                        if (nPriceMin <= 0) continue;
-                        decimal nDiff = nPriceMax - nPriceMin;
-                        decimal nPercent = Math.Round( nDiff * 100.0M / nPriceMin, 2);
-                        if( nPercent >= 10.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
+                        decimal nPriceMinAsk = oMin.LastOrderbookPrice!.AskPrice;
+                        decimal nPriceMinBid = oMin.LastOrderbookPrice!.BidPrice;
+                        if (nPriceMinAsk <= 0 || nPriceMinBid <= 0) continue;
+                        decimal nPriceMaxAsk = oMax.LastOrderbookPrice!.AskPrice;
+                        decimal nPriceMaxBid = oMax.LastOrderbookPrice!.BidPrice;
+                        if (nPriceMaxAsk <= 0 || nPriceMaxBid <= 0) continue;
+                        decimal nPercentMin = Math.Round(100.0M * (nPriceMinAsk - nPriceMinBid) / nPriceMinBid, 2);
+                        decimal nPercentMax = Math.Round(100.0M * (nPriceMaxAsk - nPriceMaxBid) / nPriceMaxBid, 2);
+                        decimal nDiff = nPriceMaxBid - nPriceMinAsk;
+                        decimal nPercent = Math.Round( nDiff * 100.0M / nPriceMinAsk, 2);
+                        nPercent -= nPercentMin;
+                        nPercent -= nPercentMax;    
+                        if ( nPercent >= 10.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
                         aResult.Add( new ArbitrageChanceModel(this, strKey, nPercent, oMin, oMax) );
                     }
                 }

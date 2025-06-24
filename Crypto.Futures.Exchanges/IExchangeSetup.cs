@@ -36,6 +36,7 @@ namespace Crypto.Futures.Exchanges
     public interface IArbitrageSetup
     {
         public decimal MinimumPercent { get; }
+        public decimal ClosePercent { get; }
         public int MaxOperations { get; }
     }
 

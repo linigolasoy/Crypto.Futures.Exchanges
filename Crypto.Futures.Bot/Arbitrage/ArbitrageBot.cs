@@ -107,9 +107,17 @@ namespace Crypto.Futures.Bot.Arbitrage
             int nDecimals = (oChance.LongData.Symbol.QuantityDecimals < oChance.ShortData.Symbol.QuantityDecimals ?
                     oChance.LongData.Symbol.QuantityDecimals :
                     oChance.ShortData.Symbol.QuantityDecimals);
-            if( nPrice <= 0 ) { oChance.Status = ArbitrageStatus.Canceled; return null; }
+            if( nPrice <= 0 ) { oChance.Status = ChanceStatus.Canceled; return null; }
             decimal nQuantity = Math.Round(nMoney / nPrice, nDecimals); 
             return nQuantity;
+        }
+
+
+        private void CloseChance(IArbitrageChance oChance, ChanceStatus eStatus )
+        {
+            oChance.Status = eStatus;
+            IArbitrageChance? oRemove = null;
+            m_aChances.TryRemove(oChance.Currency, out oRemove);
         }
 
         /// <summary>
@@ -119,16 +127,27 @@ namespace Crypto.Futures.Bot.Arbitrage
         /// <returns></returns>
         private async Task ChanceTask( IArbitrageChance oChance )
         {
-            oChance.Status = ArbitrageStatus.Handling;
+            oChance.Status = ChanceStatus.Handling;
             Logger.Info($"Acting on chance {oChance.ToString()}");
             try
             {
                 int nRetries = 100;
-                while( !oChance.IsDataValid && nRetries >= 0) { nRetries--; await Task.Delay(100); }
+                while( true )
+                {
+                    if( oChance.Update() )
+                    {
+                        if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent)
+                        {
+                            break;
+                        }
+                    }
+                    nRetries--; 
+                    await Task.Delay(100); 
+                }
 
-                if( nRetries <= 0 ) { oChance.Status = ArbitrageStatus.Canceled; return; }   
+                if( nRetries <= 0 ) { CloseChance(oChance, ChanceStatus.Canceled); return; }   
                 decimal? nQuantity = CalculateQuantity( oChance );
-                if( nQuantity == null ) { oChance.Status = ArbitrageStatus.Canceled; return; }
+                if( nQuantity == null ) { CloseChance( oChance, ChanceStatus.Canceled); return; }
                 // Buy
                 List<Task<ITraderPosition?>> aTasks = new List<Task<ITraderPosition?>>();
                 aTasks.Add(Trader.Open(oChance.LongData.Symbol, true, nQuantity.Value));
@@ -139,16 +158,16 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if( oChance.ShortData.Position == null || oChance.LongData.Position == null )
                 {
                     Logger.Warning($"   Could not open position on {oChance.ToString()}");
-                    oChance.Status = ArbitrageStatus.Canceled; 
+                    oChance.Status = ChanceStatus.Canceled; 
                     return;
                 }
                 Logger.Info($"   Position open on {oChance.ToString()}");
-                oChance.Status = ArbitrageStatus.Open;
+                oChance.Status = ChanceStatus.Open;
                 m_nOpen++;
                 decimal nMoney = Setup.MoneyDefinition.Money * Setup.MoneyDefinition.Leverage;
                     //
-                decimal nDesired = nMoney * 1.0M / 100.0M;
-                while (oChance.Status == ArbitrageStatus.Open) 
+                decimal nDesired = nMoney * Setup.Arbitrage.ClosePercent / 100.0M;
+                while (oChance.Status == ChanceStatus.Open) 
                 {
                     oChance.LongData.Position.Update();
                     oChance.ShortData.Position.Update();
@@ -167,17 +186,19 @@ namespace Crypto.Futures.Bot.Arbitrage
                     // Close
                     if (nProfit >= nDesired /*|| nProfit <= -nDesired*/ || bClose)
                     {
+                        // oChance.Profit = (oChance.LongData.Position.Profit - oChance.ShortData.Position.Profit);
+                        Logger.Info($"====<  Trying to close {oChance.ToString()} on Profit {Math.Round(nProfit, 2)}");
                         List<Task<bool>> aCloseTasks = new List<Task<bool>>();
                         aCloseTasks.Add(Trader.Close(oChance.LongData.Position));
                         aCloseTasks.Add(Trader.Close(oChance.ShortData.Position));
                         await Task.WhenAll(aCloseTasks);
-                        oChance.Profit = (oChance.LongData.Position.Profit - oChance.ShortData.Position.Profit);
+                        oChance.Profit = (oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit);
                         Logger.Info($"====<  Closed {oChance.ToString()} => Profit {Math.Round(oChance.Profit.Value, 2)}");
                         m_nTotalProfit += oChance.Profit.Value;
                         m_nTotal++;
                         m_nOpen--;
                         if (oChance.Profit > 0) m_nWin++;
-                        oChance.Status = ArbitrageStatus.Closed;
+                        oChance.Status = ChanceStatus.Closed;
                         Logger.Info($"[{Math.Round(m_nTotalProfit, 2)}] TOTAL PROFIT ({m_nWin}/{m_nTotal}) Still Openned {m_nOpen}");
                     }
                     else
@@ -205,7 +226,7 @@ namespace Crypto.Futures.Bot.Arbitrage
             {
                 Logger.Error($"  Error on chance {oChance.ToString()}", e);
             }
-            if( oChance.Status != ArbitrageStatus.Closed ) oChance.Status = ArbitrageStatus.Canceled;
+            if( oChance.Status != ChanceStatus.Closed ) oChance.Status = ChanceStatus.Canceled;
             m_aClosed.Add( oChance );
             IArbitrageChance? oRemove = null;   
             m_aChances.TryRemove(oChance.Currency, out oRemove);    

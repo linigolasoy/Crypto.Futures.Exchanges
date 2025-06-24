@@ -11,7 +11,7 @@ namespace Crypto.Futures.Bot.Arbitrage
     /// <summary>
     /// Symbol data of a chance
     /// </summary>
-    internal interface IArbitrageSymbolData
+    public interface IArbitrageSymbolData
     {
         public IArbitrageChance Chance { get; }
         public IFuturesSymbol Symbol { get; }

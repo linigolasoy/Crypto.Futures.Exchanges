@@ -11,6 +11,7 @@ namespace Crypto.Futures.Bot
     public interface ITraderPosition
     {
         public IFuturesSymbol Symbol { get; }   
+        public long Id { get; } 
         public bool IsLong {  get; } 
         public decimal Volume { get; }  
         public decimal PriceOpen { get; }
@@ -32,6 +33,10 @@ namespace Crypto.Futures.Bot
         public decimal Money { get; }   
         public decimal Leverage { get; }
         public ITradingBot Bot { get; } 
+
+        public IBalance[] Balances { get; }
+        public ITraderPosition[] ActivePositions { get; }
+        public ITraderPosition[] ClosedPositions { get; }
         public Task<ITraderPosition?> Open( IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null);
         public Task<bool> Close(ITraderPosition oPosition, decimal? nPrice = null);
 

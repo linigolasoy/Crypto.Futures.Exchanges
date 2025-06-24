@@ -9,7 +9,7 @@ namespace Crypto.Futures.Bot.Arbitrage
     /// <summary>
     /// Find chances and subscribe to websockets
     /// </summary>
-    internal interface IArbitrageFinder
+    public interface IArbitrageFinder
     {
         public ITradingBot Bot { get; }
 

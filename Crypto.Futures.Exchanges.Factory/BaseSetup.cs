@@ -32,6 +32,8 @@ namespace Crypto.Futures.Exchanges.Factory
     {
         [JsonProperty("MinimumPercent")]
         public decimal Percent { get; set; } = 1;
+        [JsonProperty("ClosePercent")]
+        public decimal ClosePercent { get; set; } = 1;
         [JsonProperty("MaxOperations")]
         public int MaxOperations { get; set; } = 0;
     }
@@ -93,9 +95,10 @@ namespace Crypto.Futures.Exchanges.Factory
         {
             MinimumPercent = oParsed.Percent;
             MaxOperations = oParsed.MaxOperations;
+            ClosePercent = oParsed.ClosePercent;
         }
         public decimal MinimumPercent { get; }
-
+        public decimal ClosePercent { get; }
         public int MaxOperations { get; }
     }
     /// <summary>

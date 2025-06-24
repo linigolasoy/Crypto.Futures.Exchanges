@@ -101,17 +101,18 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
 
         public static IWebsocketMessage[]? ParseWs( IFuturesExchange oExchange, JToken? oToken )
         {
-            if( oToken == null) return null;
-            if( ! (oToken is JArray) ) return null;
-            JArray oArray = (JArray)oToken;
+            ITicker? oTicker = Parse(oExchange, oToken);
+            if (oTicker == null) return null;
             List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();
-            foreach (var oItem in oArray)
+            IOrderbookPrice oPrice = new MexcOrderbookPrice(oTicker);
+            if( oPrice.AskPrice > 0 && oPrice.BidPrice > 0 )
             {
-                if( !(oItem is JObject )) continue;
-                ITicker? oTicker = Parse(oExchange, oItem);
-                if (oTicker == null) continue;
-                aResult.Add( new MexcOrderbookPrice( oTicker));
-                aResult.Add( new MexcLastPrice( oTicker));
+                aResult.Add(oPrice);
+            }
+            ILastPrice oLast = new MexcLastPrice(oTicker);
+            if( oLast.Price > 0 )
+            {
+                aResult.Add(oLast);
             }
             return aResult.ToArray();
         }

@@ -18,13 +18,13 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
     {
         private const string PING_METHOD = "ping";
         private const string BAR_METHOD = "kline";
-        private const string TICKER_METHOD = "tickers";
+        private const string TICKER_METHOD = "ticker";
         private const string FUNDING_METHOD = "funding.rate";
         private const string METHOD_SUBSCRIBE = "sub.";
         private const string METHOD_UNSUBSCRIBE = "unsub.";
 
         // private const string CHANNEL_TRADE = "push.deal";
-        private const string CHANNEL_TICKER = "push.tickers";
+        private const string CHANNEL_TICKER = "push.ticker";
         private const string CHANNEL_FUNDING = "push.funding.rate";
         private const string CHANNEL_KLINE = "push.kline";
 
