@@ -52,5 +52,9 @@ namespace Crypto.Futures.Exchanges.Mexc
         {
             return MexcBalance.Parse(Exchange, oJson);
         }
+        public IPosition? ParsePosition(JToken? oJson)
+        {
+            return MexcPosition.Parse(Exchange, oJson);
+        }
     }
 }

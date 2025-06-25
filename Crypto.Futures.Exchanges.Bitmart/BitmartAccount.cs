@@ -60,5 +60,9 @@ namespace Crypto.Futures.Exchanges.Bitmart
         {
             throw new NotImplementedException();
         }
+        public async Task<IPosition[]?> GetPositions()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

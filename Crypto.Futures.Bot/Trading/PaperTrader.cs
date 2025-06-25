@@ -19,11 +19,13 @@ namespace Crypto.Futures.Bot.Trading
         private IFuturesExchange[] m_aExchanges;
         private const decimal BALANCE_MULTIPLIER = 4;
 
-        private ConcurrentDictionary<ExchangeType, IBalance> m_aBalances; 
+        private ConcurrentDictionary<ExchangeType, IBalance> m_aBalances;
         private ConcurrentDictionary<long, ITraderPosition> m_aActivePositions = new ConcurrentDictionary<long, ITraderPosition>();
         private ConcurrentDictionary<long, ITraderPosition> m_aClosedPositions = new ConcurrentDictionary<long, ITraderPosition>();
-        public PaperTrader( ITradingBot oBot ) 
-        { 
+        private List<IFuturesSymbol> m_aLeverages = new List<IFuturesSymbol>();
+
+        public PaperTrader(ITradingBot oBot)
+        {
             Bot = oBot;
 
             // Create exchanges based on the bot setup  
@@ -32,7 +34,7 @@ namespace Crypto.Futures.Bot.Trading
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oBot.Setup, eType);
                 if (!oExchange.Tradeable) continue;
-                aExchanges.Add(oExchange);  
+                aExchanges.Add(oExchange);
             }
             m_aExchanges = aExchanges.ToArray();
             // Create initial balances
@@ -64,15 +66,15 @@ namespace Crypto.Futures.Bot.Trading
         /// <returns></returns>
         public bool Update()
         {
-            foreach( ExchangeType eType in m_aBalances.Keys)
+            foreach (ExchangeType eType in m_aBalances.Keys)
             {
                 IBalance? oBalance = m_aBalances[eType];
                 if (oBalance == null) continue;
-                decimal nOpenProfit = (m_aActivePositions.Count <= 0 ? 0: m_aActivePositions.Values.Where(p=> p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
+                decimal nOpenProfit = (m_aActivePositions.Count <= 0 ? 0 : m_aActivePositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
                 decimal nOpenLocked = (m_aActivePositions.Count <= 0 ? 0 : m_aActivePositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.PriceOpen * p.Volume / Bot.Setup.MoneyDefinition.Leverage));
-                decimal nClosedProfit = (m_aClosedPositions.Count <= 0 ? 0:  m_aClosedPositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
+                decimal nClosedProfit = (m_aClosedPositions.Count <= 0 ? 0 : m_aClosedPositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
                 PaperTraderBalance oPaperBalance = (PaperTraderBalance)oBalance;
-                oPaperBalance.Balance = oPaperBalance.StartBalance + nOpenProfit + nClosedProfit;   
+                oPaperBalance.Balance = oPaperBalance.StartBalance + nOpenProfit + nClosedProfit;
                 oPaperBalance.Locked = nOpenLocked; // Locked is the open positions value
             }
             return true;
@@ -83,7 +85,7 @@ namespace Crypto.Futures.Bot.Trading
         /// </summary>
         /// <param name="oPosition"></param>
         /// <param name="bClose"></param>
-        private void UpdateBalance( ITraderPosition oPosition, bool bClose )
+        private void UpdateBalance(ITraderPosition oPosition, bool bClose)
         {
             if (bClose)
             {
@@ -123,16 +125,32 @@ namespace Crypto.Futures.Bot.Trading
         public async Task<ITraderPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
         {
             IWebsocketSymbolData? oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
-            if( oData == null ) return null;
+            if (oData == null) return null;
 
-            if( oData.LastOrderbookPrice == null ) return null;
+            if (oData.LastOrderbookPrice == null) return null;
             int nDelay = Random.Shared.Next(MIN_DELAY, MAX_DELAY);
             await Task.Delay(nDelay);
-            decimal nPriceOpen = (bLong? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);  
+            decimal nPriceOpen = (bLong ? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);
             ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, nPriceOpen);
             UpdateBalance(oPosition, false);
             // Update balance
-            return oPosition;   
+            return oPosition;
+        }
+
+        /// <summary>
+        /// Put leverage
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
+        public async Task<bool> PutLeverage(IFuturesSymbol oSymbol)
+        {
+            // Simulate leverage change
+            if (m_aLeverages.Any(p => p.Exchange.ExchangeType == oSymbol.Exchange.ExchangeType && p.Symbol == oSymbol.Symbol)) return true;
+            // Bot.Logger.Info($"  Setting leverage for {oSymbol.ToString()}");
+            int nDelay = Random.Shared.Next(MIN_DELAY, MAX_DELAY);
+            await Task.Delay(nDelay);
+            m_aLeverages.Add(oSymbol);
+            return true; // Always success in paper trading
         }
     }
 }

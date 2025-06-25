@@ -102,6 +102,26 @@ namespace Crypto.Futures.Exchanges.Rest
             return new CryptoRestResult<T[]>(aList.ToArray());
         }
 
+        public static async Task<ICryptoRestResult<bool>> CreateFromBoolean(HttpResponseMessage oResponse)
+        {
+            string strResponse = await oResponse.Content.ReadAsStringAsync();
+            ICryptoErrorCode? oHttpError = CryptoRestError.Create(oResponse);
+            if (oHttpError != null) return new CryptoRestResult<bool>(oHttpError);
+
+            StdResultResponse? oStdResponse = JsonConvert.DeserializeObject<StdResultResponse>(strResponse);
+
+
+            if (oStdResponse == null) oHttpError = CryptoRestError.Create(-99999, "Could not parse error code");
+
+            if (oHttpError != null) return new CryptoRestResult<bool>(oHttpError);
+            if( oStdResponse == null || oStdResponse.ErrorCode != 0 )
+            {
+                return new CryptoRestResult<bool>(false);
+            }
+
+            return new CryptoRestResult<bool>(true);
+        }
+
 
         public static ICryptoRestResult<T> CreateFromException(Exception ex)
         {

@@ -33,5 +33,10 @@ namespace Crypto.Futures.Exchanges.Rest
             string? strField, 
             Func<JToken, T> oParserAction, 
             Dictionary<string, string>? aParameters = null);
+
+
+        public Task<ICryptoRestResult<bool>> DoPostParams<T>(
+            string strEndpoint,
+            T oData);
     }
 }

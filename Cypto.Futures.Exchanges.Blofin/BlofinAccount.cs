@@ -58,5 +58,9 @@ namespace Crypto.Futures.Exchanges.Blofin
         {
             throw new NotImplementedException();
         }
+        public async Task<IPosition[]?> GetPositions()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Mexc.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         private const string ENDP_BALANCES = "/api/v1/private/account/assets";
         private const string ENDP_LEVERAGE = "/api/v1/private/position/leverage";
+        private const string ENDP_SETLEVERAGE = "/api/v1/private/position/change_leverage";
+        private const string ENDP_POSITIONS = "/api/v1/private/position/open_positions";
         public MexcAccount(MexcFutures oExchange)
         {
             m_oExchange = oExchange;
@@ -67,17 +70,18 @@ ApiKey, Request-Time, Signature
 
                 Dictionary<string, string> aParameters = new Dictionary<string, string>();  
                 aParameters.Add("symbol", oSymbol.Symbol);
-                var oResult = await oClient.DoGetArrayParams<IBalance?>(ENDP_LEVERAGE, null, p => m_oExchange.Parser.ParseBalance(p), aParameters);
+                var oResult = await oClient.DoGetArrayParams<MexcLeverage?>(ENDP_LEVERAGE, null, p => p.ToObject<MexcLeverage>(), aParameters);
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;
-                List<IBalance> aResult = new List<IBalance>();
+                List<MexcLeverage> aResult = new List<MexcLeverage>();
                 foreach (var oItem in oResult.Data)
                 {
                     if (oItem == null) continue;
                     aResult.Add(oItem);
                 }
-                return null;
+                decimal nMin = aResult.Min(p => p.Leverage);
+                return nMin;
             }
             catch (Exception ex)
             {
@@ -89,9 +93,87 @@ ApiKey, Request-Time, Signature
             return null;
         }
 
+
+        /// <summary>
+        /// Sets leverage
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <param name="nLeverage"></param>
+        /// <returns></returns>
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            throw new NotImplementedException();
+            try
+            {
+                CryptoRestClient oClient = m_oExchange.RestClient;
+
+                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
+
+                MexcLeveragePost oPostLong = new MexcLeveragePost()
+                {
+                    Symbol = oSymbol.Symbol,
+                    Leverage = (int)nLeverage,
+                    PositionType = 1, // 1 = Long
+                    OpenType = 1
+                };
+
+                MexcLeveragePost oPostShort = new MexcLeveragePost()
+                {
+                    Symbol = oSymbol.Symbol,
+                    Leverage = (int)nLeverage,
+                    PositionType = 2, // 2 = Long
+                    OpenType = 1
+                };
+
+                var oResult = await oClient.DoPostParams<MexcLeveragePost?>(ENDP_SETLEVERAGE, oPostLong);
+                if (oResult == null || !oResult.Success) return false;
+
+                oResult = await oClient.DoPostParams<MexcLeveragePost?>(ENDP_SETLEVERAGE, oPostShort);
+                if (oResult == null || !oResult.Success) return false;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (Exchange.Logger != null)
+                {
+                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get all open positions for the account. 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IPosition[]?> GetPositions()
+        {
+            try
+            {
+                CryptoRestClient oClient = m_oExchange.RestClient;
+
+                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
+
+                var oResult = await oClient.DoGetArrayParams<IPosition?>(ENDP_POSITIONS, null, p => m_oExchange.Parser.ParsePosition(p));
+                if (oResult == null || !oResult.Success) return null;
+                if (oResult.Data == null) return null;
+                List<IPosition> aResult = new List<IPosition>();
+                if (oResult.Data.Count() <= 0) aResult.ToArray();
+                foreach (var oItem in oResult.Data)
+                {
+                    if (oItem == null) continue;
+                    aResult.Add(oItem);
+                }
+                return aResult.ToArray();
+            }
+            catch (Exception ex)
+            {
+                if (Exchange.Logger != null)
+                {
+                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
+                }
+            }
+            return null;
         }
     }
 }

@@ -149,7 +149,16 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
 
                 // Start websockets
                 await oExchange.Market.Websocket.Subscribe(aPendingSymbols);
-
+                foreach(var oSymbol in aPendingSymbols)
+                {
+                    await Bot.Trader.PutLeverage(oSymbol);
+                    /*
+                    if( oSymbol.ContractSize != 1)
+                    {
+                        Bot.Logger.Info($"   Contract size on  {oSymbol.ToString()} Not one ({oSymbol.ContractSize})");
+                    }
+                    */
+                }
             }
 
 

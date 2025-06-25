@@ -47,5 +47,9 @@ namespace Crypto.Futures.Exchanges.Coinex
         {
             return CoinexBalance.Parse(Exchange, oJson);
         }
+        public IPosition? ParsePosition(JToken? oJson)
+        {
+            return CoinexPosition.Parse(Exchange, oJson);
+        }
     }
 }

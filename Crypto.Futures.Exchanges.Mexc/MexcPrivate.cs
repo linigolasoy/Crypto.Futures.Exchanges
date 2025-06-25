@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
     internal class MexcRequestData
     {
-        public string Parameters { get; set; } = string.Empty;
+        public string? Parameters { get; set; } = null;
         public string? Body { get; set; } = null;
         public string Signature { get; set; } = string.Empty;
         public Dictionary<string, string>? Headers { get; set; } = null;
@@ -38,14 +39,15 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         private MexcRequestData CreateRequestData(Dictionary<string, string>? aParams, string? strBody)
         {
-            if (strBody != null)
-            {
-                throw new NotImplementedException();
-            }
-            MexcRequestData oData = new MexcRequestData();  
+            MexcRequestData oData = new MexcRequestData();
             long nTimestamp = Util.ToUnixTimestamp(DateTime.Now, true);
             StringBuilder oBuildParams = new StringBuilder();
-            if (aParams != null)
+            if (strBody != null)
+            {
+                oBuildParams.Append(strBody);
+                
+            }
+            else if (aParams != null)
             {
                 foreach (var oParam in aParams)
                 {
@@ -65,7 +67,7 @@ namespace Crypto.Futures.Exchanges.Mexc
             string strSignature = Util.EncodePayLoadHmac(strPayLoad, this.Exchange.ApiKey, true).ToLower();
 
             // const signature = CryptoJS.HmacSHA256(queryString, api_secret).toString()
-            oData.Parameters = oBuildParams.ToString();
+            oData.Parameters = ( strBody == null ? oBuildParams.ToString() : null);
             oData.Signature = strSignature;
             oData.Headers = new Dictionary<string, string>();
             oData.Headers.Add(HEADER_API, Exchange.ApiKey.ApiKey);
@@ -84,7 +86,8 @@ namespace Crypto.Futures.Exchanges.Mexc
         {
             MexcRequestData oData = CreateRequestData(aParams, strBody);
 
-            string strNewUrl = $"{strUrl}?{oData.Parameters}";
+            string strNewUrl = $"{strUrl}";
+            if( oData.Parameters != null ) strNewUrl += $"?{oData.Parameters}";
             HttpRequestMessage oMsg = new HttpRequestMessage(oMethod, strNewUrl);
             if (oData.Headers != null)
             {
@@ -92,6 +95,14 @@ namespace Crypto.Futures.Exchanges.Mexc
                 {
                     oMsg.Headers.Add(oHeader.Key, oHeader.Value);
                 }
+            }
+            if(oData.Body != null)
+            {
+                oMsg.Content = new StringContent(oData.Body, Encoding.UTF8, "application/json");
+            }
+            else
+            {
+                oMsg.Content = null;
             }
             return oMsg;
         }

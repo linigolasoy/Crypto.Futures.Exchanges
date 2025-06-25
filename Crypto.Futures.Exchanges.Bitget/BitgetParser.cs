@@ -46,5 +46,9 @@ namespace Crypto.Futures.Exchanges.Bitget
         {
             return BitgetBalance.Parse(Exchange, oJson);
         }
+        public IPosition? ParsePosition(JToken? oJson)
+        {
+            return BitgetPosition.Parse(Exchange, oJson);
+        }
     }
 }

@@ -45,5 +45,9 @@ namespace Crypto.Futures.Exchanges.Bingx
         {
             return BingxBalance.Parse(this.Exchange, oJson);
         }
+        public IPosition? ParsePosition(JToken? oJson)
+        {
+            return BingxPosition.Parse(this.Exchange, oJson);
+        }
     }
 }

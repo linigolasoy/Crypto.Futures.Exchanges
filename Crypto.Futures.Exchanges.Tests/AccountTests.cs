@@ -41,7 +41,7 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            decimal nNewLeverage = 10;
+            decimal nNewLeverage = 15;
             foreach (ExchangeType eType in oSetup.ExchangeTypes)
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
@@ -49,7 +49,7 @@ namespace Crypto.Futures.Exchanges.Tests
 
                 if (!oExchange.Tradeable) continue;
 
-                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "BTC" && p.Quote == "USDT");
+                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "ETH" && p.Quote == "USDT");
                 Assert.IsNotNull(oBtc);
 
                 decimal? nLeverage = await oExchange.Account.GetLeverage(oBtc);
@@ -57,6 +57,29 @@ namespace Crypto.Futures.Exchanges.Tests
 
                 bool bSet = await oExchange.Account.SetLeverage(oBtc, nNewLeverage);
                 Assert.IsTrue(bSet);
+
+            }
+
+        }
+
+
+        [TestMethod]
+        public async Task PositionTest()
+        {
+
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
+                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+
+                if (!oExchange.Tradeable) continue;
+
+                IPosition[]? aPositions = await oExchange.Account.GetPositions();
+                Assert.IsNotNull(aPositions);
+
 
             }
 

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,13 +31,13 @@ namespace Crypto.Futures.Exchanges.Rest
         }
 
 
-        private HttpRequestMessage CreateRequestMessage(HttpMethod oMethod, string strEndPoint, Dictionary<string, string>? aParameters )
+        private HttpRequestMessage CreateRequestMessage(HttpMethod oMethod, string strEndPoint, Dictionary<string, string>? aParameters, string? strBody )
         {
             HttpRequestMessage? oMsg = null;
             string strUrl = $"{BaseUrl}{strEndPoint}";
             if (RequestEvaluator != null)
             {
-                oMsg = RequestEvaluator(oMethod, strUrl, aParameters, null);
+                oMsg = RequestEvaluator(oMethod, strUrl, aParameters, strBody);
             }
             else
             {
@@ -70,7 +71,7 @@ namespace Crypto.Futures.Exchanges.Rest
             try
             {
                 var oClient = CreateClient();
-                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters );
+                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters, null);
 
                 var oResponse = await oClient.SendAsync(oMsg); // await oClient.GetAsync(strUrl);
                 ICryptoRestResult<T> oResult = await CryptoRestResult<T>.CreateFromResponse(oResponse, oParserAction);
@@ -92,7 +93,7 @@ namespace Crypto.Futures.Exchanges.Rest
             {
                 var oClient = CreateClient();
 
-                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters);
+                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Get, strEndpoint, aParameters, null);
                 var oResponse = await oClient.SendAsync(oMsg); // await oClient.GetAsync(strUrl);
                 ICryptoRestResult<T[]> oResult = await CryptoRestResult<T>.CreateFromResponseArray(oResponse, strField, oParserAction);
                 return oResult;
@@ -102,6 +103,26 @@ namespace Crypto.Futures.Exchanges.Rest
                 ICryptoRestResult<T[]> oResult = CryptoRestResult<T[]>.CreateFromException(ex);
                 return oResult;
             }
+        }
+
+
+        public async Task<ICryptoRestResult<bool>> DoPostParams<T>( string strEndpoint, T oData)
+        {
+            try
+            {
+                var oClient = CreateClient();
+                string strBody = JsonConvert.SerializeObject(oData);   
+                HttpRequestMessage oMsg = CreateRequestMessage(HttpMethod.Post, strEndpoint, null, strBody);
+                var oResponse = await oClient.SendAsync(oMsg); // await oClient.GetAsync(strUrl);
+                var oResult = await CryptoRestResult<bool>.CreateFromBoolean(oResponse);
+                return oResult;
+            }
+            catch (Exception ex)
+            {
+                ICryptoRestResult<bool> oResult = CryptoRestResult<bool>.CreateFromException(ex);
+                return oResult;
+            }
+            throw new NotImplementedException("Post not implemented yet");
         }
 
     }
