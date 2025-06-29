@@ -14,8 +14,11 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     {
         public IFuturesExchange Exchange { get; }
         public int PingSeconds { get; }
-        public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame);
+        public int MaxSubscriptions { get; }
 
+        // public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame);
+        public string? ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType);
+        public string[]? ParseSubscription(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType);
         public string ParsePing();
         public string ParsePong();
 

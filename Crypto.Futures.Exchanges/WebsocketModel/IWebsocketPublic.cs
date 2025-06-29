@@ -26,12 +26,13 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public Task<bool> Stop();
 
         // public Task Send(string strSend);
-        public Task<bool> Subscribe(IFuturesSymbol oSymbol);
-        public Task<bool> Subscribe(IFuturesSymbol[] aSymbols);
-        public Task<bool> UnSubscribe(IFuturesSymbol oSymbol);
-        public Task<bool> UnSubscribe(IFuturesSymbol[]? aSymbols = null);
+        public Task<IWebsocketSubscription?> Subscribe(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType);
+        public Task<IWebsocketSubscription?> Subscribe(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType);
+        // public Task<bool> Subscribe(IFuturesSymbol[] aSymbols);
+        // public Task<bool> UnSubscribe(IFuturesSymbol oSymbol);
+        // public Task<bool> UnSubscribe(IFuturesSymbol[]? aSymbols = null);
 
-        public IFuturesSymbol[] SubscribedSymbols { get; }  
+        public IWebsocketSubscription[] Subscriptions { get; }  
     }
 
 

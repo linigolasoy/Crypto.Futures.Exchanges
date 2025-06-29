@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx.Ws
 {
-    internal class BingxWebsocketPublic: BaseWebsocketPublic, IWebsocketPublic
+    internal class BingxWebsocketPublic: BaseWebsocketManager, IWebsocketPublic
     {
         private const string WS_URL = "wss://open-api-swap.bingx.com/swap-market";
         private Task? m_oMainLoop = null;

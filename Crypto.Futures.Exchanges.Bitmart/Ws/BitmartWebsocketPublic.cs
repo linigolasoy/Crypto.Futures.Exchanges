@@ -10,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
     /// <summary>
     /// Bitmart websocket
     /// </summary>
-    internal class BitmartWebsocketPublic : BaseWebsocketPublic, IWebsocketPublic
+    internal class BitmartWebsocketPublic : BaseWebsocketManager, IWebsocketPublic
     {
         private const string URL_WS = "wss://openapi-ws-v2.bitmart.com/api?protocol=1.1";
 

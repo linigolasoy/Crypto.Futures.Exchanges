@@ -16,7 +16,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         KLine,
         Ticker,
         OrderbookPrice,
-        LastPrice
+        LastPrice,
+        Subscription
     }
     /// <summary>
     /// Websocket message

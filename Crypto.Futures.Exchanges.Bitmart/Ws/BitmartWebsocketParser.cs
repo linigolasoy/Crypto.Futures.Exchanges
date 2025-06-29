@@ -22,29 +22,53 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
 
         public int PingSeconds { get => 18; }
 
+        public int MaxSubscriptions { get => 90; }
+
         public IWebsocketMessage[]? ParseMessage(string strMessage)
         {
             BitmartMessage? oMessage = JsonConvert.DeserializeObject<BitmartMessage?>( strMessage );
             if ( oMessage == null ) return null;
-            if (oMessage.Data == null || oMessage.Group == null) return null;
+            if( oMessage.Group == null ) return null;
             string[] aSplit = oMessage.Group.Split(':');
             string strChannel = aSplit[0];
-            string strSymbol = aSplit[1];   
-            IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol( strSymbol );
-            if ( oSymbol == null ) return null;
+            string strSymbol = aSplit[1];
+            IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(strSymbol);
+            if (oSymbol == null) return null;
+            bool bSubscribe = (oMessage.Action == BitmartSubscription.SUBSCRIBE);
             if (strChannel == BitmartSubscription.CHANNEL_FUNDING)
             {
-                IWebsocketMessage? oWsMessage = BitmartFundingRate.Parse(oSymbol, oMessage.Data);
-                if (oWsMessage == null) return null;
-                return new IWebsocketMessage[] { oWsMessage };
+                if (oMessage.Data != null)
+                {
+                    IWebsocketMessage? oWsMessage = BitmartFundingRate.Parse(oSymbol, oMessage.Data);
+                    if (oWsMessage == null) return null;
+                    return new IWebsocketMessage[] { oWsMessage };
+                }
+                else if( bSubscribe )
+                {
+                    return new IWebsocketMessage[] { new BaseSubscription( WsMessageType.FundingRate, oSymbol) };
+                }
             }
             else if (strChannel == BitmartSubscription.CHANNEL_TICKER)
             {
-                return BitmartTicker.ParseWs(oSymbol, oMessage.Data);  
+                if( oMessage.Data != null )
+                {
+                    return BitmartTicker.ParseWs(oSymbol, oMessage.Data);
+                }
+                else if( bSubscribe )
+                {
+                    return new IWebsocketMessage[] { new BaseSubscription(WsMessageType.LastPrice, oSymbol) };
+                }
             }
             else if (strChannel == BitmartSubscription.CHANNEL_ORDERBOOK)
             {
-                return BitmartOrderbookPrice.ParseWs(oSymbol, oMessage.Data);
+                if (oMessage.Data != null)
+                {
+                    return BitmartOrderbookPrice.ParseWs(oSymbol, oMessage.Data);
+                }
+                else if (bSubscribe)
+                {
+                    return new IWebsocketMessage[] { new BaseSubscription(WsMessageType.OrderbookPrice, oSymbol) };
+                }
             }
             return null;
         }
@@ -58,7 +82,34 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
         {
             throw new NotImplementedException();
         }
+        public string[]? ParseSubscription(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException("Bitmart does not support multiple subscriptions at once. Use ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType) instead.");
+        }
 
+        public string? ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType)
+        {
+            string? strResult = null;
+            IFuturesSymbol[] aSymbols = new IFuturesSymbol[] { oSymbol };
+            switch ( eSubscriptionType )
+            {
+                case WsMessageType.FundingRate:
+                    BitmartSubscription oSubFunding = new BitmartSubscription(aSymbols, BitmartSubscription.CHANNEL_FUNDING, true);
+                    strResult = JsonConvert.SerializeObject(oSubFunding, Formatting.Indented);
+                    break;
+                case WsMessageType.LastPrice:
+                    BitmartSubscription oSubTicker = new BitmartSubscription(aSymbols, BitmartSubscription.CHANNEL_TICKER, true);
+                    strResult = JsonConvert.SerializeObject(oSubTicker, Formatting.Indented);
+                    break;
+                case WsMessageType.OrderbookPrice:
+                    BitmartSubscription oSubBook = new BitmartSubscription(aSymbols, BitmartSubscription.CHANNEL_ORDERBOOK, true);
+                    strResult = JsonConvert.SerializeObject(oSubBook, Formatting.Indented);
+                    break;
+            }
+            return strResult;
+        }
+
+        /*
         public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame)
         {
             List<string> aResult = new List<string>();
@@ -80,5 +131,6 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
 
             return aResult.ToArray();
         }
+        */
     }
 }

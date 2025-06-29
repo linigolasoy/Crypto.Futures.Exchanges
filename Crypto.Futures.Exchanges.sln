@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Bi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.FrontEnd", "Crypto.Futures.FrontEnd\Crypto.Futures.FrontEnd.csproj", "{75BC4651-2C5C-4B74-B157-66B1A31C3A32}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Bitunix", "Crypto.Futures.Exchanges.Bitunix\Crypto.Futures.Exchanges.Bitunix.csproj", "{1B010EE6-DFAC-41D1-874F-F79437E50B99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{75BC4651-2C5C-4B74-B157-66B1A31C3A32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75BC4651-2C5C-4B74-B157-66B1A31C3A32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75BC4651-2C5C-4B74-B157-66B1A31C3A32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B010EE6-DFAC-41D1-874F-F79437E50B99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B010EE6-DFAC-41D1-874F-F79437E50B99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B010EE6-DFAC-41D1-874F-F79437E50B99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B010EE6-DFAC-41D1-874F-F79437E50B99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

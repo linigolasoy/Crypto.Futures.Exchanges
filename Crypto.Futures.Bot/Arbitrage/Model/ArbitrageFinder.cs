@@ -148,7 +148,24 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 }
 
                 // Start websockets
-                await oExchange.Market.Websocket.Subscribe(aPendingSymbols);
+                foreach (var oSymbol in aPendingSymbols)
+                {
+                    var oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.FundingRate);
+                    if( oSubscription == null)
+                    {
+                        Bot.Logger.Error($"   Failed to subscribe to {oSymbol.Symbol} funding rate on {eType.ToString()}");
+                    }
+                    oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.LastPrice);
+                    if (oSubscription == null)
+                    {
+                        Bot.Logger.Error($"   Failed to subscribe to {oSymbol.Symbol} last price on {eType.ToString()}");
+                    }
+                    oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.OrderbookPrice);
+                    if (oSubscription == null)
+                    {
+                        Bot.Logger.Error($"   Failed to subscribe to {oSymbol.Symbol} orderbook price on {eType.ToString()}");
+                    }
+                }
                 foreach(var oSymbol in aPendingSymbols)
                 {
                     await Bot.Trader.PutLeverage(oSymbol);

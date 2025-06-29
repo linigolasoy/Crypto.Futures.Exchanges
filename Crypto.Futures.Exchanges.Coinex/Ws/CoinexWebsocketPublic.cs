@@ -10,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
     /// <summary>
     /// Local websockets for Coinex
     /// </summary>
-    internal class CoinexWebsocketPublic : BaseWebsocketPublic, IWebsocketPublic
+    internal class CoinexWebsocketPublic : BaseWebsocketManager, IWebsocketPublic
     {
         private const string URL_WS = "wss://socket.coinex.com/v2/futures";
 

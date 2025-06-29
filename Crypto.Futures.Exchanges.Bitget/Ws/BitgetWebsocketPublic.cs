@@ -10,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
     /// <summary>
     /// Bitget websocket
     /// </summary>
-    internal class BitgetWebsocketPublic : BaseWebsocketPublic, IWebsocketPublic
+    internal class BitgetWebsocketPublic : BaseWebsocketManager, IWebsocketPublic
     {
         private const string URL_WS = "wss://ws.bitget.com/v2/ws/public";
 

@@ -67,6 +67,17 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
             throw new NotImplementedException();
         }
 
+        public int MaxSubscriptions { get => 30; }
+
+        public string[]? ParseSubscription(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException("Mexc does not support multiple subscriptions at once. Use ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType) instead.");
+        }
+        public string ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException();    
+        }
+        /*
         /// <summary>
         /// Returns subscribe messages  for websockets
         /// </summary>
@@ -98,6 +109,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
             }
             return aResult.ToArray();
         }
+        */
     }
 
 }

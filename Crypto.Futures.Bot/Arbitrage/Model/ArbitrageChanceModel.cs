@@ -74,12 +74,12 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 if (nPriceBidShort <= 0 || nPriceAskShort <= 0) return false;
                 decimal nDiffShort = Math.Abs(nPriceAskShort - nPriceBidShort);
                 decimal nPercentShort = nDiffShort * 100.0M / nPriceBidShort;
-                if (nPercentLong > 1.0M) return false; // 1% difference is too high 
+                if (nPercentShort > 1.0M) return false; // 1% difference is too high 
 
                 DateTime dNow = DateTime.Now;
                 double nDiffTimeLong = (dNow - LongData.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
                 double nDiffTimeShort = (dNow - ShortData.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
-                if (nDiffTimeLong > 1000 || nDiffTimeShort > 1000) return false;
+                if (nDiffTimeLong > 1500 || nDiffTimeShort > 1500) return false;
                 return true;
             }
         }

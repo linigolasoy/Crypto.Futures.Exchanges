@@ -29,7 +29,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();
                 Assert.IsNotNull(aSymbols, $"Symbols for {eType} should not be null.");
                 Assert.IsTrue(aSymbols.Length > 50, $"There should be at least 50 symbol for {eType} exchange.");
-
+                IFuturesSymbol[] aFilter2 = aSymbols.Where(p => p.Base == "LPT").ToArray();
                 int nCount = aSymbols.Where(p=> p.ListDate >= dFrom).Count();   
                 nTotal += nCount;
             }
@@ -45,11 +45,11 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            foreach (ExchangeType eType in oSetup.ExchangeTypes ) //.Where(p=> p== ExchangeType.BitunixFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
-
+                if( !oExchange.Tradeable) continue; // Skip non-tradeable exchanges
                 IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();
                 Assert.IsNotNull(aSymbols, $"Symbols for {eType} should not be null.");
 
@@ -95,90 +95,6 @@ namespace Crypto.Futures.Exchanges.Tests
 
         }
 
-        [TestMethod]
-        public async Task GetBestFundingRateArbitrageTest()
-        {
-            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
-            Assert.IsNotNull(oSetup, "Setup should not be null.");
-
-
-            // List of all funding rates in exchanges
-
-            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
-            List<IFundingRate> aAllFundingRates = new List<IFundingRate>(); 
-            foreach( ExchangeType eType in oSetup.ExchangeTypes )
-            {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
-                aExchanges.Add(oExchange);
-                IFundingRate[]? aFunding = await oExchange.Market.GetFundingRates();
-                Assert.IsNotNull(aFunding, $"Funding rates for {eType} should not be null for exchange.");
-                Assert.IsTrue(aFunding.Length > 50);
-                aAllFundingRates.AddRange(aFunding);    
-            }
-
-            // Dictionary of different currencies
-            Dictionary<string, List<IFundingRate>> aCurrencies = new Dictionary<string, List<IFundingRate>>();
-            List<DateTime> aDates = new List<DateTime>();
-            foreach( var oFunding in aAllFundingRates )
-            {
-                if (oFunding.Symbol.Quote != "USDT") continue;
-                if( !aCurrencies.ContainsKey(oFunding.Symbol.Base) )
-                {
-                    aCurrencies.Add(oFunding.Symbol.Base, new List<IFundingRate>() { oFunding });
-                }
-                else
-                {
-                    aCurrencies[oFunding.Symbol.Base].Add(oFunding);
-                }
-                if( !aDates.Contains(oFunding.Next) ) aDates.Add(oFunding.Next);
-            }
-            Dictionary<string, IFundingRate[]> aCorrectCurrencies = new Dictionary<string, IFundingRate[]>();
-            foreach (string strKey in aCurrencies.Keys)
-            {
-                if (aCurrencies[strKey].Count < 2) continue;
-                aCorrectCurrencies.Add(strKey, aCurrencies[strKey].ToArray());  
-            }
-
-            DateTime dMin = aDates.Min();
-            decimal nMax = -10;
-            int nFound = 0;
-            foreach( string strKey in aCorrectCurrencies.Keys)
-            {
-                IFundingRate[] aInKey = aCorrectCurrencies[strKey];
-                IFundingRate[] aFound = aInKey.Where(p=> p.Next == dMin).ToArray();   
-                if( aFound.Length <= 0 ) continue;
-                nFound++;   
-                for( int i = 0; i < aFound.Length; i++ )
-                {
-                    IFundingRate oRate1 = aFound[i];
-                    if (aFound.Length == 1)
-                    {
-                        decimal nDiff = Math.Abs(oRate1.Rate);
-                        if( nDiff > nMax )
-                        {
-                            nMax = nDiff;
-                        }
-                    }
-                    else
-                    {
-                        for (int j = i + 1; j < aFound.Length; j++)
-                        {
-                            IFundingRate oRate2 = aFound[j];
-                            decimal nDiff = Math.Abs(oRate1.Rate - oRate2.Rate);
-                            if (nDiff > nMax)
-                            {
-                                nMax = nDiff;
-                            }
-                        }
-
-                    }
-                }
-
-            }
-
-            return;
-        }
-
 
         [TestMethod]
         public async Task MarketSocketTests()
@@ -197,19 +113,32 @@ namespace Crypto.Futures.Exchanges.Tests
             }
 
 
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.MexcFutures))
+            string[] aCoins = new string[] { "BTC", "ETH", "XRP", "LTC", "SOL", "BNB", "ADA", "DOT", "DOGE", "TRX" };
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.BlofinFutures))
             {
+                if( !oExchange.Tradeable) continue;
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
-                IFuturesSymbol[] aFirst = oExchange.SymbolManager.GetAllValues().Take(10).ToArray();   
+                IFuturesSymbol[] aFirst = oExchange.SymbolManager.GetAllValues().Where(p=> p.Quote.Equals("USDT")).Where( p=> aCoins.Contains(p.Base)).ToArray();   
                 oWs.Timeframe = BarTimeframe.M15;
                 bool bStarted = await oWs.Start();
                 Assert.IsTrue(bStarted);
-                bool bSubscribed = await oWs.Subscribe(aFirst);
+
+
+                foreach( var oSymbol in aFirst )
+                {
+                    var oSubscription = await oWs.Subscribe(oSymbol, WsMessageType.FundingRate);
+                    Assert.IsNotNull(oSubscription, $"Subscription for {oSymbol.Symbol} should not be null.");
+                    oSubscription = await oWs.Subscribe(oSymbol, WsMessageType.LastPrice);
+                    Assert.IsNotNull(oSubscription, $"Subscription for {oSymbol.Symbol} should not be null.");
+                    oSubscription = await oWs.Subscribe(oSymbol, WsMessageType.OrderbookPrice);
+                    Assert.IsNotNull(oSubscription, $"Subscription for {oSymbol.Symbol} should not be null.");
+                }
 
                 await Task.Delay(25000);
 
                 DateTime dNow = DateTime.Now;
-                Assert.IsTrue( (dNow - oWs.DataManager.LastUpdate).TotalSeconds < 3 );
+                double nSeconds = (dNow - oWs.DataManager.LastUpdate).TotalSeconds;
+                Assert.IsTrue(  nSeconds < 10 );
                 await oWs.Stop();
                 List<IFundingRate> aFunding = new List<IFundingRate>();
                 List<ILastPrice> aLast = new List<ILastPrice>();

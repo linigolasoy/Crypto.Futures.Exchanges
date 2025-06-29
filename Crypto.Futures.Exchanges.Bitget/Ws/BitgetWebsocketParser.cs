@@ -22,13 +22,26 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
         public IFuturesExchange Exchange { get; }
 
         public int PingSeconds { get => 30; }
+        public int MaxSubscriptions { get => 500; }
 
         public IWebsocketMessage[]? ParseMessage(string strMessage)
         {
             if (strMessage == PONG) return null;
             BitgetMessage? oMessage = JsonConvert.DeserializeObject<BitgetMessage>(strMessage);
             if (oMessage == null) return null;
-            if( oMessage.Action == null || oMessage.Data == null) return null;
+            if( oMessage.Action == null || oMessage.Data == null)
+            {
+                if( oMessage.Event != null && oMessage.Event == "subscribe" && oMessage.Argument != null)
+                {
+                    if( oMessage.Argument.Channel == ChannelType.ticker.ToString())
+                    {
+                        IFuturesSymbol? oSymbolSub = Exchange.SymbolManager.GetSymbol(oMessage.Argument.Symbol);
+                        if (oSymbolSub == null) return null;
+                        return new IWebsocketMessage[] { new BaseSubscription(WsMessageType.OrderbookPrice, oSymbolSub) };
+                    }
+                    return null;
+                }
+            }
             if( oMessage.Argument == null ) return null;
             string strSymbol = oMessage.Argument.Symbol;
             IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(strSymbol);
@@ -56,6 +69,29 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             throw new NotImplementedException();
         }
 
+        public string[]? ParseSubscription(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException("Bitget does not support multiple subscriptions at once. Use ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType) instead.");
+        }
+        public string? ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType)
+        {
+            string? strResult = null;   
+            switch (eSubscriptionType)
+            {
+                case WsMessageType.OrderbookPrice:
+                    BitgetSubscriptionJson oSubOrderbook = new BitgetSubscriptionJson(ChannelType.ticker, true, new IFuturesSymbol[] { oSymbol });
+                   
+                    strResult = JsonConvert.SerializeObject(oSubOrderbook, Formatting.Indented);
+                    break;
+                case WsMessageType.FundingRate:
+                    break;
+                case WsMessageType.LastPrice:
+                    break;
+            }
+            return strResult;
+        }
+
+        /*
         public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame)
         {
             List<string> aResult = new List<string>();
@@ -64,12 +100,8 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             string strSubTicker = JsonConvert.SerializeObject(oSubTicker, Formatting.Indented); 
             aResult.Add(strSubTicker);
 
-            /*
-            BitgetSubscriptionJson oSubTrade = new BitgetSubscriptionJson(ChannelType.trade, true, aSymbols);
-            string strSubTrade = JsonConvert.SerializeObject(oSubTrade, Formatting.Indented);
-            aResult.Add(strSubTrade);
-            */
             return aResult.ToArray();
         }
+        */
     }
 }

@@ -16,7 +16,8 @@ namespace Crypto.Futures.Exchanges
         BingxFutures,
         BitgetFutures,
         BitmartFutures,
-        BitUnixFutures
+        ToobitFutures,
+        BitunixFutures
     }
 
     public interface IApiKey

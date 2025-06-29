@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -42,13 +43,19 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
         public const string CHANNEL_FUNDING = "funding-rate";
 
         // private const string CHANNEL_TRADE = "trades";
-        public BlofinSubscription(bool bSubscibe, IFuturesSymbol oSymbol, BarTimeframe eFrame)
+        public BlofinSubscription(bool bSubscibe, IFuturesSymbol oSymbol, WsMessageType eType)
         {
             Option = (bSubscibe ? OPTION_SUBSCRIBE : OPTION_UNSUBSCRIBE);
-
-            Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_TICKERS, Symbol = oSymbol.Symbol });
-            Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_FUNDING, Symbol = oSymbol.Symbol });
+            if( eType == WsMessageType.FundingRate )
+            {
+                Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_FUNDING, Symbol = oSymbol.Symbol });
+            }
+            else if (eType == WsMessageType.Ticker)
+            {
+                Channels.Add(new BlofinSubscriptionChannel() { Channel = CHANNEL_TICKERS, Symbol = oSymbol.Symbol });
+            }
         }
+
         [JsonProperty("op")]
         public string Option { get; }
 

@@ -14,7 +14,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
     /// <summary>
     /// Local websockets for Mexc
     /// </summary>
-    internal class MexcWebsocketPublic : BaseWebsocketPublic, IWebsocketPublic
+    internal class MexcWebsocketPublic : BaseWebsocketManager, IWebsocketPublic
     {
         private const string URL_WS = "wss://contract.mexc.com/edge";
 

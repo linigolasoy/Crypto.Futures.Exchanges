@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog.Core;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,8 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
     internal class BingxWebsocketParser : IWebsocketParser
     {
 
+
+        private ConcurrentDictionary<string, IWebsocketSubscription> m_aPendingSubscriptions = new ConcurrentDictionary<string, IWebsocketSubscription>();  
         public BingxWebsocketParser( IFuturesMarket oMarket ) 
         { 
             Exchange = oMarket.Exchange;    
@@ -50,6 +53,8 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
         public IFuturesExchange Exchange { get; }
 
         public int PingSeconds { get => -1; }
+
+        public int MaxSubscriptions { get => 180; }
 
         private const string PING = "Ping";
         private const string PONG = "Pong";
@@ -84,6 +89,21 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                         return BingxOrderbookPrice.Parse(Exchange, aSplit[0], oJson.Data);
                     }
                 }
+                else if( !string.IsNullOrEmpty(oJson.Id))
+                {
+                    if(m_aPendingSubscriptions.TryRemove(oJson.Id, out IWebsocketSubscription? oSub))
+                    {
+                        return new IWebsocketMessage[] { oSub };
+                    }
+                }
+                else if (oJson.Code.HasValue && oJson.Code.Value != 0)
+                {
+                    // Error message
+                    if (this.Exchange.Logger != null)
+                    {
+                        this.Exchange.Logger.Error($"Bingx. Error code {oJson.Code.Value} in message: {strMessage}");
+                    }
+                }
             }
             catch ( Exception ex) 
             { 
@@ -105,6 +125,38 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
             return PONG;
         }
 
+
+        public string[]? ParseSubscription(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException("Bingx does not support bulk subscriptions. Please use ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType) instead.");
+        }
+
+        public string? ParseSubscription(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType)
+        {
+            string? strResult = null;
+            switch (eSubscriptionType)
+            {
+                case WsMessageType.FundingRate:
+                    break;
+                case WsMessageType.LastPrice:
+                    {
+                        BingxSubscriptionJson oSub = new BingxSubscriptionJson(oSymbol, true, WsMessageType.LastPrice);
+                        strResult = JsonConvert.SerializeObject(oSub, Formatting.Indented);
+                        m_aPendingSubscriptions.TryAdd(oSub.Id, new BaseSubscription(eSubscriptionType, oSymbol));
+                    }
+                    break;
+                case WsMessageType.OrderbookPrice:
+                    {
+                        BingxSubscriptionJson oSub = new BingxSubscriptionJson(oSymbol, true, WsMessageType.OrderbookPrice);
+                        strResult = JsonConvert.SerializeObject(oSub, Formatting.Indented);
+                        m_aPendingSubscriptions.TryAdd(oSub.Id, new BaseSubscription(eSubscriptionType, oSymbol));
+                    }
+                    break;
+            }
+            return strResult;
+        }
+
+        /*
         public string[] ParseSubscription(IFuturesSymbol[] aSymbols, BarTimeframe eFrame)
         {
             List<string> aResult = new List<string>();  
@@ -121,5 +173,6 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
             }
             return aResult.ToArray();   
         }
+        */
     }
 }

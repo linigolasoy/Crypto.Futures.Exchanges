@@ -33,7 +33,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
         internal BitmartParser Parser { get => m_oParser; } 
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
-        public bool Tradeable { get => false; }
+        public bool Tradeable { get => true; }
 
         public ICommonLogger? Logger { get; }
 
