@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BingX.Net.Objects.Models;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,31 +15,15 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
 {
 
 
-    internal class BingxFundingRateJson
-    {
-        [JsonProperty("symbol")]
-        public string Symbol { get; set; } = string.Empty;
 
-        [JsonProperty("lastFundingRate")] // Last updated funding rate
-        public string LastFundingRate { get; set; } = string.Empty;
-        [JsonProperty("markPrice")] // current mark price
-        public string MarkPrice { get; set; } = string.Empty;
-        [JsonProperty("indexPrice")] // index price
-        public string IndexPrice { get; set; } = string.Empty;
-        [JsonProperty("nextFundingTime")] // The remaining time for the nex...
-        public long NextFundingTime { get; set; } = 0;
-
-    }
     internal class BingxFundingRate : IFundingRate
     {
 
-        public BingxFundingRate(IFuturesSymbol oSymbol, BingxFundingRateJson oJson )
+        public BingxFundingRate(IFuturesSymbol oSymbol, BingXFundingRate oJson )
         {
             Symbol = oSymbol;
-            DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.NextFundingTime);
-            DateTime dDate = oOffset.DateTime.ToLocalTime();
-            Next = dDate;
-            Rate = decimal.Parse(oJson.LastFundingRate, CultureInfo.InvariantCulture);  
+            Next = oJson.NextFundingTime.ToLocalTime();
+            Rate = oJson.LastFundingRate;
         }
         public IFuturesSymbol Symbol { get; }
 
@@ -54,14 +39,5 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             Rate = oFunding.Rate;
         }
 
-        public static IFundingRate? Parse( IFuturesExchange oExchange, JToken? oToken )
-        {
-            if (oToken == null) return null;
-            var oFundingJson = oToken.ToObject<BingxFundingRateJson>();
-            if (oFundingJson == null) return null;
-            var oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
-            if (oSymbol == null) return null;
-            return new BingxFundingRate(oSymbol, oFundingJson);
-        }
     }
 }

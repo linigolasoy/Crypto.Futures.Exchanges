@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx
 {
+    /*
     internal class BingxAccount : IFuturesAccount
     {
         private BingxFutures m_oExchange;
@@ -164,4 +165,5 @@ namespace Crypto.Futures.Exchanges.Bingx
             return null;
         }
     }
+    */
 }

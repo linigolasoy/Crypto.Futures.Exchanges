@@ -11,7 +11,7 @@ using System.Transactions;
 
 namespace Crypto.Futures.Exchanges.Bingx.Data
 {
-
+    /*
     internal class BingxBarJson
     {
         [JsonProperty("open")]
@@ -59,4 +59,5 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             return new BingxBar(oSymbol, eFrame, dDate, oParsed.Open, oParsed.High, oParsed.Low, oParsed.Close, oParsed.Volume);    
         }
     }
+    */
 }

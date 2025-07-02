@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BingX.Net.Objects.Models;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,24 +12,15 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx.Data
 {
-    internal class BingxLastPriceJson
-    {
-        [JsonProperty("e")]
-        public string EventType { get; set; } = string.Empty; // Event type, e.g., "lastPrice"
-        [JsonProperty("E")]
-        public string EventTime { get; set; } = string.Empty; // Event time in milliseconds since epoch
-        [JsonProperty("s")]
-        public string Symbol { get; set; } = string.Empty; //
-        [JsonProperty("c")]
-        public string LastPrice { get; set; } = string.Empty; //
-    }
+
+
     internal class BingxLastPrice : ILastPrice
     {
-        public BingxLastPrice(IFuturesSymbol oSymbol, BingxLastPriceJson oJson)
+        public BingxLastPrice(IFuturesSymbol oSymbol, BingXFuturesTickerUpdate oJson)
         {
             Symbol = oSymbol;
-            DateTime = Util.FromUnixTimestamp(oJson.EventTime, true);
-            Price = decimal.Parse(oJson.LastPrice, CultureInfo.InvariantCulture);
+            DateTime = oJson.EventTime.ToLocalTime();   
+            Price = oJson.LastPrice;
         }
         public decimal Price { get; private set; }
 
@@ -46,15 +38,5 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             DateTime = oLastPrice.DateTime;
         }
 
-        public static IWebsocketMessage[]? Parse( IFuturesExchange oExchange, string strSymbol, JToken? oToken )
-        {
-            if (oToken == null) return null;
-            BingxLastPriceJson? oJson = oToken.ToObject<BingxLastPriceJson>();
-            if (oJson == null) return null;
-            if( strSymbol != oJson.Symbol) return null;
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(strSymbol);
-            if (oSymbol == null) return null; // Symbol not found
-            return new IWebsocketMessage[] { new BingxLastPrice(oSymbol, oJson) };  
-        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Bingx.Ws;
+﻿using Crypto.Futures.Exchanges.Bingx.Data;
+using Crypto.Futures.Exchanges.Bingx.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
@@ -9,12 +10,11 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx
 {
+    
     internal class BingxMarket : IFuturesMarket
     {
         private BingxFutures m_oExchange;
 
-        private const string ENDP_FUNDING = "/openApi/swap/v2/quote/premiumIndex";
-        private const string ENDP_TICKER = "/openApi/swap/v2/quote/ticker";
         public BingxMarket( BingxFutures oExchange ) 
         { 
             m_oExchange = oExchange;
@@ -22,12 +22,12 @@ namespace Crypto.Futures.Exchanges.Bingx
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
-        public IWebsocketPublic Websocket { get ; }
+        public IWebsocketPublic Websocket { get; }
 
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.ExchangeData.GetFundingRatesAsync();
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;
@@ -36,7 +36,9 @@ namespace Crypto.Futures.Exchanges.Bingx
             foreach( var oFunding in oResult.Data )
             {
                 if (oFunding == null) continue;
-                aResult.Add(oFunding);
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oFunding.Symbol);
+                if (oSymbol == null) continue; // Skip if symbol is not found
+                aResult.Add(new BingxFundingRate(oSymbol, oFunding));
             }
             return aResult.ToArray();
         }
@@ -62,22 +64,24 @@ namespace Crypto.Futures.Exchanges.Bingx
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.ExchangeData.GetTickersAsync();
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             if (oResult.Data.Count() <= 0) return null;
-
             List<ITicker> aResult = new List<ITicker>();
             foreach (var oTicker in oResult.Data)
             {
                 if (oTicker == null) continue;
-                if( aSymbols != null )
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oTicker.Symbol);
+                if (oSymbol == null) continue; // Skip if symbol is not found
+                if(aSymbols != null)
                 {
-                    if (!aSymbols.Any(p => p.Symbol == oTicker.Symbol.Symbol)) continue;
-                }
-                aResult.Add(oTicker);
+                    if (!aSymbols.Any(p => p.Symbol == oSymbol.Symbol)) continue; // Filter by symbols
+                }   
+                aResult.Add(new BingxTicker(oSymbol, oTicker));
             }
             return aResult.ToArray();
         }
     }
+    
 }

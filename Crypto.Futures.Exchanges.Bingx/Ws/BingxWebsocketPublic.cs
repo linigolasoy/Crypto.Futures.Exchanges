@@ -1,6 +1,7 @@
 ﻿using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,60 +9,77 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx.Ws
 {
-    internal class BingxWebsocketPublic: BaseWebsocketManager, IWebsocketPublic
+    /// <summary>
+    /// Bingx websocket manager
+    /// </summary>
+    internal class BingxWebsocketPublic : IWebsocketPublic
     {
-        private const string WS_URL = "wss://open-api-swap.bingx.com/swap-market";
-        private Task? m_oMainLoop = null;
-        private CancellationTokenSource m_oCancelSource = new CancellationTokenSource();    
-
-        public BingxWebsocketPublic(IFuturesMarket oMarket) : base(oMarket, WS_URL, new BingxWebsocketParser(oMarket))
+        private BingxMarket m_oMarket;
+        private const int MAX_SUBSCRIPTIONS = 90; // Max subscriptions per socket
+        private ConcurrentDictionary<int, BingxSocketSingle> m_aSockets = new ConcurrentDictionary<int, BingxSocketSingle>();
+        public BingxWebsocketPublic(BingxMarket oMarket)
         {
-            this.StartTask = StartPostTask;
-            this.StopTask = StopPostTask;
+            m_oMarket = oMarket;
+            DataManager = new BaseWsDataManager(oMarket.Exchange);
         }
 
-        public async Task<bool> StartPostTask()
+        public IWebsocketDataManager DataManager { get; }
+
+        public IFuturesMarket Market { get => m_oMarket; }
+
+        public BarTimeframe Timeframe { get; set; } = BarTimeframe.M1;
+
+        public IWebsocketParser Parser => throw new NotImplementedException();
+
+        public string Url => throw new NotImplementedException();
+
+        public bool Started { get; private set; } = false;
+
+        public IWebsocketSubscription[] Subscriptions 
         {
-            m_oCancelSource = new CancellationTokenSource();
-            m_oMainLoop = LoopFundings();
-            await Task.Delay(500);
-            return true;
-        }
-        public async Task<bool> StopPostTask()
-        {
-            m_oCancelSource.Cancel();
-            if (m_oMainLoop != null)
+            get
             {
-                await m_oMainLoop;
-                m_oMainLoop = null;
-            }
-            return true;
-        }
-
-        private async Task LoopFundings()
-        {
-            while (!m_oCancelSource.IsCancellationRequested)
-            {
-                try
+                List<IWebsocketSubscription> aSubscriptions = new List<IWebsocketSubscription>();
+                foreach (var oSocket in m_aSockets.Values)
                 {
-                    IFundingRate[]? aFundings = await this.Market.GetFundingRates();
-                    if (aFundings != null)
-                    {
-                        foreach (var oFunding in aFundings)
-                        {
-                            this.DataManager.Put(oFunding);
-                        }
-                    }
+                    aSubscriptions.AddRange(oSocket.Subscriptions);
                 }
-                catch( Exception e) 
-                { 
-                    if( this.Market.Exchange.Logger != null )
-                    {
-                        this.Market.Exchange.Logger.Error("BingxError on funding rates", e); 
-                    }
-                }
-                await Task.Delay(10000);
+                return aSubscriptions.ToArray();
             }
+        }
+
+        public async Task<bool> Start()
+        {
+            Started = true;
+            await Task.Delay(200);
+            return true;
+        }
+
+        public async Task<bool> Stop()
+        {
+            Started = false;
+            await Task.Delay(200);
+            return true;
+        }
+
+        public async Task<IWebsocketSubscription?> Subscribe(IFuturesSymbol oSymbol, WsMessageType eSubscriptionType)
+        {
+            foreach (var oSocket in m_aSockets.Values)
+            {
+                if (oSocket.Subscriptions.Length >= MAX_SUBSCRIPTIONS)
+                {
+                    continue; // This socket is full, try next one
+                }
+                return await oSocket.Subscribe(oSymbol, eSubscriptionType);
+            }
+            int nNext = m_aSockets.Count;
+            m_aSockets[nNext] = new BingxSocketSingle(this);
+            return await m_aSockets[nNext].Subscribe(oSymbol, eSubscriptionType);
+        }
+
+        public async Task<IWebsocketSubscription?> Subscribe(IFuturesSymbol[] aSymbols, WsMessageType eSubscriptionType)
+        {
+            throw new NotImplementedException();
         }
     }
 }

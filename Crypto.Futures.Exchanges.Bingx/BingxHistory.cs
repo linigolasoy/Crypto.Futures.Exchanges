@@ -3,6 +3,7 @@ using Crypto.Futures.Exchanges.Rest;
 
 namespace Crypto.Futures.Exchanges.Bingx
 {
+    /*
     /// <summary>
     /// History data for bing
     /// </summary>
@@ -91,4 +92,5 @@ namespace Crypto.Futures.Exchanges.Bingx
             return aBars.ToArray();
         }
     }
+    */
 }

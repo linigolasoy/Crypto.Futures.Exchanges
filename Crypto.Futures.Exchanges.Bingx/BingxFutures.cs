@@ -1,5 +1,8 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BingX.Net.Clients;
+using BingX.Net.Interfaces.Clients;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using CryptoExchange.Net.Authentication;
 using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
@@ -16,41 +19,39 @@ namespace Crypto.Futures.Exchanges.Bingx
     /// </summary>
     public class BingxFutures : IFuturesExchange
     {
-        public const string BASE_URL = "https://open-api.bingx.com";
-        private const string ENDP_SYMBOLS = "/openApi/swap/v2/quote/contracts";
 
-        private BingxParser m_oParser;
+        private IBingXRestClient m_oRestClient;
 
         public BingxFutures(IExchangeSetup oSetup, ICommonLogger? logger = null)
         {
             Setup = oSetup;
             Logger = logger;
             ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
-            m_oParser = new BingxParser(this);
+            m_oRestClient = new BingXRestClient();  
+            m_oRestClient.SetApiCredentials(new ApiCredentials(ApiKey.ApiKey, ApiKey.ApiSecret));   
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BingxMarket(this); 
-            History = new BingxHistory(this);
-            Account = new BingxAccount(this);
+            // History = new BingxHistory(this);
+            // Account = new BingxAccount(this);
         }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
         public bool Tradeable { get => true; }
 
-        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
-        internal BingxParser Parser { get => m_oParser; }
+        internal IBingXRestClient RestClient { get => m_oRestClient; }
         public ICommonLogger? Logger { get; }
 
         public ExchangeType ExchangeType { get => ExchangeType.BingxFutures; }
 
         public IFuturesMarket Market { get; }
 
-        public IFuturesHistory History { get; }
+        public IFuturesHistory History { get => throw new NotImplementedException(); }
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account { get; }
+        public IFuturesAccount Account { get => throw new NotImplementedException(); }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -58,7 +59,7 @@ namespace Crypto.Futures.Exchanges.Bingx
         {
             try
             {
-                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await m_oRestClient.PerpetualFuturesApi.ExchangeData.GetContractsAsync();
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;
@@ -66,7 +67,7 @@ namespace Crypto.Futures.Exchanges.Bingx
                 foreach (var oSymbol in oResult.Data)
                 {
                     if (oSymbol == null) continue;
-                    aResult.Add(oSymbol);
+                    aResult.Add(new BingxSymbol(this, oSymbol));
                 }
 
                 SymbolManager.SetSymbols(aResult.ToArray());

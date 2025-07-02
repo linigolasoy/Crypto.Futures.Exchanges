@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx.Data
 {
+    /*
 
     internal class BingxBalanceJson
     {
@@ -67,4 +68,6 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             return oBalance;
         }
     }
+    */
 }
+
