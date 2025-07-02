@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BitMart.Net.Objects.Models;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,12 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
 {
     internal class BitmartLastPrice : ILastPrice
     {
-        public BitmartLastPrice(IFuturesSymbol oSymbol, BitmartTickerJson oJson)
+
+        public BitmartLastPrice(IFuturesSymbol oSymbol, BitMartFuturesTickerUpdate oUpdate, DateTime dDate)
         {
             Symbol = oSymbol;
-            Price = decimal.Parse(oJson.LastPrice, CultureInfo.InvariantCulture);
-            DateTime = DateTime.Now;
+            Price = oUpdate.LastPrice;
+            DateTime = dDate.ToLocalTime();
         }
         public decimal Price { get; private set; }
 

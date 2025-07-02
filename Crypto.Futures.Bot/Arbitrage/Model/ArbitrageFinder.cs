@@ -108,8 +108,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 decimal nDiff = nMax - nMin;
                 decimal nPercent = Math.Round( 100.0M * nDiff / nMin, 2);
                 if (nPercent < Bot.Setup.Arbitrage.MinimumPercent) continue;
-                if( nPercent > 10.0M ) continue;    
-                Bot.Logger.Info($"   Possible chance on {oPre.Key} => {nPercent}");
+                if( nPercent > 4.0M ) continue;    
+                Bot.Logger.Info($"   Possible chance on {oPre.Key} => {nPercent} ({SubscribedCurrencies.Length})");
                 aResult.Add(oPre.Key, oPre.Value.ToArray());    
             }
 
@@ -150,12 +150,14 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 // Start websockets
                 foreach (var oSymbol in aPendingSymbols)
                 {
+                    /*
                     var oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.FundingRate);
                     if( oSubscription == null)
                     {
                         Bot.Logger.Error($"   Failed to subscribe to {oSymbol.Symbol} funding rate on {eType.ToString()}");
                     }
-                    oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.LastPrice);
+                    */
+                    var oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.LastPrice);
                     if (oSubscription == null)
                     {
                         Bot.Logger.Error($"   Failed to subscribe to {oSymbol.Symbol} last price on {eType.ToString()}");
@@ -248,8 +250,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                     if (m_aSubscribed.TryGetValue(strKey, out aData))
                     {
                         // Find minimum and maximum
-                        IWebsocketSymbolData? oMin = aData.Where(p=> p.FundingRate != null && p.LastOrderbookPrice != null ).OrderBy(p=> p.LastOrderbookPrice!.AskPrice).FirstOrDefault();
-                        IWebsocketSymbolData? oMax = aData.Where(p => p.FundingRate != null && p.LastOrderbookPrice != null).OrderByDescending(p => p.LastOrderbookPrice!.BidPrice).FirstOrDefault();
+                        IWebsocketSymbolData? oMin = aData.Where(p=> /*p.FundingRate != null &&*/ p.LastOrderbookPrice != null ).OrderBy(p=> p.LastOrderbookPrice!.AskPrice).FirstOrDefault();
+                        IWebsocketSymbolData? oMax = aData.Where(p => /*p.FundingRate != null &&*/ p.LastOrderbookPrice != null).OrderByDescending(p => p.LastOrderbookPrice!.BidPrice).FirstOrDefault();
                         if (oMin == null || oMax == null) continue;
                         if (oMin.Symbol.Exchange.ExchangeType == oMax.Symbol.Exchange.ExchangeType) continue;
 
@@ -265,7 +267,7 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                         decimal nPercent = Math.Round( nDiff * 100.0M / nPriceMinAsk, 2);
                         nPercent -= nPercentMin;
                         nPercent -= nPercentMax;    
-                        if ( nPercent >= 10.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
+                        if ( nPercent >= 4.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
                         aResult.Add( new ArbitrageChanceModel(this, strKey, nPercent, oMin, oMax) );
                     }
                 }

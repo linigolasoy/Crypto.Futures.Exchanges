@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bitmart
 {
+    /*
     internal class BitmartHistory : IFuturesHistory
     {
         private const int MAX_TASKS = 10;
@@ -74,4 +75,5 @@ namespace Crypto.Futures.Exchanges.Bitmart
             return aBars.ToArray();
         }
     }
+    */
 }

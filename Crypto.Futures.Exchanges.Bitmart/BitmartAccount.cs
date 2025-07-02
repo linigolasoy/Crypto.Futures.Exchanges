@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bitmart
 {
+    /*
     internal class BitmartAccount : IFuturesAccount
     {
         private BitmartFutures m_oExchange;
@@ -65,4 +66,5 @@ namespace Crypto.Futures.Exchanges.Bitmart
             throw new NotImplementedException();
         }
     }
+    */
 }

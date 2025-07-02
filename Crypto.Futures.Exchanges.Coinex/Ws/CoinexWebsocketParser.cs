@@ -17,6 +17,8 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
 
         private const string METHOD_STATE   = "state.update";
         private const string METHOD_BBO     = "bbo.update";
+
+        private int m_nLastPing = 0;
         public CoinexWebsocketParser(IFuturesExchange oExchange) 
         { 
             Exchange = oExchange;
@@ -28,7 +30,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
 
         private ConcurrentDictionary<int, IWebsocketSubscription> m_aPendingSubscriptions = new ConcurrentDictionary<int, IWebsocketSubscription>();
 
-        public IWebsocketMessage[]? ParseMessage(string strMessage)
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage)
         {
             CoinexMessage? oMessage = JsonConvert.DeserializeObject<CoinexMessage>(strMessage);
             if (oMessage == null) return null;
@@ -36,9 +38,14 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
             {
                 if( oMessage.Id != null && oMessage.Id.Value > 0 )
                 {
+                    if( oMessage.Id.Value == m_nLastPing)
+                    {
+                        // Ping response
+                        return new IWebsocketMessageBase[] { new BasePong() };
+                    }
                     if (m_aPendingSubscriptions.TryRemove(oMessage.Id.Value, out IWebsocketSubscription? oSubscription))
                     {
-                        return new IWebsocketMessage[] { oSubscription };
+                        return new IWebsocketMessageBase[] { oSubscription };
                     }
                 }
                 return null;
@@ -56,7 +63,8 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
 
         public string ParsePing()
         {
-            CoinexSubscribeJson oJson = new CoinexSubscribeJson(m_nGlobalId++, "server.ping");
+            m_nLastPing = m_nGlobalId++;
+            CoinexSubscribeJson oJson = new CoinexSubscribeJson(m_nLastPing, "server.ping");
 
             string strResult = JsonConvert.SerializeObject(oJson);
 

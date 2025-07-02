@@ -11,6 +11,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     public enum WsMessageType
     {
         Ping,
+        Pong,
         Trade,
         FundingRate,
         KLine,
@@ -18,13 +19,22 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         OrderbookPrice,
         LastPrice,
         Subscription
+        
     }
+
+    /// <summary>
+    /// Message base
+    /// </summary>
+    public interface IWebsocketMessageBase
+    {
+        public WsMessageType MessageType { get; }
+    }
+
     /// <summary>
     /// Websocket message
     /// </summary>
-    public interface IWebsocketMessage
+    public interface IWebsocketMessage: IWebsocketMessageBase
     {
-        public WsMessageType MessageType { get; }
         public IFuturesSymbol Symbol { get; }
 
         public void Update(IWebsocketMessage oMessage);

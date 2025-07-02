@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Bitmart.Ws;
+﻿using Crypto.Futures.Exchanges.Bitmart.Data;
+using Crypto.Futures.Exchanges.Bitmart.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bitmart
 {
+    
     internal class BitmartMarket : IFuturesMarket
     {
 
@@ -24,17 +26,18 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(BitmartFutures.ENDP_SYMBOLS, "symbols", p => m_oExchange.Parser.ParseFundingRate(p));
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-            List<IFundingRate> aResult = new List<IFundingRate>();
-            foreach (var item in oResult.Data)
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.ExchangeData.GetContractsAsync();
+            if( oResult == null || !oResult.Success) return null;
+            List<IFundingRate> aFundingRates = new List<IFundingRate>();
+            foreach (var oItem in oResult.Data )
             {
-                if( item == null) continue; 
-                aResult.Add(item);
+                if(oItem == null) continue; // Skip null items
+                IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue; // Skip symbols that are not managed by the exchange
+                aFundingRates.Add(new BitmartFundingRate(oSymbol, oItem));
             }
-            return aResult.ToArray();   
+
+            return aFundingRates.ToArray(); 
         }
 
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
@@ -53,20 +56,19 @@ namespace Crypto.Futures.Exchanges.Bitmart
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(BitmartFutures.ENDP_SYMBOLS, "symbols", p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.ExchangeData.GetContractsAsync();
             if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
             List<ITicker> aResult = new List<ITicker>();
-            foreach (var item in oResult.Data)
+            foreach (var oItem in oResult.Data)
             {
-                if (item == null) continue;
-                if( aSymbols != null )
-                {
-                    if (!aSymbols.Any(p => p.Symbol == item.Symbol.Symbol)) continue;
-                }
-                aResult.Add(item);
+                if (oItem == null) continue; // Skip null items
+                IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue; // Skip symbols that are not managed by the exchange
+                if( oItem.LastPrice == null || oItem.LastPrice <= 0) continue; // Skip items with no price  
+                if( aSymbols != null && !aSymbols.Any(s => s.Symbol == oSymbol.Symbol)) continue; // Skip symbols not in the requested list
+                aResult.Add(new BitmartTicker(oSymbol, oItem));
             }
+
             return aResult.ToArray();
         }
     }

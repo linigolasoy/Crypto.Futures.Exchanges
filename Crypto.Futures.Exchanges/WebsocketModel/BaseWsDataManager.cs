@@ -11,7 +11,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     /// <summary>
     /// Manages data received by public websocket
     /// </summary>
-    internal class BaseWsDataManager : IWebsocketDataManager
+    public class BaseWsDataManager : IWebsocketDataManager
     {
 
         private ConcurrentDictionary<string, IWebsocketSymbolData> m_aData = new ConcurrentDictionary<string, IWebsocketSymbolData> ();

@@ -53,8 +53,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
             {
                 if (LongData.WsSymbolData == null) return false;
                 if (ShortData.WsSymbolData == null) return false;
-                if (LongData.WsSymbolData.FundingRate == null) return false;
-                if (ShortData.WsSymbolData.FundingRate == null) return false;
+                // if (LongData.WsSymbolData.FundingRate == null) return false;
+                // if (ShortData.WsSymbolData.FundingRate == null) return false;
                 if (LongData.WsSymbolData.LastPrice == null) return false;
                 if (ShortData.WsSymbolData.LastPrice == null) return false;
                 if (LongData.WsSymbolData.LastOrderbookPrice == null) return false;

@@ -1,12 +1,8 @@
 ﻿using Crypto.Futures.Exchanges.Model;
-using System;
-using System.Collections.Generic;
 using System.IO.Compression;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
-using System.Threading.Tasks;
-using WatsonWebsocket;
+using Websocket.Client;
 
 namespace Crypto.Futures.Exchanges.WebsocketModel
 {
@@ -14,15 +10,14 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     {
         private List<IWebsocketSubscription> m_aSubscribed = new List<IWebsocketSubscription>();
 
-        // private Timer? m_oTimer;
+        private Timer? m_oTimer;
         // private Task? m_oPingTask = null;
-        private CancellationTokenSource m_oCancelToken = new CancellationTokenSource();
-        private Task? m_oMainTask = null;
+        private Task<bool>? m_oResubscribeTask = null;
 
         public delegate Task<bool> StartStopDelegate();
 
 
-        private bool m_bConnected = false; // Used to check if we are connected to the websocket server 
+        // private bool m_bConnected = false; // Used to check if we are connected to the websocket server 
 
         public BaseWebsocketSingle(
             IWebsocketPublic oManager, 
@@ -37,101 +32,64 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IWebsocketPublic Manager { get; }
         public int Index { get; }
 
-        private WatsonWsClient? m_oWsClient = null;
-        private async Task MainLoop()
+        private IWebsocketClient? m_oWsClient = null;
+
+
+        private static ClientWebSocket CreateClient()
         {
-            bool bResubscribe = false;
-            while (!m_oCancelToken.IsCancellationRequested)
+            return new ClientWebSocket
             {
-                DateTime dLastPing = DateTime.Now;
-                m_bConnected = false;
-                m_oWsClient = new WatsonWsClient(new Uri(Manager.Url));
-
-                m_oWsClient.ServerConnected += OnServerConnected;
-                m_oWsClient.MessageReceived += OnMessageReceived;
-                m_oWsClient.ServerDisconnected += OnServerDisconnected;
-                await m_oWsClient.StartAsync();
-                int nRetries = 200;
-                while (!m_bConnected && nRetries > 0)
+                Options =
                 {
-                    await Task.Delay(100);
-                    nRetries--;
+                    KeepAliveInterval = TimeSpan.FromSeconds(30),
+                    Proxy = null, // Set proxy if needed
+                    UseDefaultCredentials = false // Set to true if you want to use default credentials
                 }
+            };
+        }
 
-                if (bResubscribe)
-                {
-                    await Resubscribe();
-                }
-                while (m_bConnected && !m_oCancelToken.IsCancellationRequested)
-                {
-                    await Task.Delay(100);
-                    if (Manager.Parser.PingSeconds > 0)
-                    {
-                        DateTime dNow = DateTime.Now;
-                        double nSeconds = (dNow - dLastPing).TotalSeconds;
-                        if (nSeconds >= Manager.Parser.PingSeconds)
-                        {
-                            dLastPing = dNow;
-                            string strPing = Manager.Parser.ParsePing();
-                            await m_oWsClient.SendAsync(strPing);
-
-                        }
-                    }
-
-                }
-
-                if (!m_bConnected)
-                {
-                    if (Manager.Market.Exchange.Logger != null)
-                    {
-                        Manager.Market.Exchange.Logger.Warning($"{Manager.Market.Exchange.ExchangeType.ToString()}({Index}) Disconnected. Reconnecting...");
-                    }
-                }
-                await Task.Delay(1000); // Wait before reconnecting 
-                await m_oWsClient.StopAsync();
-                m_oWsClient.Dispose();
-                await Task.Delay(2000);
-                m_oWsClient = null;
+        private void LogUnknownMessage(string? strMessage)
+        {
+            if (Manager.Market.Exchange.Logger != null && strMessage != null  && strMessage.ToUpper() != "PONG")
+            {
+                Manager.Market.Exchange.Logger.Warning($"Unknown message received on {Manager.Market.Exchange.ExchangeType.ToString()} ({Index}): {strMessage}");
             }
         }
-
-        private void OnServerDisconnected(object? sender, EventArgs e)
-        {
-            m_bConnected = false;
-        }
-
         /// <summary>
         /// Message reception
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnMessageReceived(object? sender, MessageReceivedEventArgs oArgs)
+        private void OnMessageReceived(ResponseMessage oMessage)
         {
             string? strMessage = null;
+            if( m_oWsClient == null ) return;   
             try
             {
-                strMessage = GetMessageText(oArgs);
+                strMessage = GetMessageText(oMessage);
                 if (strMessage == null) return;
 
 
-                IWebsocketMessage[]? aMessages = Manager.Parser.ParseMessage(strMessage);
-                if (aMessages == null || aMessages.Length == 0) return;
+                IWebsocketMessageBase[]? aMessages = Manager.Parser.ParseMessage(strMessage);
+                if (aMessages == null || aMessages.Length == 0) { LogUnknownMessage(strMessage); return; }
                 foreach (var oMsg in aMessages)
                 {
                     if (oMsg.MessageType == WsMessageType.Ping && m_oWsClient != null)
                     {
-                        WatsonWsClient oClient = (WatsonWsClient)sender!;
-                        oClient.SendAsync(Manager.Parser.ParsePong()).Wait();
+                        m_oWsClient.Send(Manager.Parser.ParsePong());
                     }
                     else if (oMsg.MessageType == WsMessageType.Subscription)
                     {
                         IWebsocketSubscription oSub = (IWebsocketSubscription)oMsg;
-                        if (!m_aSubscribed.Any(p => p.SubscriptionType == oSub.SubscriptionType && p.Symbol.Symbol == oMsg.Symbol.Symbol))
+                        if (!m_aSubscribed.Any(p => p.SubscriptionType == oSub.SubscriptionType && p.Symbol.Symbol == oSub.Symbol.Symbol))
                         {
                             m_aSubscribed.Add((IWebsocketSubscription)oMsg);
                         }
                     }
-                    else Manager.DataManager.Put(oMsg);
+                    else if( oMsg is IWebsocketMessage )
+                    {
+                        Manager.DataManager.Put((IWebsocketMessage)oMsg);
+                    }
                 }
 
             }
@@ -145,9 +103,18 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             }
         }
 
-        private void OnServerConnected(object? sender, EventArgs e)
+        private void OnServerConnected(ReconnectionInfo oInfo)
         {
-            m_bConnected = true;
+            if(Manager.Market.Exchange.Logger != null)
+            {
+                Manager.Market.Exchange.Logger.Info($"Reconnected to {Manager.Market.Exchange.ExchangeType.ToString()} ({Index}), {oInfo.Type.ToString()}");
+            }
+
+            if( oInfo.Type != ReconnectionType.Initial )
+            {
+                m_oResubscribeTask = Resubscribe();
+            }
+            // m_bConnected = true;
         }
 
         /// <summary>
@@ -156,25 +123,40 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         /// <returns></returns>
         public async Task<bool> Start()
         {
-            if (m_oMainTask != null)
+
+            if( m_oWsClient != null )
             {
-                await Stop();
+                await Stop();   
             }
-            m_oCancelToken = new CancellationTokenSource();
-            m_oMainTask = MainLoop();   
+            m_oWsClient = new WebsocketClient(new Uri(Manager.Url), CreateClient);
+            m_oWsClient.LostReconnectTimeout = TimeSpan.FromSeconds(120);
+            m_oWsClient.ReconnectTimeout = TimeSpan.FromSeconds(120);
+            m_oWsClient.ReconnectionHappened.Subscribe(p=> OnServerConnected(p));
+            m_oWsClient.MessageReceived.Subscribe( p=>  OnMessageReceived(p));
+            await m_oWsClient.Start();
+            if (Manager.Parser.PingSeconds > 0)
+            {
+                m_oTimer = new Timer(async (o) =>
+                {
+                    if (m_oWsClient == null || !m_oWsClient.IsRunning) return;
+                    string strPing = Manager.Parser.ParsePing();
+                    m_oWsClient.Send(strPing);
+                }, null, TimeSpan.FromSeconds(Manager.Parser.PingSeconds), TimeSpan.FromSeconds(Manager.Parser.PingSeconds));
+            }
 
             await Task.Delay(2000);
             return true;
         }
 
-        private string? GetMessageText(MessageReceivedEventArgs oMessage)
+        private string? GetMessageText(ResponseMessage oMessage)
         {
-            if (oMessage.MessageType == WebSocketMessageType.Text)
+            if (oMessage.MessageType == WebSocketMessageType.Text )
             {
-                return Encoding.UTF8.GetString(oMessage.Data);
+                return oMessage.Text;
             }
             if (oMessage.MessageType != WebSocketMessageType.Binary) return null;
-            var oInput = new MemoryStream(oMessage.Data.ToArray());
+            if (oMessage.Binary == null || oMessage.Binary.Length == 0) return null;
+            var oInput = new MemoryStream(oMessage.Binary);
             if (oInput == null) return null;
             var oGzip = new GZipStream(oInput, CompressionMode.Decompress);
             if (oGzip == null) return null;
@@ -192,12 +174,18 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         /// <returns></returns>
         public async Task<bool> Stop()
         {
-            m_oCancelToken.Cancel();
-
-            if (m_oMainTask != null)
+            if (m_oTimer != null) ;
             {
-                await m_oMainTask;
-                m_oMainTask = null;
+                m_oTimer!.Dispose();
+                m_oTimer = null;
+            }
+            if (m_oWsClient != null)
+            {
+                await m_oWsClient.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "User stopping");
+                m_oWsClient.Dispose();
+                m_oWsClient = null;
+                m_aSubscribed.Clear();  
+                await Task.Delay(1000);
             }
 
             return true;
@@ -241,7 +229,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
                     Manager.Market.Exchange.Logger.Info($"Sent subscribe {Manager.Market.Exchange.ExchangeType.ToString()} ({strSubscription})");
                 }
                 */
-                bool bSent = await m_oWsClient.SendAsync(strSubscription);
+
+                bool bSent = m_oWsClient.Send(strSubscription);
                 if (!bSent) return null;
                 int nRetries = 200;
                 while (nRetries > 0)

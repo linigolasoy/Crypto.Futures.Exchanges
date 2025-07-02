@@ -22,6 +22,6 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public string ParsePing();
         public string ParsePong();
 
-        public IWebsocketMessage[]? ParseMessage(string strMessage);
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage);
     }
 }

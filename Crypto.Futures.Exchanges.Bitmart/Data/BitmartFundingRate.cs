@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BitMart.Net.Objects.Models;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,45 +15,25 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace Crypto.Futures.Exchanges.Bitmart.Data
 {
 
-    internal class BitmartFundingRateJson
-    {
-        [JsonProperty("symbol")]
-        public string Symbol { get; set; } = string.Empty;
-        [JsonProperty("fundingRate")]
-        public string FundingRate { get; set; } = string.Empty;
-        [JsonProperty("fundingTime")]
-        public string FundingTime { get; set; } = string.Empty;
-        [JsonProperty("nextFundingRate")]
-        public string NextFundingRate { get; set; } = string.Empty;
-        [JsonProperty("nextFundingTime")]
-        public string NextFundingTime { get; set; } = string.Empty;
-        [JsonProperty("funding_upper_limit")]
-        public string Funding_upper_limit { get; set; } = string.Empty;
-        [JsonProperty("funding_lower_limit")]
-        public string Funding_lower_limit { get; set; } = string.Empty;
-        [JsonProperty("ts")]
-        public string Timestamp { get; set; } = string.Empty;
-    }
     internal class BitmartFundingRate : IFundingRate
     {
 
-        public BitmartFundingRate(IFuturesSymbol oSymbol, BitmartFundingRateJson oJson)
+        public BitmartFundingRate(IFuturesSymbol oSymbol, BitMartContract oContract)
         {
             Symbol = oSymbol;
-            Next = Util.FromUnixTimestamp(oJson.NextFundingTime, true);
-            decimal nRate = 0;
-            if( !decimal.TryParse(oJson.FundingRate, CultureInfo.InvariantCulture, out nRate))
-            {
-                nRate = 0;
-            }
-            Rate = nRate;
+            Next = Util.NextFundingRate( (oContract.FundingIntervalHours == null? 8 : oContract.FundingIntervalHours.Value));
+            Rate = oContract.FundingRate;
         }
-
-        public BitmartFundingRate( IFuturesSymbol oSymbol, BitmartSymbolJson oJson) 
-        { 
+        public BitmartFundingRate(IFuturesSymbol oSymbol, BitMartFundingRateUpdate oUpdate)
+        {
             Symbol = oSymbol;
-            Next = Util.NextFundingRate(oJson.FundingIntervalHours);
-            Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);  
+            DateTime dNext = DateTime.MinValue;
+            if(oUpdate.NextFundingTime != null )
+            {
+                dNext = oUpdate.NextFundingTime.Value.ToLocalTime();
+            }
+            Next = dNext;
+            Rate = oUpdate.FundingRate;
         }
         public IFuturesSymbol Symbol { get; }
         public WsMessageType MessageType { get => WsMessageType.FundingRate; }
@@ -68,26 +49,6 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Rate = oFunding.Rate;
         }
 
-        public static IFundingRate? Parse( IFuturesExchange oExchange, JToken? oToken )
-        {
-            if (oToken == null) return null;
-            if (!(oToken is JObject)) return null;
-
-            BitmartSymbolJson? oJson = oToken.ToObject<BitmartSymbolJson>();
-            if (oJson == null) return null;
-
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
-            if (oSymbol == null) return null;
-
-            return new BitmartFundingRate(oSymbol, oJson);
-        }
-
-        public static IFundingRate? Parse(IFuturesSymbol oSymbol, JToken oToken)
-        {
-            BitmartFundingRateJson? oJson = oToken.ToObject<BitmartFundingRateJson>();
-            if( oJson == null ) return null;
-            return new BitmartFundingRate(oSymbol, oJson);
-        }
 
     }
 }

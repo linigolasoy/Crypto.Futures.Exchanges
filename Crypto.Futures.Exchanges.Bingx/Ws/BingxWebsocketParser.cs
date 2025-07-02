@@ -65,14 +65,14 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
             bookTicker
         }
 
-        public IWebsocketMessage[]? ParseMessage(string strMessage)
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage)
         {
             try
             {
                 if( strMessage.Length < 20 && strMessage.Equals(PING))
                      
                 {
-                    return new IWebsocketMessage[] { new PingMessage() };   
+                    return new IWebsocketMessageBase[] { new PingMessage() };   
                 }
                 BingxMessageJson? oJson = JsonConvert.DeserializeObject<BingxMessageJson>(strMessage);  
                 if (oJson == null) return null;
@@ -93,7 +93,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                 {
                     if(m_aPendingSubscriptions.TryRemove(oJson.Id, out IWebsocketSubscription? oSub))
                     {
-                        return new IWebsocketMessage[] { oSub };
+                        return new IWebsocketMessageBase[] { oSub };
                     }
                 }
                 else if (oJson.Code.HasValue && oJson.Code.Value != 0)

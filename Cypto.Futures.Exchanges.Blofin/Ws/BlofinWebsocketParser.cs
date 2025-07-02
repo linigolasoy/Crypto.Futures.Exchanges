@@ -37,11 +37,11 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
         /// </summary>
         /// <param name="oJson"></param>
         /// <returns></returns>
-        private IWebsocketMessage[]? ParseEvent( BlofinMessage oJson )
+        private IWebsocketMessageBase[]? ParseEvent( BlofinMessage oJson )
         {
             if(oJson.Event == null || oJson.Argument == null) return null;
             if (oJson.Event != "subscribe") return null;
-            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();    
+            List<IWebsocketMessageBase> aResult = new List<IWebsocketMessageBase>();    
             WsMessageType eType = WsMessageType.Trade;
             if (oJson.Argument.Channel == BlofinSubscription.CHANNEL_TICKERS)
             {
@@ -73,7 +73,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Ws
         /// </summary>
         /// <param name="strMessage"></param>
         /// <returns></returns>
-        public IWebsocketMessage[]? ParseMessage(string strMessage)
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage)
         {
             if (strMessage == null || strMessage == PONG) return null;
             /*

@@ -35,7 +35,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Ws
             Exchange = exchange;
         }
 
-        public IWebsocketMessage[]? ParseMessage(string strMessage)
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage)
         {
             MexcMessage? oMessage = JsonConvert.DeserializeObject<MexcMessage>(strMessage);
             if (oMessage == null) return null;

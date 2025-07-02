@@ -24,7 +24,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
         public int PingSeconds { get => 30; }
         public int MaxSubscriptions { get => 500; }
 
-        public IWebsocketMessage[]? ParseMessage(string strMessage)
+        public IWebsocketMessageBase[]? ParseMessage(string strMessage)
         {
             if (strMessage == PONG) return null;
             BitgetMessage? oMessage = JsonConvert.DeserializeObject<BitgetMessage>(strMessage);

@@ -135,20 +135,29 @@ namespace Crypto.Futures.Bot.Arbitrage
             try
             {
                 int nRetries = 100;
+                decimal nMaxPercent = -100.0M;
                 while( true )
                 {
                     if( oChance.Update() )
                     {
-                        if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent)
+                        if( oChance.Percentage > nMaxPercent ) nMaxPercent = oChance.Percentage;
+
+                        if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent )
                         {
                             break;
                         }
                     }
+
                     nRetries--; 
                     await Task.Delay(100); 
                 }
 
-                if( nRetries <= 0 ) { CloseChance(oChance, ChanceStatus.Canceled); return; }   
+                if( nRetries <= 0 ) 
+                { 
+                    Logger.Info($"   Chance {oChance.ToString()} not valid after retries, max percent is {nMaxPercent}%, closing it");
+                    CloseChance(oChance, ChanceStatus.Canceled); 
+                    return; 
+                }   
                 decimal? nQuantity = CalculateQuantity( oChance );
                 if( nQuantity == null ) { CloseChance( oChance, ChanceStatus.Canceled); return; }
                 // Buy
@@ -161,7 +170,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if( oChance.ShortData.Position == null || oChance.LongData.Position == null )
                 {
                     Logger.Warning($"   Could not open position on {oChance.ToString()}");
-                    oChance.Status = ChanceStatus.Canceled; 
+                    CloseChance( oChance, ChanceStatus.Canceled); 
                     return;
                 }
                 Logger.Info($"   Position open on {oChance.ToString()}");
@@ -271,6 +280,15 @@ namespace Crypto.Futures.Bot.Arbitrage
                         {
                             IArbitrageChance? oFound = null;
                             if (m_aChances.TryGetValue(oChance.Currency, out oFound)) continue;
+                            ExchangeType eTypeLong = oChance.LongData.Symbol.Exchange.ExchangeType;
+                            ExchangeType eTypeShort = oChance.ShortData.Symbol.Exchange.ExchangeType;
+                            if( m_aChances.Values.Any(p=> p.LongData.Symbol.Exchange.ExchangeType == eTypeLong ||
+                                                          p.LongData.Symbol.Exchange.ExchangeType == eTypeShort ||
+                                                          p.ShortData.Symbol.Exchange.ExchangeType == eTypeLong ||
+                                                          p.ShortData.Symbol.Exchange.ExchangeType == eTypeShort ))
+                            {
+                                continue;
+                            }
                             /*
                             {
                                 if (oFound.Status != ArbitrageStatus.Canceled && oFound.Status != ArbitrageStatus.Closed) continue;
@@ -278,7 +296,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                                 oChance.TradeTask = ChanceTask(oChance);
                             }
                             */
-                            if( m_aChances.TryAdd(oChance.Currency, oChance) )
+                            if ( m_aChances.TryAdd(oChance.Currency, oChance) )
                             {
                                 oChance.TradeTask = ChanceTask( oChance );
                             }

@@ -17,7 +17,7 @@ namespace Crypto.Futures.Bot.Trading
     internal class PaperTrader : ITrader
     {
         private IFuturesExchange[] m_aExchanges;
-        private const decimal BALANCE_MULTIPLIER = 4;
+        private const decimal BALANCE_MULTIPLIER = 3;
 
         private ConcurrentDictionary<ExchangeType, IBalance> m_aBalances;
         private ConcurrentDictionary<long, ITraderPosition> m_aActivePositions = new ConcurrentDictionary<long, ITraderPosition>();

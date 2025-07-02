@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using BitMart.Net.Objects.Models;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -33,20 +34,43 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         {
             Symbol = oSymbol;
             DateTime = Util.FromUnixTimestamp(oJson.Timestamp,true);
-            AskPrice = decimal.Parse(oJson.BestAskPrice, System.Globalization.CultureInfo.InvariantCulture);
-            AskVolume = decimal.Parse(oJson.BestAskVol, System.Globalization.CultureInfo.InvariantCulture);
-            BidPrice = decimal.Parse(oJson.BestBidPrice, System.Globalization.CultureInfo.InvariantCulture);
-            BidVolume = decimal.Parse(oJson.BestBidVol, System.Globalization.CultureInfo.InvariantCulture);
+            decimal nValue = -1;
+            if(decimal.TryParse(oJson.BestAskPrice, System.Globalization.CultureInfo.InvariantCulture, out nValue))
+            {
+                AskPrice = nValue;
+            }
+            if (decimal.TryParse(oJson.BestAskVol, System.Globalization.CultureInfo.InvariantCulture, out nValue))
+            {
+                AskVolume = nValue;
+            }
+            if (decimal.TryParse(oJson.BestBidPrice, System.Globalization.CultureInfo.InvariantCulture, out nValue))
+            {
+                BidPrice = nValue;
+            }
+            if (decimal.TryParse(oJson.BestBidVol, System.Globalization.CultureInfo.InvariantCulture, out nValue))
+            {
+                BidVolume = nValue;
+            }
+        }
+
+        public BitmartOrderbookPrice(IFuturesSymbol oSymbol, BitMartBookTicker oTicker, DateTime dDate )
+        {
+            Symbol = oSymbol;
+            DateTime = dDate.ToLocalTime();
+            AskPrice = oTicker.BestBidPrice;
+            AskVolume = oTicker.BestAskQuantity;
+            BidPrice = oTicker.BestBidPrice;
+            BidVolume = oTicker.BestBidQuantity;
         }
         public DateTime DateTime { get; private set; }
 
-        public decimal AskPrice { get; private set; }
+        public decimal AskPrice { get; private set; } = -1;
 
-        public decimal AskVolume { get; private set; }
+        public decimal AskVolume { get; private set; } = -1;
 
-        public decimal BidPrice { get; private set; }
+        public decimal BidPrice { get; private set; } = -1;
 
-        public decimal BidVolume { get; private set; }
+        public decimal BidVolume { get; private set; } = -1;
 
         public WsMessageType MessageType { get => WsMessageType.OrderbookPrice; }
 
@@ -66,10 +90,10 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             if (!(oMessage is IOrderbookPrice)) return;
             IOrderbookPrice oOrderbookPrice = (IOrderbookPrice)oMessage;
             DateTime = oOrderbookPrice.DateTime;
-            AskPrice = oOrderbookPrice.AskPrice;
-            AskVolume = oOrderbookPrice.AskVolume;
-            BidPrice = oOrderbookPrice.BidPrice;
-            BidVolume = oOrderbookPrice.BidVolume;
+            AskPrice = (oOrderbookPrice.AskPrice < 0 ? AskPrice : oOrderbookPrice.AskPrice);
+            AskVolume = (oOrderbookPrice.AskVolume < 0 ? AskVolume : oOrderbookPrice.AskVolume);
+            BidPrice = (oOrderbookPrice.BidPrice < 0 ? BidPrice : oOrderbookPrice.BidPrice);
+            BidVolume = (oOrderbookPrice.BidVolume < 0 ? BidVolume : oOrderbookPrice.BidVolume);
         }
     }
 }
