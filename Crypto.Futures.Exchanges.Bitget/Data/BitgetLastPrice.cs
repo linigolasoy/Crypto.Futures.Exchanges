@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Bitget.Net.Objects.Models.V2;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -8,13 +9,14 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bitget.Data
 {
+    
     internal class BitgetLastPrice : ILastPrice
     {
-        public BitgetLastPrice(IFuturesSymbol oSymbol, BitgetTickerJson oJson)
+        public BitgetLastPrice(IFuturesSymbol oSymbol, BitgetFuturesTickerUpdate oJson)
         {
             Symbol = oSymbol;
-            Price = decimal.Parse(oJson.LastPrice, System.Globalization.CultureInfo.InvariantCulture);
-            DateTime = Util.FromUnixTimestamp(oJson.Timestamp, true);
+            Price = oJson.LastPrice;
+            DateTime = oJson.Timestamp.ToLocalTime();
         }
         public decimal Price { get; private set; }
 

@@ -1,5 +1,11 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Bitget.Net.Clients;
+using Bitget.Net.Enums;
+using Bitget.Net.Enums.V2;
+using Bitget.Net.Interfaces.Clients;
+using Crypto.Futures.Exchanges.Bitget.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using CryptoExchange.Net.Authentication;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,28 +16,26 @@ namespace Crypto.Futures.Exchanges.Bitget
 {
     public class BitgetFutures : IFuturesExchange
     {
-        // https://api.bitget.com/api/v2/mix/market/contracts?productType=usdt-futures
-        private BitgetParser m_oParser;
-        private const string BASE_URL = "https://api.bitget.com/api/v2";
-        private const string ENDP_SYMBOLS = "/mix/market/contracts?productType=usdt-futures";
 
+        private IBitgetRestClient m_oRestClient;
         public BitgetFutures(IExchangeSetup oSetup, ICommonLogger? oLogger)
         {
             Setup = oSetup;
             Logger = oLogger;
-            m_oParser = new BitgetParser(this);
             ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
-            
+
+            m_oRestClient = new BitgetRestClient();
+            m_oRestClient.SetApiCredentials(new ApiCredentials(ApiKey.ApiKey, ApiKey.ApiSecret, ApiKey.ApiPassword));   
+
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BitgetMarket(this);
-            History = new BitgetHistory(this);
-            Account = new BitgetAccount(this);
+            // History = new BitgetHistory(this);
+            // Account = new BitgetAccount(this);
         }
 
-        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser);  } }
-        internal BitgetParser Parser { get => m_oParser; }
+        internal IBitgetRestClient RestClient { get { return m_oRestClient;  } }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
         public bool Tradeable { get => true; }
@@ -42,11 +46,11 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public IFuturesMarket Market { get; }
 
-        public IFuturesHistory History { get; }
+        public IFuturesHistory History => throw new NotImplementedException();
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account { get; }
+        public IFuturesAccount Account => throw new NotImplementedException();
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -54,7 +58,7 @@ namespace Crypto.Futures.Exchanges.Bitget
         {
             try
             {
-                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await RestClient.FuturesApiV2.ExchangeData.GetContractsAsync( BitgetProductTypeV2.UsdtFutures);
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
                 if (oResult.Data.Count() <= 0) return null;
@@ -62,7 +66,8 @@ namespace Crypto.Futures.Exchanges.Bitget
                 foreach (var oSymbol in oResult.Data)
                 {
                     if (oSymbol == null) continue;
-                    aResult.Add(oSymbol);
+                    if( oSymbol.Status != FuturesSymbolStatus.Normal) continue; // Only normal symbols   
+                    aResult.Add(new BitgetSymbol(this, oSymbol));
                 }
 
                 SymbolManager.SetSymbols(aResult.ToArray());

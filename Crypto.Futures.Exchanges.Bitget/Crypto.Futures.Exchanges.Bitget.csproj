@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="JK.Bitget.Net" Version="2.1.1" />
+  </ItemGroup>
+
 </Project>

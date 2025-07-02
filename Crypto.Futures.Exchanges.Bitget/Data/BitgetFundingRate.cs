@@ -1,43 +1,27 @@
-﻿using Crypto.Futures.Exchanges.Bitget.Data;
+﻿using Bitget.Net.Objects.Models.V2;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Globalization;
 
 namespace Crypto.Futures.Exchanges.Bitget
 {
 
 
-    internal class BitgetFundingRateJson
-    {
-        [JsonProperty("symbol")]
-        public string Symbol { get; set; } = string.Empty;
-        [JsonProperty("fundingRate")]
-        public string FundingRate { get; set; } = string.Empty;
-        [JsonProperty("fundingRateInterval")]
-        public string FundingRateInterval { get; set; } = string.Empty;
-        [JsonProperty("nextUpdate")]
-        public string NextUpdate { get; set; } = string.Empty;
-        [JsonProperty("minFundingRate")]
-        public string MinFundingRate { get; set; } = string.Empty;
-        [JsonProperty("maxFundingRate")]
-        public string MaxFundingRate { get; set; } = string.Empty;
-    }
+
+
     internal class BitgetFundingRate: IFundingRate
     {
-        public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetFundingRateJson oJson) 
+        public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetCurrentFundingRate oJson) 
         {
             Symbol = oSymbol;
-            Next = Util.FromUnixTimestamp(oJson.NextUpdate,true);
-            Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+            Next = Util.NextFundingRate(oJson.FundingInterval);
+            Rate = oJson.FundingRate;
         }
 
-        public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetTickerJson oJson)
+        public BitgetFundingRate(IFuturesSymbol oSymbol, BitgetFuturesTickerUpdate oTicker)
         {
             Symbol = oSymbol;
-            Next = Util.FromUnixTimestamp(oJson.NexFundingTime, true);
-            Rate = decimal.Parse(oJson.FundingRate, CultureInfo.InvariantCulture);
+            Next = ( oTicker.NextFundingTime == null ? DateTime.MinValue : oTicker.NextFundingTime.Value.ToLocalTime());
+            Rate = ( oTicker.FundingRate == null ? 0: oTicker.FundingRate.Value);
         }
 
         public IFuturesSymbol Symbol { get; }
@@ -53,28 +37,5 @@ namespace Crypto.Futures.Exchanges.Bitget
             Rate = oFunding.Rate;
         }
 
-        public static IFundingRate? Parse( IFuturesExchange oExchange, JToken? oToken )
-        {
-            if (oToken == null) return null;
-            var oFundingJson = oToken.ToObject<BitgetFundingRateJson>();
-            if (oFundingJson == null) return null;
-            var oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
-            if (oSymbol == null) return null;
-            return new BitgetFundingRate(oSymbol, oFundingJson);
-        }
-
-        public static IWebsocketMessage[]? Parse( IFuturesSymbol oSymbol, JToken oToken )
-        {
-            if( !( oToken is JArray)) return null;
-            JArray oArray = (JArray)oToken;
-            List<IWebsocketMessage> aResult = new List<IWebsocketMessage>();    
-            foreach( var oItem in oArray )
-            {
-                BitgetTickerJson? oJson = oItem.ToObject<BitgetTickerJson>();
-                if (oJson == null) continue;
-                aResult.Add(new BitgetFundingRate(oSymbol, oJson));
-            }
-            return aResult.ToArray();
-        }
     }
 }

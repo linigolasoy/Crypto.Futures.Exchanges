@@ -17,7 +17,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
     {
         private BitmartMarket m_oMarket;
 
-        private const int MAX_SUBSCRIPTIONS = 90; // Max subscriptions per socket
+        private const int MAX_SUBSCRIPTIONS = 180; // Max subscriptions per socket
 
         private ConcurrentDictionary<int, BitmartSocketSingle> m_aSockets = new ConcurrentDictionary<int, BitmartSocketSingle>();
         private IWebsocketDataManager m_oDataManager;

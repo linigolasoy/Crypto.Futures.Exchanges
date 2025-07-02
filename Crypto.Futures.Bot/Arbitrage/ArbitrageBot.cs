@@ -152,7 +152,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                     await Task.Delay(100); 
                 }
 
-                if( nRetries <= 0 ) 
+                if( nRetries <= 0 && oChance.Percentage < Setup.Arbitrage.MinimumPercent ) 
                 { 
                     Logger.Info($"   Chance {oChance.ToString()} not valid after retries, max percent is {nMaxPercent}%, closing it");
                     CloseChance(oChance, ChanceStatus.Canceled); 
