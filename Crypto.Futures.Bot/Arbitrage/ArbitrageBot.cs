@@ -105,22 +105,27 @@ namespace Crypto.Futures.Bot.Arbitrage
 
         private decimal? CalculateQuantity( IArbitrageChance oChance )
         {
+            if(oChance.LongData.WsSymbolData == null ) { Logger.Info("QTY1"); return null; }
+            if (oChance.ShortData.WsSymbolData == null) { Logger.Info("QTY2"); return null; }
+            if (oChance.LongData.WsSymbolData.LastPrice == null) { Logger.Info("QTY3"); return null; }
+            if (oChance.ShortData.WsSymbolData.LastPrice == null) { Logger.Info("QTY4"); return null; }
             decimal nPrice = Math.Max(oChance.LongData.WsSymbolData!.LastPrice!.Price, oChance.ShortData.WsSymbolData!.LastPrice!.Price);
             decimal nMoney = Setup.MoneyDefinition.Money * Setup.MoneyDefinition.Leverage;
             int nDecimals = (oChance.LongData.Symbol.QuantityDecimals < oChance.ShortData.Symbol.QuantityDecimals ?
                     oChance.LongData.Symbol.QuantityDecimals :
                     oChance.ShortData.Symbol.QuantityDecimals);
-            if( nPrice <= 0 ) { oChance.Status = ChanceStatus.Canceled; return null; }
+            if( nPrice <= 0 ) { Logger.Info("QTY5"); return null; }
             decimal nQuantity = Math.Round(nMoney / nPrice, nDecimals); 
             return nQuantity;
         }
 
 
-        private void CloseChance(IArbitrageChance oChance, ChanceStatus eStatus )
+        private void CloseChance(IArbitrageChance oChance, ChanceStatus eStatus, string strLog )
         {
             oChance.Status = eStatus;
             IArbitrageChance? oRemove = null;
             m_aChances.TryRemove(oChance.Currency, out oRemove);
+            Logger.Info($"   Removed {oChance.ToString()} Status {eStatus.ToString()}, Reason [{strLog}]");
         }
 
         /// <summary>
@@ -136,7 +141,7 @@ namespace Crypto.Futures.Bot.Arbitrage
             {
                 int nRetries = 100;
                 decimal nMaxPercent = -100.0M;
-                while( true )
+                while( nRetries >= 0 )
                 {
                     if( oChance.Update() )
                     {
@@ -154,12 +159,11 @@ namespace Crypto.Futures.Bot.Arbitrage
 
                 if( nRetries <= 0 && oChance.Percentage < Setup.Arbitrage.MinimumPercent ) 
                 { 
-                    Logger.Info($"   Chance {oChance.ToString()} not valid after retries, max percent is {nMaxPercent}%, closing it");
-                    CloseChance(oChance, ChanceStatus.Canceled); 
+                    CloseChance(oChance, ChanceStatus.Canceled, "Retries"); 
                     return; 
                 }   
                 decimal? nQuantity = CalculateQuantity( oChance );
-                if( nQuantity == null ) { CloseChance( oChance, ChanceStatus.Canceled); return; }
+                if( nQuantity == null ) { CloseChance( oChance, ChanceStatus.Canceled, "Quantity"); return; }
                 // Buy
                 List<Task<ITraderPosition?>> aTasks = new List<Task<ITraderPosition?>>();
                 aTasks.Add(Trader.Open(oChance.LongData.Symbol, true, nQuantity.Value));
@@ -170,7 +174,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                 if( oChance.ShortData.Position == null || oChance.LongData.Position == null )
                 {
                     Logger.Warning($"   Could not open position on {oChance.ToString()}");
-                    CloseChance( oChance, ChanceStatus.Canceled); 
+                    CloseChance( oChance, ChanceStatus.Canceled, "OpenError"); 
                     return;
                 }
                 Logger.Info($"   Position open on {oChance.ToString()}");
@@ -263,6 +267,22 @@ namespace Crypto.Futures.Bot.Arbitrage
             }   
 
         }
+
+        private bool CanTrade(IArbitrageChance oChance)
+        {
+            IArbitrageChance? oFound = null;
+            if (m_aChances.TryGetValue(oChance.Currency, out oFound)) return false;
+
+            int nChancesLong = m_aChances.Where(p=> p.Value.LongData.Symbol.Exchange.ExchangeType == oChance.LongData.Symbol.Exchange.ExchangeType ||
+                                                    p.Value.ShortData.Symbol.Exchange.ExchangeType == oChance.LongData.Symbol.Exchange.ExchangeType ).Count();
+
+            int nChancesShort = m_aChances.Where(p => p.Value.LongData.Symbol.Exchange.ExchangeType == oChance.ShortData.Symbol.Exchange.ExchangeType ||
+                                                     p.Value.ShortData.Symbol.Exchange.ExchangeType == oChance.ShortData.Symbol.Exchange.ExchangeType).Count();
+            if (nChancesLong >= 2) return false;
+            if( nChancesShort >= 2 ) return false;
+            return true;    
+
+        }
         /// <summary>
         /// TODO: Main background loop
         /// </summary>
@@ -278,17 +298,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                     {
                         foreach (var oChance in aChances)
                         {
-                            IArbitrageChance? oFound = null;
-                            if (m_aChances.TryGetValue(oChance.Currency, out oFound)) continue;
-                            ExchangeType eTypeLong = oChance.LongData.Symbol.Exchange.ExchangeType;
-                            ExchangeType eTypeShort = oChance.ShortData.Symbol.Exchange.ExchangeType;
-                            if( m_aChances.Values.Any(p=> p.LongData.Symbol.Exchange.ExchangeType == eTypeLong ||
-                                                          p.LongData.Symbol.Exchange.ExchangeType == eTypeShort ||
-                                                          p.ShortData.Symbol.Exchange.ExchangeType == eTypeLong ||
-                                                          p.ShortData.Symbol.Exchange.ExchangeType == eTypeShort ))
-                            {
-                                continue;
-                            }
+                            if( !CanTrade(oChance)) continue;   
                             /*
                             {
                                 if (oFound.Status != ArbitrageStatus.Canceled && oFound.Status != ArbitrageStatus.Closed) continue;

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using CoinEx.Net.Objects.Models.V2;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,32 +15,18 @@ using System.Xml.Linq;
 namespace Crypto.Futures.Exchanges.Coinex.Data
 {
 
-    internal class CoinexBboJson
-    {
-        [JsonProperty("market")]
-        public string Market { get; set; } = string.Empty;
-        [JsonProperty("updated_at")]
-        public long UpdatedAt { get; set; } = 0;
-        [JsonProperty("best_bid_price")]
-        public string BestBidPrice { get; set; } = string.Empty;
-        [JsonProperty("best_bid_size")]
-        public string BestBidSize { get; set; } = string.Empty;
-        [JsonProperty("best_ask_price")]
-        public string BestAskPrice { get; set; } = string.Empty;
-        [JsonProperty("best_ask_size")]
-        public string BestAskSize { get; set; } = string.Empty;
-    }
+
     internal class CoinexOrderbookPrice : IOrderbookPrice
     {
 
-        public CoinexOrderbookPrice(IFuturesSymbol oSymbol, CoinexBboJson oJson )
+        public CoinexOrderbookPrice(IFuturesSymbol oSymbol, CoinExBookPriceUpdate oJson, DateTime? dTime )
         {
             Symbol = oSymbol;
-            DateTime = Util.FromUnixTimestamp(oJson.UpdatedAt, true);
-            AskPrice = decimal.Parse(oJson.BestAskPrice, CultureInfo.InvariantCulture);
-            AskVolume = decimal.Parse(oJson.BestAskSize, CultureInfo.InvariantCulture);
-            BidPrice = decimal.Parse(oJson.BestBidPrice, CultureInfo.InvariantCulture);
-            BidVolume = decimal.Parse(oJson.BestBidSize, CultureInfo.InvariantCulture);
+            DateTime = (dTime == null ? DateTime.Now : dTime.Value.ToLocalTime());
+            AskPrice = oJson.BestAskPrice;
+            AskVolume = oJson.BestAskQuantity * oSymbol.ContractSize;
+            BidPrice = oJson.BestBidPrice;
+            BidVolume = oJson.BestBidQuantity * oSymbol.ContractSize;
         }
         public DateTime DateTime { get; private set; }
 
@@ -67,18 +54,5 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
 
         }
 
-        public static IWebsocketMessage[]? ParseWs( IFuturesExchange oExchange, JToken? oToken )
-        {
-            if (oToken == null) return null;
-            CoinexBboJson? oBbo = oToken.ToObject<CoinexBboJson>();
-            if (oBbo == null) return null;
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oBbo.Market);
-            if (oSymbol == null) return null;
-            return new IWebsocketMessage[]
-            {
-                new CoinexOrderbookPrice(oSymbol, oBbo)
-            };
-
-        }
     }
 }

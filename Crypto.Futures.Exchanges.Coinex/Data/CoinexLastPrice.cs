@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using CoinEx.Net.Objects.Models.V2;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
@@ -9,14 +10,15 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Coinex.Data
 {
+    
     internal class CoinexLastPrice : ILastPrice
     {
 
-        public CoinexLastPrice(IFuturesSymbol oSymbol, CoinexStateJson oJson)
+        public CoinexLastPrice(IFuturesSymbol oSymbol, CoinExFuturesTickerUpdate oJson, DateTime? dTime)
         {
             Symbol = oSymbol;
-            Price = decimal.Parse(oJson.LastPrice, CultureInfo.InvariantCulture);
-            DateTime = DateTime.Now;
+            Price = oJson.LastPrice;
+            DateTime = (dTime == null ? DateTime.Now : dTime.Value.ToLocalTime());
         }
         public decimal Price { get; private set; }
 

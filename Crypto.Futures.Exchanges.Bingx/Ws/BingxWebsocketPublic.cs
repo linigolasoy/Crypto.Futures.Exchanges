@@ -73,6 +73,10 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                 return await oSocket.Subscribe(oSymbol, eSubscriptionType);
             }
             int nNext = m_aSockets.Count;
+            if (Market.Exchange.Logger != null)
+            {
+                Market.Exchange.Logger.Info($"{Market.Exchange.ExchangeType.ToString()} Creating new socket ({nNext})");
+            }
             m_aSockets[nNext] = new BingxSocketSingle(this);
             return await m_aSockets[nNext].Subscribe(oSymbol, eSubscriptionType);
         }

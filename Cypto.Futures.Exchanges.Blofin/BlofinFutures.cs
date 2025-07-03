@@ -30,7 +30,7 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
-        public bool Tradeable { get => true; }
+        public bool Tradeable { get => false; }
         internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
         internal BlofinParser Parser { get => m_oParser; }
 

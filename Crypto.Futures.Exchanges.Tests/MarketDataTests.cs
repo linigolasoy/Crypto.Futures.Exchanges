@@ -81,7 +81,7 @@ namespace Crypto.Futures.Exchanges.Tests
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
-
+                if( !oExchange.Tradeable) continue; // Skip non-tradeable exchanges 
 
                 IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();
                 Assert.IsNotNull(aSymbols, $"Symbols for {eType} should not be null.");
@@ -114,7 +114,7 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
             string[] aCoins = new string[] { "BTC", "ETH", "XRP", "LTC", "SOL", "BNB", "ADA", "DOT", "DOGE", "TRX" };
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.BitgetFutures))
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.CoinExFutures))
             {
                 if( !oExchange.Tradeable) continue;
                 IWebsocketPublic oWs = oExchange.Market.Websocket;

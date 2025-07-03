@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Coinex.Ws;
+﻿using Crypto.Futures.Exchanges.Coinex.Data;
+using Crypto.Futures.Exchanges.Coinex.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
@@ -9,10 +10,9 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Coinex
 {
+    
     internal class CoinexMarket : IFuturesMarket
     {
-        private const string ENDP_FUNDING = "/futures/funding-rate";
-        private const string ENDP_TICKERS = "/futures/ticker";
         private CoinexFutures m_oExchange;
         public CoinexMarket( CoinexFutures oExchange)
         {
@@ -26,17 +26,17 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            var oResult = await m_oExchange.RestClient.FuturesApi.ExchangeData.GetFundingRatesAsync();
             if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-            List<IFundingRate> aResult = new List<IFundingRate>();
-            foreach (var f in oResult.Data)
+            if( oResult.Data == null || oResult.Data.Length <= 0) return null;
+            List<IFundingRate> aFundingRates = new List<IFundingRate>();    
+            foreach (var oFunding in oResult.Data)
             {
-                if( f!= null) aResult.Add(f);   
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oFunding.Symbol);
+                if (oSymbol == null) continue;
+                aFundingRates.Add(new CoinexFundingRate(oSymbol, oFunding));
             }
-
-            return aResult.ToArray();
+            return aFundingRates.ToArray();
         }
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
         {
@@ -55,22 +55,23 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKERS, null, p => m_oExchange.Parser.ParseTicker(p));
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-            List<ITicker> aResult = new List<ITicker>();
-            foreach (var f in oResult.Data)
+            string[]? aSymbolString = null;
+            if(aSymbols != null && aSymbols.Length > 0)
             {
-                if (f == null) continue;
-                if( aSymbols != null)
-                {
-                    if (!aSymbols.Any(p => p.Symbol == f.Symbol.Symbol)) continue;
-                }
-                aResult.Add(f);
+                aSymbolString = aSymbols.Select(s => s.Symbol).ToArray();
+            }   
+            var oResult = await m_oExchange.RestClient.FuturesApi.ExchangeData.GetTickersAsync(aSymbolString);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null || oResult.Data.Length <= 0) return null;
+            List<ITicker> aTickers = new List<ITicker>();
+            foreach (var oItem in oResult.Data)
+            {
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue;
+                aTickers.Add(new CoinexTicker(oSymbol, oItem));
             }
-
-            return aResult.ToArray();
+            return aTickers.ToArray();
         }
     }
+    
 }
