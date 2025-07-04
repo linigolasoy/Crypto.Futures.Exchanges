@@ -26,7 +26,17 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         public IWebsocketSymbolData? GetData(string strSymbol)
         {
             IWebsocketSymbolData? oFound = null;
-            if( !m_aData.TryGetValue (strSymbol, out oFound) ) return null;
+            if (!m_aData.TryGetValue(strSymbol, out oFound))
+            {
+                IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(strSymbol);
+                if (oSymbol == null) return null; // Symbol not found
+                BaseSymbolData oData = new BaseSymbolData(oSymbol);
+                m_aData.TryAdd(strSymbol, oData);
+                if (!m_aData.TryGetValue(strSymbol, out oFound))
+                {
+                    return null; // Still not found, something went wrong
+                }
+            }
             return oFound;
         }
 

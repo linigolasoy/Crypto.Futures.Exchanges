@@ -29,6 +29,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         private int m_nOpen = 0;
 
         private DateTime m_dLastBalance = DateTime.Now;
+        private ConcurrentDictionary<string, ChanceCounter> m_aCounters = new ConcurrentDictionary<string, ChanceCounter>();    
 
         public ArbitrageBot( IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading ) 
         { 
@@ -107,9 +108,10 @@ namespace Crypto.Futures.Bot.Arbitrage
         {
             if(oChance.LongData.WsSymbolData == null ) { Logger.Info("QTY1"); return null; }
             if (oChance.ShortData.WsSymbolData == null) { Logger.Info("QTY2"); return null; }
-            if (oChance.LongData.WsSymbolData.LastPrice == null) { Logger.Info("QTY3"); return null; }
-            if (oChance.ShortData.WsSymbolData.LastPrice == null) { Logger.Info("QTY4"); return null; }
-            decimal nPrice = Math.Max(oChance.LongData.WsSymbolData!.LastPrice!.Price, oChance.ShortData.WsSymbolData!.LastPrice!.Price);
+            if (oChance.LongData.WsSymbolData.LastOrderbookPrice == null) { Logger.Info("QTY3"); return null; }
+            if (oChance.ShortData.WsSymbolData.LastOrderbookPrice == null) { Logger.Info("QTY4"); return null; }
+            decimal nPrice = Math.Max(  oChance.LongData.WsSymbolData!.LastOrderbookPrice!.AskPrice, 
+                                        oChance.ShortData.WsSymbolData!.LastOrderbookPrice!.BidPrice);
             decimal nMoney = Setup.MoneyDefinition.Money * Setup.MoneyDefinition.Leverage;
             int nDecimals = (oChance.LongData.Symbol.QuantityDecimals < oChance.ShortData.Symbol.QuantityDecimals ?
                     oChance.LongData.Symbol.QuantityDecimals :
@@ -128,6 +130,116 @@ namespace Crypto.Futures.Bot.Arbitrage
             Logger.Info($"   Removed {oChance.ToString()} Status {eStatus.ToString()}, Reason [{strLog}]");
         }
 
+
+        /// <summary>
+        /// STEP 1: Check chance validity
+        /// </summary>
+        /// <param name="oChance"></param>
+        /// <returns></returns>
+        private async Task<bool> CheckChance( IArbitrageChance oChance )
+        {
+            int nRetries = 100;
+            decimal nMaxPercent = -100.0M;
+            while (nRetries >= 0)
+            {
+                if (oChance.UpdateOpen())
+                {
+                    if (oChance.Percentage > nMaxPercent) nMaxPercent = oChance.Percentage;
+
+                    if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent)
+                    {
+                        break;
+                    }
+                }
+
+                nRetries--;
+                await Task.Delay(100);
+            }
+
+            if (nRetries <= 0 && oChance.Percentage < Setup.Arbitrage.MinimumPercent)
+            {
+                CloseChance(oChance, ChanceStatus.Canceled, "Retries");
+                return false;
+            }
+            return true;
+        }
+
+
+        /// <summary>
+        /// STEP 2: Try open
+        /// </summary>
+        /// <param name="oChance"></param>
+        /// <returns></returns>
+        private async Task<bool> TryOpen(IArbitrageChance oChance)
+        {
+            decimal? nQuantity = CalculateQuantity(oChance);
+            if (nQuantity == null) { CloseChance(oChance, ChanceStatus.Canceled, "Quantity"); return false; }
+            if( oChance.LongData.DesiredPriceOpen == null || oChance.ShortData.DesiredPriceOpen == null)
+            {
+                CloseChance(oChance, ChanceStatus.Canceled, "DesiredPriceOpen");
+                return false;
+            }
+            List<Task<ITraderPosition?>> aTasks = new List<Task<ITraderPosition?>>();
+            aTasks.Add(Trader.Open(oChance.LongData.Symbol, true, nQuantity.Value, oChance.LongData.DesiredPriceOpen));
+            aTasks.Add(Trader.Open(oChance.ShortData.Symbol, false, nQuantity.Value, oChance.ShortData.DesiredPriceOpen));
+            await Task.WhenAll(aTasks);
+            oChance.LongData.Position = aTasks[0].Result;
+            oChance.ShortData.Position = aTasks[1].Result;
+            if (oChance.ShortData.Position == null || oChance.LongData.Position == null)
+            {
+                Logger.Error($"   Could not open position on {oChance.ToString()}");
+                CloseChance(oChance, ChanceStatus.Canceled, "OpenError");
+                return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// STEP 2: Try close
+        /// </summary>
+        /// <param name="oChance"></param>
+        /// <returns></returns>
+        private async Task<bool> TryClose(IArbitrageChance oChance)
+        {
+            if (!oChance.LongData.Position!.Update()) return false;
+            if (!oChance.ShortData.Position!.Update()) return false;
+            decimal nMoney = Setup.MoneyDefinition.Money * Setup.MoneyDefinition.Leverage;
+            //
+            decimal nDesired = nMoney * Setup.Arbitrage.ClosePercent / 100.0M;
+            decimal nProfit = oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit;
+            decimal nPercentProfit = Math.Round(100.0M * nProfit / nMoney, 3);
+
+            if (nProfit < nDesired) return false;
+            // oChance.Profit = (oChance.LongData.Position.Profit - oChance.ShortData.Position.Profit);
+            Logger.Info($"====<  Trying to close {oChance.ToString()} on Profit {Math.Round(nProfit, 2)}");
+            List<Task<bool>> aCloseTasks = new List<Task<bool>>();
+            aCloseTasks.Add(Trader.Close(oChance.LongData.Position, oChance.LongData.Position.ActualPrice));
+            aCloseTasks.Add(Trader.Close(oChance.ShortData.Position, oChance.ShortData.Position.ActualPrice));
+            await Task.WhenAll(aCloseTasks);
+            if(!aCloseTasks[0].Result )
+            {
+                Logger.Warning($"   Could not close position Long on {oChance.ToString()}. Trying to close market");
+                await Trader.Close(oChance.LongData.Position, null);
+            }
+            if (!aCloseTasks[1].Result)
+            {
+                Logger.Warning($"   Could not close position Short on {oChance.ToString()}. Trying to close market");
+                await Trader.Close(oChance.LongData.Position, null);
+            }
+            oChance.Profit = (oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit);
+            Logger.Info($"====<  Closed {oChance.ToString()} => Profit {Math.Round(oChance.Profit.Value, 2)}");
+            m_aCounters.AddOrUpdate(oChance.Currency, new ChanceCounter(oChance), (key, oldValue) => { oldValue.Update(oChance); return oldValue; });
+            m_nTotalProfit += oChance.Profit.Value;
+            m_nTotal++;
+            m_nOpen--;
+            if (oChance.Profit > 0) m_nWin++;
+            oChance.Status = ChanceStatus.Closed;
+            Logger.Info($"[{Math.Round(m_nTotalProfit, 2)}] TOTAL PROFIT ({m_nWin}/{m_nTotal}) Still Openned {m_nOpen}");
+            return false;
+        }
+
         /// <summary>
         /// Main chance task
         /// </summary>
@@ -139,102 +251,47 @@ namespace Crypto.Futures.Bot.Arbitrage
             Logger.Info($"Acting on chance {oChance.ToString()}");
             try
             {
-                int nRetries = 100;
-                decimal nMaxPercent = -100.0M;
-                while( nRetries >= 0 )
-                {
-                    if( oChance.Update() )
-                    {
-                        if( oChance.Percentage > nMaxPercent ) nMaxPercent = oChance.Percentage;
+                bool bCheck = await CheckChance(oChance);
+                if (!bCheck) return;
 
-                        if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent )
-                        {
-                            break;
-                        }
-                    }
+                bool bOpen = await TryOpen(oChance);
+                if (!bOpen) return;
 
-                    nRetries--; 
-                    await Task.Delay(100); 
-                }
-
-                if( nRetries <= 0 && oChance.Percentage < Setup.Arbitrage.MinimumPercent ) 
-                { 
-                    CloseChance(oChance, ChanceStatus.Canceled, "Retries"); 
-                    return; 
-                }   
-                decimal? nQuantity = CalculateQuantity( oChance );
-                if( nQuantity == null ) { CloseChance( oChance, ChanceStatus.Canceled, "Quantity"); return; }
                 // Buy
-                List<Task<ITraderPosition?>> aTasks = new List<Task<ITraderPosition?>>();
-                aTasks.Add(Trader.Open(oChance.LongData.Symbol, true, nQuantity.Value));
-                aTasks.Add(Trader.Open(oChance.ShortData.Symbol, false, nQuantity.Value));
-                await Task.WhenAll( aTasks );
-                oChance.LongData.Position = aTasks[0].Result;
-                oChance.ShortData.Position = aTasks[1].Result;
-                if( oChance.ShortData.Position == null || oChance.LongData.Position == null )
+                Logger.Info($"   Position open on {oChance.ToString()}");
+                decimal nPercentOpen = Math.Round( 100.0M * (oChance.ShortData.Position!.PriceOpen - oChance.LongData.Position!.PriceOpen) / oChance.LongData.Position.PriceOpen, 2);
+                if ( oChance.ShortData.Position.PriceOpen <= oChance.LongData.Position.PriceOpen)
                 {
-                    Logger.Warning($"   Could not open position on {oChance.ToString()}");
-                    CloseChance( oChance, ChanceStatus.Canceled, "OpenError"); 
+                    Logger.Warning($"   !!!!!! {oChance.ToString()} Short open less than Long Open {nPercentOpen}...");
                     return;
                 }
-                Logger.Info($"   Position open on {oChance.ToString()}");
                 oChance.Status = ChanceStatus.Open;
-                m_nOpen++;
                 decimal nMoney = Setup.MoneyDefinition.Money * Setup.MoneyDefinition.Leverage;
-                    //
-                decimal nDesired = nMoney * Setup.Arbitrage.ClosePercent / 100.0M;
+                m_nOpen++;
                 while (oChance.Status == ChanceStatus.Open) 
                 {
-                    oChance.LongData.Position.Update();
-                    oChance.ShortData.Position.Update();
+                    bool bClose = await TryClose(oChance);
+                    if (bClose) break; // Close chance if we could not close it
 
-                    decimal nProfit = oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit;
-                    decimal nPercentProfit = Math.Round(100.0M * nProfit / nMoney, 3);
-
+                    decimal nProfit = oChance.LongData.Position!.Profit + oChance.ShortData.Position!.Profit;
+                    decimal nPercentProfit = Math.Round(100.0M * nProfit / nMoney, 3);  
                     DateTime dDateOpen = oChance.DateTime;
                     DateTime dNow = DateTime.Now;
-                    bool bClose = false;
-                    if ((dNow - dDateOpen).TotalMinutes > 30)
+
+                    if (nProfit > oChance.MaxProfit)
                     {
-                        Logger.Warning($"     {oChance.ToString()} [{dDateOpen.ToShortTimeString()}] Time out on position");
-                        bClose = true;
-                    }
-                    // Close
-                    if (nProfit >= nDesired /*|| nProfit <= -nDesired*/ || bClose)
-                    {
-                        // oChance.Profit = (oChance.LongData.Position.Profit - oChance.ShortData.Position.Profit);
-                        Logger.Info($"====<  Trying to close {oChance.ToString()} on Profit {Math.Round(nProfit, 2)}");
-                        List<Task<bool>> aCloseTasks = new List<Task<bool>>();
-                        aCloseTasks.Add(Trader.Close(oChance.LongData.Position));
-                        aCloseTasks.Add(Trader.Close(oChance.ShortData.Position));
-                        await Task.WhenAll(aCloseTasks);
-                        oChance.Profit = (oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit);
-                        Logger.Info($"====<  Closed {oChance.ToString()} => Profit {Math.Round(oChance.Profit.Value, 2)}");
-                        m_nTotalProfit += oChance.Profit.Value;
-                        m_nTotal++;
-                        m_nOpen--;
-                        if (oChance.Profit > 0) m_nWin++;
-                        oChance.Status = ChanceStatus.Closed;
-                        Logger.Info($"[{Math.Round(m_nTotalProfit, 2)}] TOTAL PROFIT ({m_nWin}/{m_nTotal}) Still Openned {m_nOpen}");
+                        oChance.MaxProfit = nProfit;
+                        Logger.Info($"     {oChance.ToString()} => ({nPercentProfit}% / {oChance.Percentage}%) Profit {nProfit}");
                     }
                     else
                     {
-                        if (nProfit > oChance.MaxProfit)
+                        if ((dNow - oChance.LastLog).TotalMinutes > 1)
                         {
-                            oChance.MaxProfit = nProfit;
+                            oChance.LastLog = dNow;
                             Logger.Info($"     {oChance.ToString()} => ({nPercentProfit}% / {oChance.Percentage}%) Profit {nProfit}");
-                        }
-                        else
-                        {
-                            if ((dNow - oChance.LastLog).TotalMinutes > 1)
-                            {
-                                oChance.LastLog = dNow;
-                                Logger.Info($"     {oChance.ToString()} => ({nPercentProfit}% / {oChance.Percentage}%) Profit {nProfit}");
 
-                            }
                         }
                     }
-
                     await Task.Delay(100);
                 }
             }
@@ -280,6 +337,19 @@ namespace Crypto.Futures.Bot.Arbitrage
                                                      p.Value.ShortData.Symbol.Exchange.ExchangeType == oChance.ShortData.Symbol.Exchange.ExchangeType).Count();
             if (nChancesLong >= 2) return false;
             if( nChancesShort >= 2 ) return false;
+
+            ChanceCounter? oCounter = null;
+            if (m_aCounters.TryGetValue(oChance.Currency, out oCounter))
+            {
+                if (oCounter.Count >= 5 )
+                {
+                    if( oCounter.Profit < 0 )
+                    {
+                        Logger.Info($"   Chance {oChance.ToString()} is not profitable ({oCounter.Count}/{oCounter.Profit}), skipping...");
+                        return false;
+                    }
+                }
+            }
             return true;    
 
         }

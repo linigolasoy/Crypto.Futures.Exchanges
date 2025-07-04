@@ -26,6 +26,7 @@ namespace Crypto.Futures.Bot
         public DateTime DateTime { get; }
         public DateTime? DateOpen { get; }
         public decimal? Profit { get; set; }
-        public bool Update();
+        public bool UpdateOpen();
+        public bool UpdateClose();
     }
 }

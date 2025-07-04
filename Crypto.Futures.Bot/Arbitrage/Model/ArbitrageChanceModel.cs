@@ -55,8 +55,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 if (ShortData.WsSymbolData == null) return false;
                 // if (LongData.WsSymbolData.FundingRate == null) return false;
                 // if (ShortData.WsSymbolData.FundingRate == null) return false;
-                if (LongData.WsSymbolData.LastPrice == null) return false;
-                if (ShortData.WsSymbolData.LastPrice == null) return false;
+                // if (LongData.WsSymbolData.LastPrice == null) return false;
+                // if (ShortData.WsSymbolData.LastPrice == null) return false;
                 if (LongData.WsSymbolData.LastOrderbookPrice == null) return false;
                 if (ShortData.WsSymbolData.LastOrderbookPrice == null) return false;
 
@@ -77,14 +77,72 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 if (nPercentShort > 1.0M) return false; // 1% difference is too high 
 
                 DateTime dNow = DateTime.Now;
-                double nDiffTimeLong = (dNow - LongData.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
-                double nDiffTimeShort = (dNow - ShortData.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
-                if (nDiffTimeLong > 1500 || nDiffTimeShort > 1500) return false;
+                double nDiffTimeLong = (dNow - LongData.WsSymbolData.LastOrderbookPrice.DateTime).TotalMilliseconds;
+                double nDiffTimeShort = (dNow - ShortData.WsSymbolData.LastOrderbookPrice.DateTime).TotalMilliseconds;
+                if (nDiffTimeLong > 1000 || nDiffTimeShort > 1000) return false;
                 return true;
             }
         }
 
-        public bool Update()
+
+        /// <summary>
+        /// Updates to open
+        /// </summary>
+        /// <returns></returns>
+        public bool UpdateOpen()
+        {
+            if (!IsDataValid)
+            {
+                return false;
+            }
+            decimal nPriceLong = LongData.WsSymbolData!.LastOrderbookPrice!.AskPrice;
+            decimal nPriceShort = ShortData.WsSymbolData!.LastOrderbookPrice!.BidPrice;
+            if (nPriceLong <= 0 || nPriceShort <= 0)
+            {
+                return false;
+            }
+            decimal nDiff = nPriceShort - nPriceLong;
+            decimal nPercent = nDiff * 100.0M / nPriceLong;
+            ShortData.DesiredPriceOpen = nPriceShort;
+            LongData.DesiredPriceOpen = nPriceLong;
+            Percentage = Math.Round(nPercent, 2);
+            return true;
+
+        }
+        public bool UpdateClose()
+        {
+            if (!IsDataValid)
+            {
+                return false;
+            }
+            if( LongData.DesiredPriceOpen == null || ShortData.DesiredPriceOpen == null )
+            {
+                return false;
+            }
+            decimal nPriceLong = LongData.WsSymbolData!.LastOrderbookPrice!.BidPrice;
+            decimal nPriceShort = ShortData.WsSymbolData!.LastOrderbookPrice!.AskPrice;
+            if (nPriceLong <= 0 || nPriceShort <= 0)
+            {
+                return false;
+            }
+
+            decimal nDiffLong = nPriceLong - LongData.DesiredPriceOpen!.Value;
+            decimal nDiffShort = ShortData.DesiredPriceOpen!.Value - nPriceShort;
+
+            decimal nMoney = Finder.Bot.Setup.MoneyDefinition.Money * Finder.Bot.Setup.MoneyDefinition.Leverage;
+            decimal nProfit = nDiffShort + nDiffLong;
+
+            decimal nPercentProfit = Math.Round(nProfit * 100.0M / nMoney, 2);
+
+
+            ShortData.DesiredPriceClose = nPriceShort;
+            LongData.DesiredPriceClose = nPriceLong;
+            PercentageClose = nPercentProfit;
+            return true;
+
+        }
+
+        private bool Update( bool bOpen )
         {
             if( !IsDataValid) 
             {

@@ -114,12 +114,30 @@ namespace Crypto.Futures.Bot.Trading
             if (oData.LastOrderbookPrice == null) return false;
             int nDelay = Random.Shared.Next(MIN_DELAY, MAX_DELAY);
             await Task.Delay(nDelay);
-            oPosition.Update();
-            ((TraderPosition)oPosition).DateClose = DateTime.Now;
-            UpdateBalance(oPosition, true);
-            return true;
-            // ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, oData.LastTrade.Price);
-            // return oPosition;
+            if(nPrice == null)
+            {
+                oPosition.Update();
+                ((TraderPosition)oPosition).DateClose = DateTime.Now;
+                UpdateBalance(oPosition, true);
+                return true;
+            }
+            int nRetries = 600;
+            while (nRetries >= 0)
+            {
+                await Task.Delay(100);
+                decimal nPriceClose = (oPosition.IsLong ? oData.LastOrderbookPrice.BidPrice : oData.LastOrderbookPrice.AskPrice);
+                if ((oPosition.IsLong && nPriceClose >= nPrice.Value) || (!oPosition.IsLong && nPriceClose <= nPrice.Value))
+                {
+                    // oPosition.Update();
+                    ((TraderPosition)oPosition).DateClose = DateTime.Now;
+                    Bot.Logger.Info($"  Closed position {oPosition.Id} for {oPosition.Symbol.ToString()} at price {oPosition.ActualPrice} with profit {oPosition.Profit} (long: {oPosition.IsLong})");
+                    UpdateBalance(oPosition, true);
+                    return true;
+                }
+                nRetries--;
+            }
+
+            return false;
         }
 
         public async Task<ITraderPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
@@ -130,11 +148,29 @@ namespace Crypto.Futures.Bot.Trading
             if (oData.LastOrderbookPrice == null) return null;
             int nDelay = Random.Shared.Next(MIN_DELAY, MAX_DELAY);
             await Task.Delay(nDelay);
-            decimal nPriceOpen = (bLong ? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);
-            ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, nPriceOpen);
-            UpdateBalance(oPosition, false);
-            // Update balance
-            return oPosition;
+            if (nPrice == null)
+            {
+                decimal nPriceOpen = (bLong ? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);
+                ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, nPriceOpen);
+                UpdateBalance(oPosition, false);
+                // Update balance
+                return oPosition;
+            }
+            int nRetries = 600;
+            while( nRetries >= 0 )
+            {
+                await Task.Delay(100);
+                decimal nPriceOpen = (bLong ? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);
+                if( (bLong && nPriceOpen <= nPrice.Value) || (!bLong && nPriceOpen >= nPrice.Value) )
+                {
+                    ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, nPriceOpen);
+                    UpdateBalance(oPosition, false);
+                    Bot.Logger.Info($"  Opened position {oPosition.Id} for {oSymbol.ToString()} at price {nPriceOpen} with volume {nVolume} (long: {bLong})");
+                    return oPosition;
+                }
+                nRetries--;
+            }
+            return null; // Failed to open position within retries limit
         }
 
         /// <summary>

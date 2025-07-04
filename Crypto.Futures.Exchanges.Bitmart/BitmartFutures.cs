@@ -68,6 +68,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
                 foreach ( var oData in oRes.Data )
                 {
                     if (oData == null) continue;
+                    if( oData.Status != BitMart.Net.Enums.ContractStatus.Trading) continue; // Only normal symbols
                     IFuturesSymbol oNew = new BitmartSymbol( this, oData); 
                     aResult.Add(oNew);
                 }

@@ -16,12 +16,13 @@ namespace Crypto.Futures.Bot
         public decimal Volume { get; }  
         public decimal PriceOpen { get; }
         public decimal PriceClose { get; }
+        public decimal ActualPrice { get; } // Current price of the position, if open   
 
         public decimal Profit { get;  }
         public DateTime DateOpen { get; }
         public DateTime? DateClose { get; }
 
-        public void Update();
+        public bool Update();
     }
 
     /// <summary>

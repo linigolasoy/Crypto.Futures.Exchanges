@@ -17,6 +17,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
             WsSymbolData = oSymbolData;
         }
         public IArbitrageChance Chance { get; }
+        public decimal? DesiredPriceOpen { get; set; } = null; // Desired price to open position
+        public decimal? DesiredPriceClose { get; set; } = null; // Desired price to close position
 
         public IFuturesSymbol Symbol { get; }
 

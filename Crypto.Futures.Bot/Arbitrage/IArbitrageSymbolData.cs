@@ -16,6 +16,8 @@ namespace Crypto.Futures.Bot.Arbitrage
         public IArbitrageChance Chance { get; }
         public IFuturesSymbol Symbol { get; }
 
+        public decimal? DesiredPriceOpen { get; set; } // Desired price to open position
+        public decimal? DesiredPriceClose { get; set; } // Desired price to close position
         public IWebsocketSymbolData? WsSymbolData { get; }
 
         public ITraderPosition? Position { get; set; }
