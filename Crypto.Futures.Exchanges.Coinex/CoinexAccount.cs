@@ -1,6 +1,8 @@
-﻿using Crypto.Futures.Exchanges.Coinex.Data;
+﻿using CoinEx.Net.Enums;
+using Crypto.Futures.Exchanges.Coinex.Data;
 using Crypto.Futures.Exchanges.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +17,8 @@ namespace Crypto.Futures.Exchanges.Coinex
     {
         private CoinexFutures m_oExchange;
 
+
+        private static ConcurrentDictionary<string, decimal> m_aLeverages = new ConcurrentDictionary<string, decimal>();
         public CoinexAccount(CoinexFutures oExchange)
         {
             m_oExchange = oExchange;
@@ -45,7 +49,13 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            decimal nLeverage = 0;
+            if (m_aLeverages.TryGetValue(oSymbol.Symbol, out nLeverage))
+            {
+                return nLeverage;
+            }
+            await Task.Delay(100);
+            return 1;
         }
 
         public async Task<IOrder[]?> GetOrders()
@@ -65,7 +75,10 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, MarginMode.Isolated, (int)nLeverage);
+            if (oResult == null || !oResult.Success) return false;
+            m_aLeverages[oSymbol.Symbol] = nLeverage;
+            return true;
         }
     }
 }

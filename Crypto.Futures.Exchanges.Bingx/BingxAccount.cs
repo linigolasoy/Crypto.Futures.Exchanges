@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Bingx.Data;
+﻿using BingX.Net.Enums;
+using Crypto.Futures.Exchanges.Bingx.Data;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using System;
@@ -47,34 +48,11 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <exception cref="NotImplementedException"></exception>
         public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
-            /*
-            try
-            {
-                CryptoRestClient oClient = m_oExchange.RestClient;
-
-                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
-                Dictionary<string, string> aParams = new Dictionary<string, string>();
-                aParams.Add("symbol", oSymbol.Symbol);  
-                var oResult = await oClient.DoGetParams<BingxLeverage?>(ENDP_LEVERAGE, p => p.ToObject<BingxLeverage>(), aParams);
-                if (oResult == null || !oResult.Success) return null;
-                if (oResult.Data == null) return null;
-                decimal nLeverage = oResult.Data.LongLeverage;
-                if( oResult.Data.ShortLeverage < nLeverage)
-                {
-                    nLeverage = oResult.Data.ShortLeverage;
-                }   
-                return nLeverage;
-            }
-            catch (Exception ex)
-            {
-                if (Exchange.Logger != null)
-                {
-                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
-                }
-            }
-            return null;
-            */
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Account.GetLeverageAsync(oSymbol.Symbol);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.ShortLeverage != oResult.Data.LongLeverage) return -1;
+            return oResult.Data.ShortLeverage; // Both should be the same, so return one of them    
         }
 
         /// <summary>
@@ -86,38 +64,9 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-
-            throw new NotImplementedException();
-            /*
-            try
-            {
-                CryptoRestClient oClient = m_oExchange.RestClient;
-
-                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
-
-                BingxLeveragePost oPost = new BingxLeveragePost()
-                {
-                    Symbol = oSymbol.Symbol,
-                    Leverage = (int)nLeverage,
-                    Side = "BOTH" 
-                };
-
-                
-                var oResult = await oClient.DoPostParams<BingxLeveragePost?>(ENDP_SETLEVERAGE, oPost);
-                if (oResult == null || !oResult.Success) return false;
-
-                return oResult.Data;
-            }
-            catch (Exception ex)
-            {
-                if (Exchange.Logger != null)
-                {
-                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
-                }
-            }
-            
-            return false;
-            */
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, PositionSide.Both, (int)nLeverage);
+            if (oResult == null || !oResult.Success) return false;
+            return true;
         }
 
         /// <summary>

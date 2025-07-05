@@ -41,7 +41,7 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            decimal nNewLeverage = 15;
+            decimal nNewLeverage = 10;
             foreach (ExchangeType eType in oSetup.ExchangeTypes)
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);

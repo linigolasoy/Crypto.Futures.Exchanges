@@ -2,6 +2,7 @@
 using Crypto.Futures.Exchanges.Bitget.Data;
 using Crypto.Futures.Exchanges.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,7 @@ namespace Crypto.Futures.Exchanges.Bitget
     {
 
         private BitgetFutures m_oExchange;
+        private static ConcurrentDictionary<string, decimal> m_aLeverages = new ConcurrentDictionary<string, decimal>();
         public BitgetAccount(BitgetFutures oExchange)
         {
             m_oExchange = oExchange;
@@ -42,7 +44,13 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            decimal nLeverage = 0;
+            if (m_aLeverages.TryGetValue(oSymbol.Symbol, out nLeverage))
+            {
+                return nLeverage;
+            }
+            await Task.Delay(100);
+            return 1;
         }
 
         public async Task<IOrder[]?> GetOrders()
@@ -62,7 +70,10 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApiV2.Account.SetLeverageAsync(BitgetProductTypeV2.UsdtFutures, oSymbol.Symbol, "USDT", (int)nLeverage);
+            if (oResult == null || !oResult.Success) return false;
+            m_aLeverages[oSymbol.Symbol] = nLeverage;
+            return true;
         }
     }
 }
