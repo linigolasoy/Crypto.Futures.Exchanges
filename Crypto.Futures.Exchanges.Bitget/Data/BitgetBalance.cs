@@ -1,27 +1,23 @@
-﻿using BitMart.Net.Objects.Models;
+﻿using Bitget.Net.Objects.Models.V2;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crypto.Futures.Exchanges.Bitmart.Data
+namespace Crypto.Futures.Exchanges.Bitget.Data
 {
-
-    internal class BitmartBalance : IBalance
+    internal class BitgetBalance : IBalance
     {
-        internal BitmartBalance( IFuturesExchange oExchange, BitMartFuturesBalance oJson) 
-        { 
+        public BitgetBalance(IFuturesExchange oExchange, BitgetFuturesBalance oBalance)
+        {
             Exchange = oExchange;
-            Currency = oJson.Asset;
-            Balance = oJson.Equity;
-            Avaliable = oJson.AvailableBalance;
-            Locked = oJson.PositionMargin + oJson.FrozenBalance;
+            Currency = oBalance.MarginAsset;
+            Balance = oBalance.Equity;
+            Locked = oBalance.Locked;
+            Avaliable = oBalance.Available;
         }
         public IFuturesExchange Exchange { get; }
 
@@ -44,5 +40,6 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Locked = oBalance.Locked;
 
         }
+
     }
 }

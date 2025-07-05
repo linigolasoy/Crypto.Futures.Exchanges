@@ -1,5 +1,6 @@
 ﻿using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,5 +29,12 @@ namespace Crypto.Futures.Bot.Trading
         public decimal Locked { get; set; } = 0;
 
         public decimal Avaliable { get; set; } = 0;
+
+        public WsMessageType MessageType { get => WsMessageType.Balance; }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

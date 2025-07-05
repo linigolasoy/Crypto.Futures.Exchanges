@@ -188,7 +188,16 @@ namespace Crypto.Futures.Bot.Arbitrage
             if (oChance.ShortData.Position == null || oChance.LongData.Position == null)
             {
                 Logger.Error($"   Could not open position on {oChance.ToString()}");
-                CloseChance(oChance, ChanceStatus.Canceled, "OpenError");
+                if ( oChance.ShortData.Position != null)
+                {
+                    await Trader.Close(oChance.ShortData.Position, null); // Close short position if it was opened
+                }
+                if (oChance.LongData.Position != null)
+                {
+                    await Trader.Close(oChance.LongData.Position, null); // Close short position if it was opened
+                }
+
+                PutProfits(oChance);
                 return false;
             }
 
@@ -196,6 +205,25 @@ namespace Crypto.Futures.Bot.Arbitrage
         }
 
 
+        /// <summary>
+        /// Profits counters
+        /// </summary>
+        /// <param name="oChance"></param>
+        private void PutProfits( IArbitrageChance oChance )
+        {
+            decimal nProfitLong = (oChance.LongData.Position == null ? 0: oChance.LongData.Position.Profit);
+            decimal nProfitShort = (oChance.ShortData.Position == null ? 0 : oChance.ShortData.Position.Profit);
+            oChance.Profit = (nProfitLong + nProfitShort);
+            Logger.Info($"====<  Closed {oChance.ToString()} => Profit {Math.Round(oChance.Profit.Value, 2)}");
+            m_aCounters.AddOrUpdate(oChance.Currency, new ChanceCounter(oChance), (key, oldValue) => { oldValue.Update(oChance); return oldValue; });
+            m_nTotalProfit += oChance.Profit.Value;
+            m_nTotal++;
+            m_nOpen--;
+            if (oChance.Profit > 0) m_nWin++;
+            oChance.Status = ChanceStatus.Closed;
+            Logger.Info($"[{Math.Round(m_nTotalProfit, 2)}] TOTAL PROFIT ({m_nWin}/{m_nTotal}) Still Openned {m_nOpen}");
+
+        }
         /// <summary>
         /// STEP 2: Try close
         /// </summary>
@@ -228,16 +256,8 @@ namespace Crypto.Futures.Bot.Arbitrage
                 Logger.Warning($"   Could not close position Short on {oChance.ToString()}. Trying to close market");
                 await Trader.Close(oChance.LongData.Position, null);
             }
-            oChance.Profit = (oChance.LongData.Position.Profit + oChance.ShortData.Position.Profit);
-            Logger.Info($"====<  Closed {oChance.ToString()} => Profit {Math.Round(oChance.Profit.Value, 2)}");
-            m_aCounters.AddOrUpdate(oChance.Currency, new ChanceCounter(oChance), (key, oldValue) => { oldValue.Update(oChance); return oldValue; });
-            m_nTotalProfit += oChance.Profit.Value;
-            m_nTotal++;
-            m_nOpen--;
-            if (oChance.Profit > 0) m_nWin++;
-            oChance.Status = ChanceStatus.Closed;
-            Logger.Info($"[{Math.Round(m_nTotalProfit, 2)}] TOTAL PROFIT ({m_nWin}/{m_nTotal}) Still Openned {m_nOpen}");
-            return false;
+            PutProfits(oChance);
+            return true;
         }
 
         /// <summary>

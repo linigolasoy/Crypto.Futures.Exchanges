@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypto.Futures.Exchanges.WebsocketModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Model
     /// <summary>
     /// Balance on a exchange
     /// </summary>
-    public interface IBalance
+    public interface IBalance: IWebsocketMessageBase
     {
         public IFuturesExchange Exchange { get; }   
         public string Currency {  get; }    

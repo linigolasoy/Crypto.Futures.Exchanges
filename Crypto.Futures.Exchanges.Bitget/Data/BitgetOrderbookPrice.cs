@@ -35,7 +35,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is IOrderbookPrice)) return;
             IOrderbookPrice oOrderbookPrice = (IOrderbookPrice)oMessage;

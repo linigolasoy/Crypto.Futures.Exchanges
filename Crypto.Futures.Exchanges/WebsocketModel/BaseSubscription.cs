@@ -24,5 +24,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         {
             return;
         }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

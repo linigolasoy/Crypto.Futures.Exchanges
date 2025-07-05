@@ -175,5 +175,15 @@ ApiKey, Request-Time, Signature
             }
             return null;
         }
+
+        public async Task<IOrder[]?> GetOrders()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPosition[]?> GetPositionHistory()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

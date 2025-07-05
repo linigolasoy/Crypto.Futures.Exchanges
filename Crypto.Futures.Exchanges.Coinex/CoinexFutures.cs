@@ -33,7 +33,7 @@ namespace Crypto.Futures.Exchanges.Coinex
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new CoinexMarket(this);    
             // History = new CoinexHistory(this);
-            // Account = new CoinexAccount(this);
+            Account = new CoinexAccount(this);
         }
 
         public bool Tradeable { get => true; }
@@ -54,7 +54,7 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 

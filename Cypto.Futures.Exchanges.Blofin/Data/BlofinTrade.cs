@@ -55,7 +55,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
 
         public bool IsBuy { get; private set; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is ITrade)) return;
             ITrade oTrade = (ITrade)oMessage;   

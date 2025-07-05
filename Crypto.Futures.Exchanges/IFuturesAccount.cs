@@ -22,6 +22,10 @@ namespace Crypto.Futures.Exchanges
         public Task<decimal?> GetLeverage(IFuturesSymbol oSymbol);
         public Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage);
 
-        public Task<IPosition[]?> GetPositions();   
+        public Task<IPosition[]?> GetPositions();
+
+        public Task<IOrder[]?> GetOrders();
+
+        public Task<IPosition[]?> GetPositionHistory();
     }
 }

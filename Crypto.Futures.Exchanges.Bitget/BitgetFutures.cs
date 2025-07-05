@@ -32,7 +32,7 @@ namespace Crypto.Futures.Exchanges.Bitget
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BitgetMarket(this);
             // History = new BitgetHistory(this);
-            // Account = new BitgetAccount(this);
+            Account = new BitgetAccount(this);
         }
 
         internal IBitgetRestClient RestClient { get { return m_oRestClient;  } }
@@ -50,7 +50,7 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 

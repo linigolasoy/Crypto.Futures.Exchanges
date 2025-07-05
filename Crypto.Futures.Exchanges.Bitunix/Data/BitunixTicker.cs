@@ -68,7 +68,7 @@ namespace Crypto.Futures.Exchanges.Bitunix.Data
             return new BitunixTicker(oSymbol, oTickerJson);
         }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             throw new NotImplementedException();
         }

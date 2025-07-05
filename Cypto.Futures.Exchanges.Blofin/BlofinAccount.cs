@@ -62,5 +62,15 @@ namespace Crypto.Futures.Exchanges.Blofin
         {
             throw new NotImplementedException();
         }
+
+        public async Task<IOrder[]?> GetOrders()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPosition[]?> GetPositionHistory()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

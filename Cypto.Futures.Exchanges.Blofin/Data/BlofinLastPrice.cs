@@ -24,7 +24,7 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if( !( oMessage is ILastPrice )) return;
             ILastPrice oPrice = ( ILastPrice )oMessage; 

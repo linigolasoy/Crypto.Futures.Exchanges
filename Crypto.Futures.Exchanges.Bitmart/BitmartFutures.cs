@@ -30,7 +30,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BitmartMarket(this);  
             // History = new BitmartHistory(this);
-            // Account = new BitmartAccount(this);
+            Account = new BitmartAccount(this);
         }
 
         internal IBitMartRestClient RestClient
@@ -54,7 +54,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         public IFuturesTrading Trading => throw new NotImplementedException();
 
-        public IFuturesAccount Account { get => throw new NotImplementedException(); }
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 

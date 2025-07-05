@@ -35,6 +35,7 @@ namespace Crypto.Futures.Bot
         public decimal Leverage { get; }
         public ITradingBot Bot { get; } 
 
+        public int OrderTimeout { get; set; } // Timeout for orders in seconds   
         public IBalance[] Balances { get; }
         public ITraderPosition[] ActivePositions { get; }
         public ITraderPosition[] ClosedPositions { get; }

@@ -52,8 +52,9 @@ namespace Crypto.Futures.Bot.Trading
 
         private const int MAX_DELAY = 800;
         private const int MIN_DELAY = 200;
+        private const int WAIT_DELAY = 100;
 
-
+        public int OrderTimeout { get; set; } = 60;// Timeout for orders in seconds   
         public ITraderPosition[] ActivePositions { get => m_aActivePositions.Values.ToArray(); }
         public ITraderPosition[] ClosedPositions { get => m_aClosedPositions.Values.ToArray(); }
 
@@ -121,10 +122,12 @@ namespace Crypto.Futures.Bot.Trading
                 UpdateBalance(oPosition, true);
                 return true;
             }
-            int nRetries = 600;
+
+
+            int nRetries = OrderTimeout * 1000 / WAIT_DELAY;
             while (nRetries >= 0)
             {
-                await Task.Delay(100);
+                await Task.Delay(WAIT_DELAY);
                 decimal nPriceClose = (oPosition.IsLong ? oData.LastOrderbookPrice.BidPrice : oData.LastOrderbookPrice.AskPrice);
                 if ((oPosition.IsLong && nPriceClose >= nPrice.Value) || (!oPosition.IsLong && nPriceClose <= nPrice.Value))
                 {
@@ -156,10 +159,10 @@ namespace Crypto.Futures.Bot.Trading
                 // Update balance
                 return oPosition;
             }
-            int nRetries = 600;
-            while( nRetries >= 0 )
+            int nRetries = OrderTimeout * 1000 / WAIT_DELAY;
+            while ( nRetries >= 0 )
             {
-                await Task.Delay(100);
+                await Task.Delay(WAIT_DELAY);
                 decimal nPriceOpen = (bLong ? oData.LastOrderbookPrice.AskPrice : oData.LastOrderbookPrice.BidPrice);
                 if( (bLong && nPriceOpen <= nPrice.Value) || (!bLong && nPriceOpen >= nPrice.Value) )
                 {

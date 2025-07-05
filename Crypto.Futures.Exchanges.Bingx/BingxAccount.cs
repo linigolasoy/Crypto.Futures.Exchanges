@@ -9,51 +9,34 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bingx
 {
-    /*
+    
     internal class BingxAccount : IFuturesAccount
     {
         private BingxFutures m_oExchange;
-        private BingxPrivate m_oExchangePrivate;
-        private const string ENDP_BALANCES = "/openApi/swap/v3/user/balance";
-        private const string ENDP_LEVERAGE = "/openApi/swap/v2/trade/leverage";
-        private const string ENDP_SETLEVERAGE = "/openApi/swap/v2/trade/leverage";
-        private const string ENDP_POSITIONS = "/openApi/swap/v2/user/positions";
+
         public BingxAccount(BingxFutures oExchange)
         {
             m_oExchange = oExchange;
-            m_oExchangePrivate = new BingxPrivate(oExchange);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
 
         public async Task<IBalance[]?> GetBalances()
         {
-            try
-            {
-                CryptoRestClient oClient = m_oExchange.RestClient;
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Account.GetBalancesAsync();
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null ) return null;
+            List<IBalance> aResult = new List<IBalance>();  
 
-                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
 
-                var oResult = await oClient.DoGetArrayParams<IBalance?>(ENDP_BALANCES, null, p => m_oExchange.Parser.ParseBalance(p));
-                if (oResult == null || !oResult.Success) return null;
-                if (oResult.Data == null) return null;
-                if (oResult.Data.Count() <= 0) return null;
-                List<IBalance> aResult = new List<IBalance>();
-                foreach (var oItem in oResult.Data)
-                {
-                    if (oItem == null) continue;
-                    aResult.Add(oItem);
-                }
-                return aResult.ToArray();
-            }
-            catch (Exception ex)
+            foreach (var oItem in oResult.Data)
             {
-                if (Exchange.Logger != null)
-                {
-                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
-                }
+                if (oItem == null) continue;
+                IBalance oBalance = new BingxBalance(Exchange, oItem);
+                if (oBalance.Balance + oBalance.Avaliable + oBalance.Locked  <= 0) continue;
+                aResult.Add(oBalance);
             }
-            return null;
+            return aResult.ToArray();
         }
 
         /// <summary>
@@ -64,6 +47,8 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <exception cref="NotImplementedException"></exception>
         public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
+            throw new NotImplementedException();
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -89,6 +74,7 @@ namespace Crypto.Futures.Exchanges.Bingx
                 }
             }
             return null;
+            */
         }
 
         /// <summary>
@@ -100,7 +86,9 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            
+
+            throw new NotImplementedException();
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -129,6 +117,7 @@ namespace Crypto.Futures.Exchanges.Bingx
             }
             
             return false;
+            */
         }
 
         /// <summary>
@@ -137,6 +126,8 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <returns></returns>
         public async Task<IPosition[]?> GetPositions()
         {
+            throw new NotImplementedException();
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -163,7 +154,17 @@ namespace Crypto.Futures.Exchanges.Bingx
                 }
             }
             return null;
+            */
+        }
+
+        public async Task<IOrder[]?> GetOrders()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPosition[]?> GetPositionHistory()
+        {
+            throw new NotImplementedException();
         }
     }
-    */
 }

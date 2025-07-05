@@ -49,7 +49,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if( !(oMessage is ITrade)) return;
             ITrade oTrade = (ITrade)oMessage;

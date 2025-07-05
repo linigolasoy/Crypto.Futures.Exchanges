@@ -50,7 +50,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public IBalance? ParseBalance(JToken? oJson)
         {
-            return MexcBalance.Parse(Exchange, oJson);
+            throw new NotImplementedException("Mexc does not support balance parsing in the REST API.");
         }
         public IPosition? ParsePosition(JToken? oJson)
         {

@@ -37,7 +37,7 @@ namespace Cypto.Futures.Exchanges.Blofin.Data
         public DateTime Next { get; private set; }
 
         public decimal Rate { get; private set; }
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is IFundingRate)) return;
             IFundingRate oFunding = (IFundingRate)oMessage;

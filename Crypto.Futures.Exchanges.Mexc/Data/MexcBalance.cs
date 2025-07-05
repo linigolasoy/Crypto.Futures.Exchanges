@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -42,20 +43,22 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
 
         public string Currency { get; }
 
-        public decimal Balance { get; }
+        public decimal Balance { get; private set; }
 
-        public decimal Locked { get; }
+        public decimal Locked { get; private set; }
 
-        public decimal Avaliable { get; }
+        public decimal Avaliable { get; private set; }
 
-        public static IBalance? Parse( IFuturesExchange oExchange, JToken? oToken )
+        public WsMessageType MessageType { get => WsMessageType.Balance; }
+
+        public void Update(IWebsocketMessageBase oMessage)
         {
-            if( oToken == null ) return null;
-            MexcBalanceJson? oJson = oToken.ToObject<MexcBalanceJson>();
-            if( oJson == null ) return null;
-            decimal nTotal = oJson.CashBalance + oJson.FrozenBalance + oJson.AvailableBalance + oJson.Unrealized + oJson.Equity + oJson.CashBalance;
-            if( nTotal <= 0 ) return null;  
-            return new MexcBalance(oExchange, oJson);
+            if (!(oMessage is IBalance)) return;
+            var oBalance = (IBalance)oMessage;
+            Balance = oBalance.Balance;
+            Avaliable = oBalance.Avaliable;
+            Locked = oBalance.Locked;
+
         }
     }
 }

@@ -18,7 +18,10 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         Ticker,
         OrderbookPrice,
         LastPrice,
-        Subscription
+        Subscription,
+        Balance,
+        Position,
+        Order
         
     }
 
@@ -28,6 +31,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     public interface IWebsocketMessageBase
     {
         public WsMessageType MessageType { get; }
+        public void Update(IWebsocketMessageBase oMessage);
     }
 
     /// <summary>
@@ -37,6 +41,5 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
     {
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage);
     }
 }

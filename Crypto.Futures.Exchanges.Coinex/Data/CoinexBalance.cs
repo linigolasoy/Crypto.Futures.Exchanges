@@ -1,27 +1,23 @@
-﻿using BitMart.Net.Objects.Models;
+﻿using CoinEx.Net.Objects.Models.V2;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crypto.Futures.Exchanges.Bitmart.Data
+namespace Crypto.Futures.Exchanges.Coinex.Data
 {
-
-    internal class BitmartBalance : IBalance
+    internal class CoinexBalance : IBalance
     {
-        internal BitmartBalance( IFuturesExchange oExchange, BitMartFuturesBalance oJson) 
-        { 
-            Exchange = oExchange;
-            Currency = oJson.Asset;
-            Balance = oJson.Equity;
-            Avaliable = oJson.AvailableBalance;
-            Locked = oJson.PositionMargin + oJson.FrozenBalance;
+        public CoinexBalance(IFuturesExchange exchange, CoinExFuturesBalance oBalance)
+        {
+            Exchange = exchange;
+            Currency = oBalance.Asset;
+            Balance = ( oBalance.Equity == null ? 0: oBalance.Equity.Value);
+            Locked = oBalance.Frozen;
+            Avaliable = oBalance.Available;
         }
         public IFuturesExchange Exchange { get; }
 

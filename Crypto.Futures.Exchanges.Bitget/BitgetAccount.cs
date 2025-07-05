@@ -1,50 +1,46 @@
-﻿using Crypto.Futures.Exchanges.Bitmart.Data;
+﻿using Bitget.Net.Enums;
+using Crypto.Futures.Exchanges.Bitget.Data;
 using Crypto.Futures.Exchanges.Model;
-using Crypto.Futures.Exchanges.Rest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crypto.Futures.Exchanges.Bitmart
+namespace Crypto.Futures.Exchanges.Bitget
 {
-    
-    internal class BitmartAccount : IFuturesAccount
+    internal class BitgetAccount : IFuturesAccount
     {
-        private BitmartFutures m_oExchange;
-        public BitmartAccount(BitmartFutures oExchange)
+
+        private BitgetFutures m_oExchange;
+        public BitgetAccount(BitgetFutures oExchange)
         {
             m_oExchange = oExchange;
         }
-
         public IFuturesExchange Exchange { get => m_oExchange; }
 
+        /// <summary>
+        /// Get the balances for the account.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public async Task<IBalance[]?> GetBalances()
         {
-            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Account.GetBalancesAsync();
+            var oResult = await m_oExchange.RestClient.FuturesApiV2.Account.GetBalancesAsync(BitgetProductTypeV2.UsdtFutures);
             if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
+            if( oResult.Data == null ) return null;
             List<IBalance> aResult = new List<IBalance>();
             foreach (var oItem in oResult.Data)
             {
                 if (oItem == null) continue;
-                IBalance oBalance = new BitmartBalance(Exchange, oItem);
-                if (oBalance.Balance + oBalance.Avaliable + oBalance.Locked <= 0) continue; // Ignore empty balances
+                IBalance oBalance = new BitgetBalance(Exchange, oItem);
+                if( oBalance.Balance + oBalance.Avaliable + oBalance.Locked <= 0) continue; // Ignore empty balances
                 aResult.Add(oBalance);
             }
             return aResult.ToArray();
         }
-        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
-        {
-            throw new NotImplementedException();
-        }
 
-        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
-        {
-            throw new NotImplementedException();
-        }
-        public async Task<IPosition[]?> GetPositions()
+        public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
             throw new NotImplementedException();
         }
@@ -58,6 +54,15 @@ namespace Crypto.Futures.Exchanges.Bitmart
         {
             throw new NotImplementedException();
         }
+
+        public async Task<IPosition[]?> GetPositions()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
+        {
+            throw new NotImplementedException();
+        }
     }
-    
 }

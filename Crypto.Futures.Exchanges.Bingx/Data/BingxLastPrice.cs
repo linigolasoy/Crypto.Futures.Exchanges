@@ -30,7 +30,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if(!(oMessage is ILastPrice)) return;
             ILastPrice oLastPrice = (ILastPrice)oMessage;

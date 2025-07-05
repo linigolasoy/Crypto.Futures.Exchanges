@@ -37,7 +37,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         public decimal AskVolume { get; private set; }
 
         public decimal BidVolume { get; private set; }
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is ITicker)) return;
             ITicker oTicker = (ITicker)oMessage;

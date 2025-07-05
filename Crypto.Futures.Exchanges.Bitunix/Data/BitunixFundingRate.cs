@@ -38,7 +38,7 @@ namespace Crypto.Futures.Exchanges.Bitunix.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is IFundingRate)) return;
             IFundingRate oFunding = (IFundingRate)oMessage;

@@ -75,7 +75,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             return aResult.ToArray();
         }
 
-        public void Update(IWebsocketMessage oMessage)
+        public void Update(IWebsocketMessageBase oMessage)
         {
             if (!(oMessage is ITrade) ) return;
             ITrade oTrade = (ITrade)oMessage;   
