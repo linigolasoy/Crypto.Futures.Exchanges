@@ -1,0 +1,74 @@
+﻿using BitMart.Net.Enums;
+using Crypto.Futures.Exchanges.Model;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Crypto.Futures.Exchanges.Bitmart
+{
+    internal class BitmartTrading : IFuturesTrading
+    {
+        private BitmartFutures m_oExchange;
+        public BitmartTrading(BitmartFutures oExchange)
+        {
+            m_oExchange = oExchange;
+        }
+        public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public async Task<bool> CloseOrders(IFuturesSymbol oSymbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        {
+            FuturesSide eSide = oPosition.IsLong ? FuturesSide.SellCloseLong : FuturesSide.BuyCloseShort;
+            FuturesOrderType eType = (nPrice == null ? FuturesOrderType.Market : FuturesOrderType.Limit);
+            int nQuantityContract = (int)(oPosition.Quantity / oPosition.Symbol.ContractSize); // Convert to contract size, if needed   
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
+                    oPosition.Symbol.Symbol, // string symbol, 
+                    eSide, // FuturesSide side, 
+                    eType, // FuturesOrderType type, 
+                    nQuantityContract, // int quantity, 
+                    nPrice // decimal ? price = null, 
+                           // string ? clientOrderId = null, 
+                           // decimal ? leverage = null, 
+                           // MarginType ? marginType = null, 
+                           // OrderMode ? orderMode = null, 
+                           // TriggerPriceType ? presetTakeProfitPriceType = null, 
+                           // TriggerPriceType ? presetStopLossPriceType = null, decimal ? presetTakeProfitPrice = null, decimal ? presetStopLossPrice = null, StpMode ? stpMode = null, CancellationToken ct = default(CancellationToken)
+                );
+            if (oResult == null || !oResult.Success) return false;
+            if (oResult.Data == null) return false; // No order created
+            if (oResult.Data.OrderId <= 0) return false; // No order id, no order created  
+            return true; // Order created successfully
+        }
+
+        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        {
+            FuturesSide eSide = bLong ? FuturesSide.BuyOpenLong : FuturesSide.SellOpenShort;
+            FuturesOrderType eType = (nPrice == null ? FuturesOrderType.Market : FuturesOrderType.Limit);
+            int nQuantityContract = (int)(nQuantity / oSymbol.ContractSize); // Convert to contract size, if needed   
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Trading.PlaceOrderAsync(
+                    oSymbol.Symbol, // string symbol, 
+                    eSide, // FuturesSide side, 
+                    eType, // FuturesOrderType type, 
+                    nQuantityContract, // int quantity, 
+                    nPrice // decimal ? price = null, 
+                           // string ? clientOrderId = null, 
+                           // decimal ? leverage = null, 
+                           // MarginType ? marginType = null, 
+                           // OrderMode ? orderMode = null, 
+                           // TriggerPriceType ? presetTakeProfitPriceType = null, 
+                           // TriggerPriceType ? presetStopLossPriceType = null, decimal ? presetTakeProfitPrice = null, decimal ? presetStopLossPrice = null, StpMode ? stpMode = null, CancellationToken ct = default(CancellationToken)
+                );
+            if (oResult == null || !oResult.Success) return false;
+            if( oResult.Data == null ) return false; // No order created
+            if(oResult.Data.OrderId <= 0 ) return false; // No order id, no order created  
+            return true; // Order created successfully
+        }
+    }
+}

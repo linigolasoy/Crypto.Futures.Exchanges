@@ -1,5 +1,6 @@
 ﻿using BingX.Net.Clients;
 using BingX.Net.Interfaces.Clients;
+using BingX.Net.Objects.Models;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using CryptoExchange.Net.Authentication;
@@ -35,6 +36,7 @@ namespace Crypto.Futures.Exchanges.Bingx
             Market = new BingxMarket(this); 
             // History = new BingxHistory(this);
             Account = new BingxAccount(this);
+            Trading = new BingxTrading(this);
         }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
@@ -49,7 +51,7 @@ namespace Crypto.Futures.Exchanges.Bingx
 
         public IFuturesHistory History { get => throw new NotImplementedException(); }
 
-        public IFuturesTrading Trading => throw new NotImplementedException();
+        public IFuturesTrading Trading { get; }
 
         public IFuturesAccount Account { get; }
 

@@ -68,9 +68,26 @@ namespace Crypto.Futures.Exchanges.Coinex
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Gets the current positions for the account. 
+        /// </summary>
+        /// <returns></returns>
         public async Task<IPosition[]?> GetPositions()
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApi.Trading.GetPositionsAsync();
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data.Items)
+            {
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue; // Skip if symbol is not found
+                IPosition oPosition = new CoinexPosition(oSymbol, oItem);
+                if (oPosition.Quantity <= 0) continue; // Only include positions with a quantity
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();
         }
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)

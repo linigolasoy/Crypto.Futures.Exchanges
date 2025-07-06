@@ -33,6 +33,7 @@ namespace Crypto.Futures.Exchanges.Bitget
             Market = new BitgetMarket(this);
             // History = new BitgetHistory(this);
             Account = new BitgetAccount(this);
+            Trading = new BitgetTrading(this);
         }
 
         internal IBitgetRestClient RestClient { get { return m_oRestClient;  } }
@@ -48,7 +49,7 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public IFuturesHistory History => throw new NotImplementedException();
 
-        public IFuturesTrading Trading => throw new NotImplementedException();
+        public IFuturesTrading Trading { get; }
 
         public IFuturesAccount Account { get; }
 

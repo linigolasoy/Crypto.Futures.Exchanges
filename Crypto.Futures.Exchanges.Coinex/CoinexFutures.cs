@@ -34,6 +34,7 @@ namespace Crypto.Futures.Exchanges.Coinex
             Market = new CoinexMarket(this);    
             // History = new CoinexHistory(this);
             Account = new CoinexAccount(this);
+            Trading = new CoinexTrading(this);
         }
 
         public bool Tradeable { get => true; }
@@ -52,7 +53,7 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public IFuturesHistory History => throw new NotImplementedException();
 
-        public IFuturesTrading Trading => throw new NotImplementedException();
+        public IFuturesTrading Trading { get; }
 
         public IFuturesAccount Account { get; }
 

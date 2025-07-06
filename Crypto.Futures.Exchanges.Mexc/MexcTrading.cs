@@ -29,45 +29,19 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public IFuturesExchange Exchange { get => m_oExchange; }
 
+        public Task<bool> CloseOrders(IFuturesSymbol oSymbol)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, decimal nLeverage, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
         {
-            try
-            {
-                CryptoRestClient oClient = m_oExchange.RestClient;
-
-                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
-                decimal nVolume = nQuantity / oSymbol.ContractSize;
-
-                MexcOrderJson oPost = new MexcOrderJson()
-                {
-                    Symbol = oSymbol.Symbol,
-                    Vol = nVolume,
-                    Leverage = (int)nLeverage,
-                    Side = (bLong ? (int)MexcOrderSide.OpenLong : (int)MexcOrderSide.OpenShort),
-                    Price = ( nPrice == null ? 0 : nPrice.Value),
-                    Type = (nPrice == null ? (int)MexcOrderType.Market : (int)MexcOrderType.Limit), // Market order
-                    OpenType = (int)MexcOpenType.Cross // Isolated margin
-                };
-
-
-                var oResult = await oClient.DoPostParams<MexcOrderJson?>(ENDP_ORDER, oPost);
-                if (oResult == null || !oResult.Success) return false;
-                return oResult.Data;
-
-            }
-            catch (Exception ex)
-            {
-                if (Exchange.Logger != null)
-                {
-                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
-                }
-            }
-            return false;
+            throw new NotImplementedException();    
         }
     }
 }

@@ -58,7 +58,20 @@ namespace Crypto.Futures.Exchanges.Bitmart
         }
         public async Task<IPosition[]?> GetPositions()
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Trading.GetPositionsAsync();
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data)
+            {
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue; // Ignore unknown symbols
+                IPosition oPosition = new BitmartPositionMine(oSymbol, oItem);
+                if (oPosition.Quantity <= 0) continue; // Ignore empty positions
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();
         }
 
         public async Task<IOrder[]?> GetOrders()

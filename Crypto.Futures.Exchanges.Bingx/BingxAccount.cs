@@ -75,35 +75,20 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <returns></returns>
         public async Task<IPosition[]?> GetPositions()
         {
-            throw new NotImplementedException();
-            /*
-            try
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Trading.GetPositionsAsync();
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data)
             {
-                CryptoRestClient oClient = m_oExchange.RestClient;
-
-                oClient.RequestEvaluator = m_oExchangePrivate.CreatePrivateRequest;
-
-                var oResult = await oClient.DoGetArrayParams<IPosition?>(ENDP_POSITIONS, null, p => m_oExchange.Parser.ParsePosition(p));
-                if (oResult == null || !oResult.Success) return null;
-                if (oResult.Data == null) return null;
-                List<IPosition> aResult = new List<IPosition>();
-                if (oResult.Data.Count() <= 0) return aResult.ToArray();
-                foreach (var oItem in oResult.Data)
-                {
-                    if (oItem == null) continue;
-                    aResult.Add(oItem);
-                }
-                return aResult.ToArray();
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbol == null) continue; // Skip if symbol is not found
+                IPosition oPosition = new BingxPosition(oSymbol, oItem);
+                if (oPosition.Quantity <= 0) continue; // Only include positions with non-zero quantity
+                aResult.Add(oPosition);
             }
-            catch (Exception ex)
-            {
-                if (Exchange.Logger != null)
-                {
-                    Exchange.Logger.Error("BloginAccount.GetBalances Error", ex);
-                }
-            }
-            return null;
-            */
+            return aResult.ToArray();
         }
 
         public async Task<IOrder[]?> GetOrders()

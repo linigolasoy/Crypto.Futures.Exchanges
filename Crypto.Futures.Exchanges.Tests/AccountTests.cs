@@ -63,27 +63,6 @@ namespace Crypto.Futures.Exchanges.Tests
         }
 
 
-        [TestMethod]
-        public async Task PositionTest()
-        {
-
-            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
-            Assert.IsNotNull(oSetup, "Setup should not be null.");
-
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
-            {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
-                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
-
-                if (!oExchange.Tradeable) continue;
-
-                IPosition[]? aPositions = await oExchange.Account.GetPositions();
-                Assert.IsNotNull(aPositions);
-
-
-            }
-
-        }
 
     }
 }

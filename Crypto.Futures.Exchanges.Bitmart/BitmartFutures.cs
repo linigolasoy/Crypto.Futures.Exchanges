@@ -31,6 +31,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
             Market = new BitmartMarket(this);  
             // History = new BitmartHistory(this);
             Account = new BitmartAccount(this);
+            Trading = new BitmartTrading(this);
         }
 
         internal IBitMartRestClient RestClient
@@ -52,7 +53,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         public IFuturesHistory History { get => throw new NotImplementedException(); }
 
-        public IFuturesTrading Trading => throw new NotImplementedException();
+        public IFuturesTrading Trading { get; }
 
         public IFuturesAccount Account { get; }
 
