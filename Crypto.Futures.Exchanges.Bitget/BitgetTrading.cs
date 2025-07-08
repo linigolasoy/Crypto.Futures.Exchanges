@@ -22,9 +22,31 @@ namespace Crypto.Futures.Exchanges.Bitget
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
 
+        /// <summary>
+        /// Close existing orders for the symbol.
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
         public async Task<bool> CloseOrders(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApiV2.Trading.GetOpenOrdersAsync(
+                BitgetProductTypeV2.UsdtFutures, // BitgetProductTypeV2 productType, 
+                oSymbol.Symbol // string symbol, 
+                               // CancellationToken ct = default(CancellationToken)
+            );
+            if (oResult == null || !oResult.Success) return false;
+            if (oResult.Data == null || oResult.Data.Orders.Length <= 0) return true; // No open orders to close
+            foreach (var oOrder in oResult.Data.Orders)
+            {
+                var oCancelResult = await m_oExchange.RestClient.FuturesApiV2.Trading.CancelOrderAsync(
+                    BitgetProductTypeV2.UsdtFutures, // BitgetProductTypeV2 productType, 
+                    oSymbol.Symbol, // string symbol, 
+                    oOrder.OrderId // string orderId, 
+                                   // CancellationToken ct = default(CancellationToken)
+                );
+                if (oCancelResult == null || !oCancelResult.Success) return false;
+            }
+            return true;
         }
 
         public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)

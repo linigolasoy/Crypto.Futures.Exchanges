@@ -181,7 +181,7 @@ ApiKey, Request-Time, Signature
             throw new NotImplementedException();
         }
 
-        public async Task<IPosition[]?> GetPositionHistory()
+        public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol   )
         {
             throw new NotImplementedException();
         }

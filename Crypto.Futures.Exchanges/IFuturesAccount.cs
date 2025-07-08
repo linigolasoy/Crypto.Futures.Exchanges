@@ -26,6 +26,6 @@ namespace Crypto.Futures.Exchanges
 
         public Task<IOrder[]?> GetOrders();
 
-        public Task<IPosition[]?> GetPositionHistory();
+        public Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol);
     }
 }

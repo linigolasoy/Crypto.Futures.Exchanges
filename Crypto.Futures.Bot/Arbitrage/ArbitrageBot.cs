@@ -35,7 +35,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         { 
             Setup = oSetup;
             Logger = oLogger;
-            Trader = new PaperTrader(this);
+            Trader = (bPaperTrading ? new PaperTrader(this) : new TraderNoSocket(this));
         }
         public IExchangeSetup Setup { get; }
 
@@ -140,10 +140,12 @@ namespace Crypto.Futures.Bot.Arbitrage
         {
             int nRetries = 100;
             decimal nMaxPercent = -100.0M;
+            bool bUpdated = false;  
             while (nRetries >= 0)
             {
                 if (oChance.UpdateOpen())
                 {
+                    bUpdated = true; // Updated chance  
                     if (oChance.Percentage > nMaxPercent) nMaxPercent = oChance.Percentage;
 
                     if (oChance.Percentage >= Setup.Arbitrage.MinimumPercent)
@@ -156,7 +158,7 @@ namespace Crypto.Futures.Bot.Arbitrage
                 await Task.Delay(100);
             }
 
-            if (nRetries <= 0 && oChance.Percentage < Setup.Arbitrage.MinimumPercent)
+            if (nRetries <= 0 && ( !bUpdated || oChance.Percentage < Setup.Arbitrage.MinimumPercent ) )
             {
                 CloseChance(oChance, ChanceStatus.Canceled, "Retries");
                 return false;
@@ -267,16 +269,16 @@ namespace Crypto.Futures.Bot.Arbitrage
         /// <returns></returns>
         private async Task ChanceTask( IArbitrageChance oChance )
         {
-            oChance.Status = ChanceStatus.Handling;
             Logger.Info($"Acting on chance {oChance.ToString()}");
+            oChance.Status = ChanceStatus.Handling;
             try
             {
                 bool bCheck = await CheckChance(oChance);
                 if (!bCheck) return;
 
+
                 bool bOpen = await TryOpen(oChance);
                 if (!bOpen) return;
-
                 // Buy
                 Logger.Info($"   Position open on {oChance.ToString()}");
                 decimal nPercentOpen = Math.Round( 100.0M * (oChance.ShortData.Position!.PriceOpen - oChance.LongData.Position!.PriceOpen) / oChance.LongData.Position.PriceOpen, 2);

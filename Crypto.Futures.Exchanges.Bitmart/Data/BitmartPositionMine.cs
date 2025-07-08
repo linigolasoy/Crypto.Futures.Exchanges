@@ -23,6 +23,20 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Quantity = (oJson.CurrentQuantity == null? 0 : oJson.CurrentQuantity.Value) * oSymbol.ContractSize;
         }
 
+
+        public BitmartPositionMine(IFuturesSymbol oSymbol, BitMartFuturesUserTrade oOpenTrade, BitMartFuturesUserTrade oCloseTrade)
+        {
+            Id = Guid.NewGuid().ToString();
+            Symbol = oSymbol;
+            CreatedAt = oOpenTrade.CreateTime.ToLocalTime();
+            UpdatedAt = oCloseTrade.CreateTime.ToLocalTime();
+            IsLong = (oOpenTrade.Side == FuturesSide.SellCloseLong || oOpenTrade.Side == FuturesSide.BuyOpenLong);
+            IsOpen = true;
+            AveragePriceOpen = oOpenTrade.Price;
+            Quantity = oOpenTrade.Quantity * oSymbol.ContractSize;
+            PriceClose = oCloseTrade.Price;
+        }
+
         public string Id { get; }
 
         public IFuturesSymbol Symbol { get; }
@@ -36,6 +50,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         public bool IsOpen { get; }
 
         public decimal AveragePriceOpen { get; }
+        public decimal? PriceClose { get; set; } = null;
 
         public decimal Quantity { get; }
     }

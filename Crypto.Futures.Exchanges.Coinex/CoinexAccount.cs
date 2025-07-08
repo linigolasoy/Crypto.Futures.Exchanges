@@ -63,9 +63,22 @@ namespace Crypto.Futures.Exchanges.Coinex
             throw new NotImplementedException();
         }
 
-        public async Task<IPosition[]?> GetPositionHistory()
+        public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol   )
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApi.Trading.GetPositionHistoryAsync(oSymbol.Symbol);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data.Items)
+            {
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbolFound = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbolFound == null) continue; // Skip if symbol is not found
+                IPosition oPosition = new CoinexPosition(oSymbolFound, oItem);
+                if (oPosition.Quantity <= 0) continue; // Only include positions with a quantity
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();   
         }
 
         /// <summary>

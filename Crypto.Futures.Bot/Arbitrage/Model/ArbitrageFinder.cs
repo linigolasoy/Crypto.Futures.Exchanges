@@ -266,10 +266,14 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                         decimal nPercentMax = Math.Round(100.0M * (nPriceMaxAsk - nPriceMaxBid) / nPriceMaxBid, 2);
                         decimal nDiff = nPriceMaxBid - nPriceMinAsk;
                         decimal nPercent = Math.Round( nDiff * 100.0M / nPriceMinAsk, 2);
-                        nPercent -= nPercentMin;
-                        nPercent -= nPercentMax;    
+                        // nPercent -= nPercentMin;
+                        // nPercent -= nPercentMax;    
                         if ( nPercent >= 4.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
-                        aResult.Add( new ArbitrageChanceModel(this, strKey, nPercent, oMin, oMax) );
+                        IArbitrageChance oChance = new ArbitrageChanceModel(this, strKey, nPercent, oMin, oMax);
+                        if( !oChance.UpdateOpen()) continue;
+                        if (oChance.LongData.DesiredPriceOpen == null || oChance.LongData.DesiredPriceClose == null) continue;
+                        if (oChance.Percentage <= Bot.Setup.Arbitrage.MinimumPercent) continue;
+                        aResult.Add( oChance );
                     }
                 }
                 return aResult.ToArray();

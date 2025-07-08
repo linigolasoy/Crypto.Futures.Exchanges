@@ -23,6 +23,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
             IsOpen = true;
             AveragePriceOpen = oJson.AverageEntryPrice;
             Quantity = oJson.AthPositionQuantity;
+            PriceClose = oJson.SettlePrice;
         }
         public string Id { get; }
 
@@ -37,6 +38,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
         public bool IsOpen { get; }
 
         public decimal AveragePriceOpen { get; }
+        public decimal? PriceClose { get; set; }= null; 
 
         public decimal Quantity { get; }
     }

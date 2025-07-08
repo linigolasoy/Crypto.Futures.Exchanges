@@ -81,6 +81,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
         public decimal AveragePriceOpen { get; }
 
         public decimal Quantity { get; }
+        public decimal? PriceClose { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public static IPosition? Parse( IFuturesExchange oExchange, JToken? oToken )
         {

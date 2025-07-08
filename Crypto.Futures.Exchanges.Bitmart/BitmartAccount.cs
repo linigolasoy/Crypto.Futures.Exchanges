@@ -1,4 +1,5 @@
 ﻿using BitMart.Net.Enums;
+using BitMart.Net.Objects.Models;
 using Crypto.Futures.Exchanges.Bitmart.Data;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
@@ -79,9 +80,25 @@ namespace Crypto.Futures.Exchanges.Bitmart
             throw new NotImplementedException();
         }
 
-        public async Task<IPosition[]?> GetPositionHistory()
+        public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Trading.GetUserTradesAsync(oSymbol.Symbol);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItemOpen in oResult.Data.Where(p=> p.Side == FuturesSide.SellOpenShort || p.Side == FuturesSide.BuyOpenLong).OrderBy(p => p.CreateTime) )
+            {
+                if (oItemOpen == null) continue;
+                FuturesSide eSideClose = (oItemOpen.Side == FuturesSide.BuyOpenLong ? FuturesSide.SellCloseLong : FuturesSide.BuyCloseShort);
+
+                BitMartFuturesUserTrade? oItemClose = oResult.Data
+                        .Where(p => p.Side == eSideClose && p.Symbol == oItemOpen.Symbol && p.CreateTime > oItemOpen.CreateTime && p.Quantity == oItemOpen.Quantity)
+                        .OrderBy(p=> p.CreateTime).FirstOrDefault();
+                if( oItemClose == null) continue; // No close trade found for this open trade   
+                IPosition oPosition = new BitmartPositionMine(oSymbol, oItemOpen, oItemClose);
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();   
         }
     }
     

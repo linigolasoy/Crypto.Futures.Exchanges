@@ -39,7 +39,8 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
                 case WsMessageType.LastPrice:
                     return new BaseSubscription(eSubscriptionType, oSymbol);
                 case WsMessageType.OrderbookPrice:
-                    var oSubBook = await m_oSocketClient.FuturesApi.SubscribeToBookPriceUpdatesAsync(oSymbol.Symbol, OnBookPrice);
+                    var oSubBook = await m_oSocketClient.FuturesApi.SubscribeToOrderBookUpdatesAsync(oSymbol.Symbol, 5, null, true, OnOrderbook);
+                    //.SubscribeToBookPriceUpdatesAsync(oSymbol.Symbol, OnBookPrice);
                     if (oSubBook == null || !oSubBook.Success) return null;
                     return new BaseSubscription(eSubscriptionType, oSymbol);
                 // Add more cases for other message types as needed
@@ -77,5 +78,17 @@ namespace Crypto.Futures.Exchanges.Coinex.Ws
             Websocket.DataManager.Put(oOrderbookPrice);
             return;
         }
+
+        private void OnOrderbook(DataEvent<CoinExOrderBook> oEvent)
+        {
+            if (oEvent == null) return;
+            if (oEvent.Data == null) return;
+            IFuturesSymbol? oSymbol = Websocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
+            if (oSymbol == null) return; // Symbol not found, skip this update
+            IOrderbookPrice oOrderbookPrice = new CoinexOrderbookPrice(oSymbol, oEvent.Data);
+            Websocket.DataManager.Put(oOrderbookPrice);
+            return;
+        }
+
     }
 }

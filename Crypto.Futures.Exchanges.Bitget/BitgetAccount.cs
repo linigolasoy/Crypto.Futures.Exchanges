@@ -58,9 +58,22 @@ namespace Crypto.Futures.Exchanges.Bitget
             throw new NotImplementedException();
         }
 
-        public async Task<IPosition[]?> GetPositionHistory()
+        public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApiV2.Trading.GetPositionHistoryAsync(BitgetProductTypeV2.UsdtFutures, oSymbol.Symbol);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data.Entries)
+            {
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbolFound = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbolFound == null) continue; // Ignore symbols that are not in the symbol manager
+                IPosition oPosition = new BitgetPositionMine(oSymbolFound, oItem);
+                if (oPosition.Quantity == 0) continue; // Ignore empty positions
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();
         }
 
         public async Task<IPosition[]?> GetPositions()

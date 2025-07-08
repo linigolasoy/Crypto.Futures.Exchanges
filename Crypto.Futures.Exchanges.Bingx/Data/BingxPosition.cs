@@ -1,4 +1,5 @@
-﻿using BingX.Net.Objects.Models;
+﻿using BingX.Net.Enums;
+using BingX.Net.Objects.Models;
 using Crypto.Futures.Exchanges.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -26,6 +27,20 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             AveragePriceOpen = oJson.AveragePrice;
             Quantity = oJson.Size;
         }
+
+        internal BingxPosition(IFuturesSymbol oSymbol, BingXPositionHistory oJson)
+        {
+            Id = oJson.PositionId;
+            Symbol = oSymbol;
+            CreatedAt = oJson.OpenTime.ToLocalTime();
+            UpdatedAt = oJson.UpdateTime.ToLocalTime(); // Bingx does not provide a separate updated time, so we use created time.
+            IsLong = (oJson.PositionSide == PositionSide.Long);
+            IsOpen = true;
+            AveragePriceOpen = oJson.AveragePrice;
+            Quantity = oJson.PositionQuantity;
+            PriceClose = oJson.AverageClosePrice;
+        }
+
         public string Id { get; }
 
         public IFuturesSymbol Symbol { get; }
@@ -39,6 +54,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
         public bool IsOpen { get; }
 
         public decimal AveragePriceOpen { get; }
+        public decimal? PriceClose { get; set; } = null;
 
         public decimal Quantity { get; }
 

@@ -19,6 +19,7 @@ namespace Crypto.Futures.Exchanges.Model
         public bool IsLong { get; }
         public bool IsOpen { get; }
         public decimal AveragePriceOpen { get; }
+        public decimal? PriceClose { get; set; } 
         public decimal Quantity { get; }
     }
 }

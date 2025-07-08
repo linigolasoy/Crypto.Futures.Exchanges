@@ -21,6 +21,15 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
             BidVolume = (oJson.BestBidQuantity == null ? 0 : oJson.BestBidQuantity.Value);
             DateTime = oJson.Timestamp.ToLocalTime();
         }
+        public BitgetOrderbookPrice(IFuturesSymbol oSymbol, BitgetOrderBookUpdate oUpdate)
+        {
+            Symbol = oSymbol;
+            DateTime = oUpdate.Timestamp.ToLocalTime();
+            AskPrice = oUpdate.Asks[0].Price;
+            AskVolume = oUpdate.Asks[0].Quantity * oSymbol.ContractSize;
+            BidPrice = oUpdate.Bids[0].Price;
+            BidVolume = oUpdate.Bids[0].Quantity * oSymbol.ContractSize;
+        }
         public DateTime DateTime { get; private set; }
 
         public decimal AskPrice { get; private set; }

@@ -45,7 +45,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
                     oResult = new BaseSubscription(WsMessageType.FundingRate, oSymbol);
                     break;
                 case WsMessageType.OrderbookPrice:
-                    var oSubscribeBook = await m_oSocketClient.UsdFuturesApi.SubscribeToBookTickerUpdatesAsync(oSymbol.Symbol, OnOrderbook);
+                    var oSubscribeBook = await m_oSocketClient.UsdFuturesApi.SubscribeToOrderBookSnapshotUpdatesAsync(oSymbol.Symbol, 5, OnOrderbook);
                     if (oSubscribeBook == null || !oSubscribeBook.Success) return null;
                     oResult = new BaseSubscription(WsMessageType.OrderbookPrice, oSymbol);
                     break;
@@ -70,13 +70,24 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
             IWebsocketMessage oMessage = new BitmartFundingRate(oSymbol, oEvent.Data);
             m_oWebsocket.DataManager.Put(oMessage);
         }
-        private void OnOrderbook(DataEvent<BitMartBookTicker> oEvent)
+        private void OnOrderbook(DataEvent<BitMartFuturesFullOrderBookUpdate> oEvent)
         {
-            if (oEvent == null || oEvent.Data == null) return;
-            IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
-            if (oSymbol == null) return;
-            IWebsocketMessage oMessage = new BitmartOrderbookPrice(oSymbol, oEvent.Data, oEvent.ReceiveTime);
-            m_oWebsocket.DataManager.Put(oMessage);
+            try
+            {
+                if (oEvent == null || oEvent.Data == null) return;
+                IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
+                if (oSymbol == null) return;
+                IWebsocketMessage oMessage = new BitmartOrderbookPrice(oSymbol, oEvent.Data);
+                m_oWebsocket.DataManager.Put(oMessage);
+
+            }
+            catch (Exception ex)
+            {
+                if (m_oWebsocket.Market.Exchange.Logger != null)
+                {
+                    m_oWebsocket.Market.Exchange.Logger.Error("BitmartSocketSingle.OnOrderbook", ex);
+                }
+            }
         }
         private void OnTicker(DataEvent<BitMartFuturesTickerUpdate> oEvent)
         {

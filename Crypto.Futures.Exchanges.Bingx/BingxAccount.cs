@@ -96,9 +96,28 @@ namespace Crypto.Futures.Exchanges.Bingx
             throw new NotImplementedException();
         }
 
-        public async Task<IPosition[]?> GetPositionHistory()
+        /// <summary>
+        /// Get closed position history for the account.    
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol   )
         {
-            throw new NotImplementedException();
+            DateTime dStart = DateTime.UtcNow.AddDays(-1); // Default to last 30 days
+            DateTime dEnd = DateTime.UtcNow;    
+            var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Trading.GetPositionHistoryAsync(oSymbol.Symbol, startTime: dStart, endTime: dEnd);
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oItem in oResult.Data)
+            {
+                if (oItem == null) continue;
+                IFuturesSymbol? oSymbolFound = m_oExchange.SymbolManager.GetSymbol(oItem.Symbol);
+                if (oSymbolFound == null) continue; // Skip if symbol is not found
+                IPosition oPosition = new BingxPosition(oSymbolFound, oItem);
+                if (oPosition.Quantity <= 0) continue; // Only include positions with non-zero quantity
+                aResult.Add(oPosition);
+            }
+            return aResult.ToArray();   
         }
     }
 }

@@ -28,6 +28,17 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
             BidPrice = oJson.BestBidPrice;
             BidVolume = oJson.BestBidQuantity * oSymbol.ContractSize;
         }
+
+        public CoinexOrderbookPrice(IFuturesSymbol oSymbol, CoinExOrderBook oJson)
+        {
+            Symbol = oSymbol;
+            DateTime = oJson.Data.UpdateTime.ToLocalTime();
+            AskPrice = oJson.Data.Asks[0].Price;
+            AskVolume = oJson.Data.Asks[0].Quantity * oSymbol.ContractSize;
+            BidPrice = oJson.Data.Bids[0].Price;
+            BidVolume = oJson.Data.Bids[0].Quantity * oSymbol.ContractSize;
+        }
+        // 
         public DateTime DateTime { get; private set; }
 
         public decimal AskPrice { get; private set; }

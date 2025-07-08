@@ -12,6 +12,8 @@ namespace Crypto.Futures.Bot.Trading
     internal class TraderPosition : ITraderPosition
     {
         private static long m_nIdCounter = 1;
+
+        private decimal m_nPriceClose = 0;
         public TraderPosition(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal nPriceOpen ) 
         { 
             Symbol = oSymbol;
@@ -30,7 +32,14 @@ namespace Crypto.Futures.Bot.Trading
 
         public decimal PriceOpen { get; }
 
-        public decimal PriceClose { get; set; }
+        public decimal PriceClose { 
+            get => m_nPriceClose;
+            set 
+            {
+                m_nPriceClose = value;
+                CalculateProfit(m_nPriceClose); // Calculate profit based on the new close price
+            } 
+        }
         public decimal ActualPrice { get; private set; } // Current price of the position, if open   
 
         public DateTime DateOpen { get; }
@@ -38,6 +47,15 @@ namespace Crypto.Futures.Bot.Trading
         public DateTime? DateClose { get; set; } = null;
 
         public decimal Profit { get; private set; } = 0;
+        private void CalculateProfit( decimal nPrice )
+        {
+            decimal nDiff = nPrice - PriceOpen;
+            if (!IsLong) nDiff *= -1.0M;
+            decimal nFeesOpen = (IsLong ? Symbol.FeeTaker : Symbol.FeeMaker) * PriceOpen * Volume;
+            decimal nFeesClose = (IsLong ? Symbol.FeeMaker : Symbol.FeeTaker) * nPrice * Volume;
+            ActualPrice = nPrice; // Update actual price to the current price
+            Profit = nDiff * Volume - nFeesOpen - nFeesClose;
+        }
         public bool Update()
         {
             // Get last trade
@@ -48,13 +66,7 @@ namespace Crypto.Futures.Bot.Trading
             double nSeconds =( dNow - oData.LastOrderbookPrice.DateTime).TotalSeconds;
             if( nSeconds > 1.0 ) return false; // Data is not fresh enough, we need to wait for next update 
             decimal nPrice = (IsLong ? oData.LastOrderbookPrice.BidPrice : oData.LastOrderbookPrice.AskPrice);
-            ActualPrice = nPrice;
-            decimal nDiff = nPrice - PriceOpen;
-            if (!IsLong) nDiff *= -1.0M;
-            decimal nFeesOpen  = (IsLong ? Symbol.FeeTaker : Symbol.FeeMaker) * PriceOpen * Volume;
-            decimal nFeesClose = (IsLong ? Symbol.FeeMaker : Symbol.FeeTaker) * nPrice * Volume;
-            PriceClose = nPrice;
-            Profit = nDiff * Volume - nFeesOpen- nFeesClose;
+            PriceClose = nPrice; // Update close price to the last price
             return true;
         }
     }

@@ -19,9 +19,31 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public IFuturesExchange Exchange { get => m_oExchange; }
 
+        /// <summary>
+        /// Close existing orders for the symbol.
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> CloseOrders(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            var oResult = await m_oExchange.RestClient.FuturesApi.Trading.GetOpenOrdersAsync(
+                oSymbol.Symbol // string symbol, 
+                               // CancellationToken ct = default(CancellationToken)
+            );
+            if (oResult == null || !oResult.Success) return true;
+            if (oResult.Data == null || oResult.Data.Items.Length <= 0) return true;
+            foreach (var oOrder in oResult.Data.Items)
+            {
+                var oCancelResult = await m_oExchange.RestClient.FuturesApi.Trading.CancelOrderAsync(
+                    oSymbol.Symbol, // string symbol, 
+                    oOrder.Id // long orderId, 
+                              // CancellationToken ct = default(CancellationToken)
+                );
+                if (oCancelResult == null || !oCancelResult.Success) return false;
+            }
+
+            return true;
         }
 
         public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)

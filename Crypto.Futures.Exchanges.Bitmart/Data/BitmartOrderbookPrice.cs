@@ -8,14 +8,14 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
     internal class BitmartOrderbookPrice: IOrderbookPrice
     {
 
-        public BitmartOrderbookPrice(IFuturesSymbol oSymbol, BitMartBookTicker oTicker, DateTime dDate )
+        public BitmartOrderbookPrice(IFuturesSymbol oSymbol, BitMartFuturesFullOrderBookUpdate oBook )
         {
             Symbol = oSymbol;
-            DateTime = dDate.ToLocalTime();
-            AskPrice = oTicker.BestBidPrice;
-            AskVolume = oTicker.BestAskQuantity;
-            BidPrice = oTicker.BestBidPrice;
-            BidVolume = oTicker.BestBidQuantity;
+            DateTime = oBook.Timestamp.ToLocalTime();
+            AskPrice = oBook.Asks[0].Price;
+            AskVolume = oBook.Asks[0].Quantity;
+            BidPrice = oBook.Bids[0].Price;
+            BidVolume = oBook.Bids[0].Quantity;
         }
         public DateTime DateTime { get; private set; }
 
