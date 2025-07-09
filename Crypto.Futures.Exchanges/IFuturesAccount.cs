@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,8 @@ namespace Crypto.Futures.Exchanges
         // TODO: Methods
         public IFuturesExchange Exchange { get; }
 
-
+        public IWebsocketPrivate WebsocketPrivate { get; }  
+                
         public Task<IBalance[]?> GetBalances();
 
         public Task<decimal?> GetLeverage(IFuturesSymbol oSymbol);

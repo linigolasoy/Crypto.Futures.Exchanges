@@ -106,7 +106,15 @@ namespace Crypto.Futures.Exchanges.Coinex
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
             var oResult = await m_oExchange.RestClient.FuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, MarginMode.Isolated, (int)nLeverage);
-            if (oResult == null || !oResult.Success) return false;
+            if (oResult == null) return false;
+            if (!oResult.Success)
+            {
+                if( Exchange.Logger != null)
+                {
+                    Exchange.Logger.Error($"Error setting leverage for {oSymbol.Symbol} to {nLeverage} [{CoinexFutures.GetErrorMessage(oResult)}]");
+                }
+                return false;
+            }
             m_aLeverages[oSymbol.Symbol] = nLeverage;
             return true;
         }

@@ -77,6 +77,8 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
                 if (oEvent == null || oEvent.Data == null) return;
                 IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
                 if (oSymbol == null) return;
+                if (oEvent.Data.Asks == null || oEvent.Data.Bids == null) return;
+                if ( oEvent.Data.Asks.Length <= 0 || oEvent.Data.Bids.Length <= 0) return;   
                 IWebsocketMessage oMessage = new BitmartOrderbookPrice(oSymbol, oEvent.Data);
                 m_oWebsocket.DataManager.Put(oMessage);
 

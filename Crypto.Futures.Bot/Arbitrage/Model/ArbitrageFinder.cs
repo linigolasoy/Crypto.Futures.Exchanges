@@ -109,7 +109,7 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 decimal nDiff = nMax - nMin;
                 decimal nPercent = Math.Round( 100.0M * nDiff / nMin, 2);
                 if (nPercent < Bot.Setup.Arbitrage.MinimumPercent) continue;
-                if( nPercent > 4.0M ) continue;    
+                if( nPercent > 10.0M ) continue;    
                 Bot.Logger.Info($"   Possible chance on {oPre.Key} => {nPercent} ({SubscribedCurrencies.Length})");
                 aResult.Add(oPre.Key, oPre.Value.ToArray());    
             }
@@ -268,10 +268,10 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                         decimal nPercent = Math.Round( nDiff * 100.0M / nPriceMinAsk, 2);
                         // nPercent -= nPercentMin;
                         // nPercent -= nPercentMax;    
-                        if ( nPercent >= 4.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
+                        if ( nPercent >= 10.0M || nPercent < Bot.Setup.Arbitrage.MinimumPercent ) continue;
                         IArbitrageChance oChance = new ArbitrageChanceModel(this, strKey, nPercent, oMin, oMax);
                         if( !oChance.UpdateOpen()) continue;
-                        if (oChance.LongData.DesiredPriceOpen == null || oChance.LongData.DesiredPriceClose == null) continue;
+                        if (oChance.LongData.DesiredPriceOpen == null || oChance.ShortData.DesiredPriceOpen == null) continue;
                         if (oChance.Percentage <= Bot.Setup.Arbitrage.MinimumPercent) continue;
                         aResult.Add( oChance );
                     }

@@ -3,6 +3,7 @@ using CoinEx.Net.Interfaces.Clients;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 using CryptoExchange.Net.Authentication;
+using CryptoExchange.Net.Objects;
 using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
@@ -59,6 +60,26 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public IFuturesSymbolManager SymbolManager { get; }
 
+        internal static string GetErrorMessage<T>( WebCallResult<T> oResult )
+        {
+            string strResult = "Unknown";
+            if (oResult != null)
+            {
+                if (oResult.Error != null)
+                {
+                    if (oResult.Error.Message != null)
+                    {
+                        strResult = oResult.Error.Message;
+                    }
+                    else if (oResult.Error.Code != null)
+                    {
+                        strResult = oResult.Error.Code.Value.ToString();
+                    }
+
+                }
+            }
+            return strResult;
+        }
         public async Task<IFuturesSymbol[]?> RefreshSymbols()
         {
             try

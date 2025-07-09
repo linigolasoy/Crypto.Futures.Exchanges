@@ -182,6 +182,7 @@ namespace Crypto.Futures.Bot.Trading
                     Bot.Logger.Error($"Failed to set leverage for symbol {oSymbol.ToString()} to {this.Leverage}");
                     return false;
                 }
+                await Task.Delay(WAIT_DELAY); // Wait for the leverage to be set    
                 return bResult; 
             }
             catch (Exception ex)

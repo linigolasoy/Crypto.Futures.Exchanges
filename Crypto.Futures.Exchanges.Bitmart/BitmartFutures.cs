@@ -66,10 +66,19 @@ namespace Crypto.Futures.Exchanges.Bitmart
                 var oRes = await m_oRestClient.UsdFuturesApi.ExchangeData.GetContractsAsync();
                 if (oRes == null || !oRes.Success) return null; 
                 List<IFuturesSymbol> aResult = new List<IFuturesSymbol>(); 
+                DateTime dToday = DateTime.UtcNow.Date;
                 foreach ( var oData in oRes.Data )
                 {
                     if (oData == null) continue;
                     if( oData.Status != BitMart.Net.Enums.ContractStatus.Trading) continue; // Only normal symbols
+                    if( oData.MaxLeverage < Setup.MoneyDefinition.Leverage )
+                    {
+                        continue;
+                    }
+                    if( oData.OpenTime > dToday)
+                    {
+                        continue; // Skip symbols that are not yet open
+                    }
                     IFuturesSymbol oNew = new BitmartSymbol( this, oData); 
                     aResult.Add(oNew);
                 }

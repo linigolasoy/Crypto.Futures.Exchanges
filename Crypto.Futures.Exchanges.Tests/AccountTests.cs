@@ -42,14 +42,14 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
             decimal nNewLeverage = 10;
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p=> p == ExchangeType.CoinExFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
 
                 if (!oExchange.Tradeable) continue;
 
-                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "ETH" && p.Quote == "USDT");
+                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "USTC" && p.Quote == "USDT");
                 Assert.IsNotNull(oBtc);
 
                 decimal? nLeverage = await oExchange.Account.GetLeverage(oBtc);

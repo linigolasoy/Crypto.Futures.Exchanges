@@ -9,6 +9,8 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
 {
     internal class ArbitrageChanceModel : IArbitrageChance
     {
+
+        private const int MAX_DELAY = 1000;
         public ArbitrageChanceModel( 
             IArbitrageFinder oFinder, 
             string strCurrency, 
@@ -79,7 +81,14 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
                 DateTime dNow = DateTime.Now;
                 double nDiffTimeLong = (dNow - LongData.WsSymbolData.LastOrderbookPrice.DateTime).TotalMilliseconds;
                 double nDiffTimeShort = (dNow - ShortData.WsSymbolData.LastOrderbookPrice.DateTime).TotalMilliseconds;
-                if (nDiffTimeLong > 1000 || nDiffTimeShort > 1000) return false;
+                if (nDiffTimeLong > MAX_DELAY)
+                {
+                    return false;
+                }
+                if (nDiffTimeShort > MAX_DELAY)
+                {
+                    return false;
+                }
                 return true;
             }
         }
