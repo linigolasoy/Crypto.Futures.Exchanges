@@ -1,5 +1,6 @@
 ﻿using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Cypto.Futures.Exchanges.Blofin;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,8 @@ namespace Crypto.Futures.Exchanges.Blofin
             m_oExchange = oExchange;
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate => throw new NotImplementedException();
 
         public async Task<IBalance[]?> GetBalances()
         {

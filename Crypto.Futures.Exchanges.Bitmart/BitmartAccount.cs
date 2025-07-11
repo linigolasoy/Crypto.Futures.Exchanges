@@ -1,8 +1,10 @@
 ﻿using BitMart.Net.Enums;
 using BitMart.Net.Objects.Models;
 using Crypto.Futures.Exchanges.Bitmart.Data;
+using Crypto.Futures.Exchanges.Bitmart.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,9 +22,12 @@ namespace Crypto.Futures.Exchanges.Bitmart
         public BitmartAccount(BitmartFutures oExchange)
         {
             m_oExchange = oExchange;
+            WebsocketPrivate = new BitmartWebsocketPrivate(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate { get; }
 
         public async Task<IBalance[]?> GetBalances()
         {

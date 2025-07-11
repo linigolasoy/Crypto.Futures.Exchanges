@@ -23,6 +23,16 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Avaliable = oJson.AvailableBalance;
             Locked = oJson.PositionMargin + oJson.FrozenBalance;
         }
+
+        internal BitmartBalance(IFuturesExchange oExchange, BitMartFuturesBalanceUpdate oUpdate )
+        {
+            Exchange = oExchange;
+            Currency = oUpdate.Asset;
+            Balance = oUpdate.Available + oUpdate.Frozen + oUpdate.PositionMargin;
+            Avaliable = oUpdate.Available;
+            Locked = oUpdate.PositionMargin + oUpdate.Frozen;
+
+        }
         public IFuturesExchange Exchange { get; }
 
         public string Currency { get; }

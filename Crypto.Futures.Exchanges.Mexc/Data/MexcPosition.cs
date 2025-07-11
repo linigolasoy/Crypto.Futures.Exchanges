@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
 using Newtonsoft.Json;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Mexc.Data
 {
@@ -68,11 +69,12 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
             Quantity = oJson.HoldVol * oSymbol.ContractSize;
         }
         public string Id { get; }
-
+        public decimal Profit { get; private set; } = 0;
         public DateTime CreatedAt { get; }
         public DateTime UpdatedAt { get; }
 
         public IFuturesSymbol Symbol { get; }
+        public WsMessageType MessageType { get => WsMessageType.Position; }
 
         public bool IsLong { get; }
 
@@ -91,6 +93,11 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
             IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
             if (oSymbol == null) return null;
             return new MexcPosition(oSymbol, oJson);    
+        }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            throw new NotImplementedException();
         }
     }
 }

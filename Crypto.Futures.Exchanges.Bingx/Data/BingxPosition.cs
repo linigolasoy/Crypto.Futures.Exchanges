@@ -1,6 +1,7 @@
 ﻿using BingX.Net.Enums;
 using BingX.Net.Objects.Models;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -28,6 +29,23 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             Quantity = oJson.Size;
         }
 
+
+        internal BingxPosition(IFuturesSymbol oSymbol, BingXFuturesPositionChange oChange)
+        {
+            Id = oSymbol.Symbol;
+            Symbol = oSymbol;
+            CreatedAt = DateTime.Now;
+            UpdatedAt = CreatedAt; // Bingx does not provide a separate updated time, so we use created time.
+            IsLong = (oChange.Side == TradeSide.Long);
+            IsOpen = (oChange.Size > 0);
+            AveragePriceOpen = oChange.EntryPrice;
+            PriceClose = oChange.EntryPrice;    
+            Quantity = oChange.Size;
+
+            Profit = oChange.UnrealizedPnl + (oChange.RealizedPnl == null? 0 : oChange.RealizedPnl.Value);
+
+
+        }
         internal BingxPosition(IFuturesSymbol oSymbol, BingXPositionHistory oJson)
         {
             Id = oJson.PositionId;
@@ -51,12 +69,23 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
 
         public bool IsLong { get; }
 
-        public bool IsOpen { get; }
+        public bool IsOpen { get; internal set; }
 
         public decimal AveragePriceOpen { get; }
         public decimal? PriceClose { get; set; } = null;
 
+        public decimal Profit { get; private set; } = 0;
         public decimal Quantity { get; }
 
+        public WsMessageType MessageType { get => WsMessageType.Position; }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            if( !(oMessage is IPosition)) return;
+            IPosition oPosition = (IPosition)oMessage;
+            IsOpen = oPosition.IsOpen;  
+            PriceClose= oPosition.PriceClose;   
+            Profit = oPosition.Profit;
+        }
     }
 }

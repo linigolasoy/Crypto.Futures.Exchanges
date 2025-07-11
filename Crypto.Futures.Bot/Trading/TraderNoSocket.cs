@@ -27,15 +27,22 @@ namespace Crypto.Futures.Bot.Trading
             AveragePriceOpen = oPosition.PriceOpen;
             Quantity = oPosition.Volume;
         }
+        public WsMessageType MessageType { get => WsMessageType.Position; }
         public string Id { get; }
         public IFuturesSymbol Symbol { get; }
         public DateTime CreatedAt { get; }
         public DateTime UpdatedAt { get; }
         public bool IsLong { get; }
         public bool IsOpen { get; }
+        public decimal Profit { get; private set; } = 0;
         public decimal AveragePriceOpen { get; }
         public decimal? PriceClose { get; set; } = null;
         public decimal Quantity { get; }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypto.Futures.Exchanges.WebsocketModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Crypto.Futures.Exchanges.Model
     /// <summary>
     /// Position on a futures exchange. 
     /// </summary>
-    public interface IPosition
+    public interface IPosition: IWebsocketMessageBase
     {
         public string Id { get; }
         public IFuturesSymbol Symbol { get; }
@@ -21,5 +22,7 @@ namespace Crypto.Futures.Exchanges.Model
         public decimal AveragePriceOpen { get; }
         public decimal? PriceClose { get; set; } 
         public decimal Quantity { get; }
+
+        public decimal Profit { get; }  
     }
 }

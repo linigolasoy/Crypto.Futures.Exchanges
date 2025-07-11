@@ -1,6 +1,7 @@
 ﻿using Crypto.Futures.Exchanges.Mexc.Data;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,8 @@ namespace Crypto.Futures.Exchanges.Mexc
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate => throw new NotImplementedException();
 
         /*
 ApiKey, Request-Time, Signature

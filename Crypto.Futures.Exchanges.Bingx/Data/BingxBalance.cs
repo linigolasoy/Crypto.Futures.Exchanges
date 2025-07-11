@@ -24,6 +24,15 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             Balance = oJson.Equity;
         }
 
+        internal BingxBalance(IFuturesExchange oExchange, BingXFuturesBalanceChange oChange)
+        {
+            Exchange = oExchange;
+            Currency = oChange.Asset;
+            Avaliable = oChange.BalanceExIsolatedMargin;
+            Balance = oChange.Balance;
+            Locked = Balance - Avaliable;   
+        }
+
         public IFuturesExchange Exchange { get; }
 
         public string Currency { get; }

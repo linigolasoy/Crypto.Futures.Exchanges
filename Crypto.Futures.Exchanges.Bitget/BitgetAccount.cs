@@ -1,6 +1,8 @@
 ﻿using Bitget.Net.Enums;
 using Crypto.Futures.Exchanges.Bitget.Data;
+using Crypto.Futures.Exchanges.Bitget.Ws;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,8 +20,11 @@ namespace Crypto.Futures.Exchanges.Bitget
         public BitgetAccount(BitgetFutures oExchange)
         {
             m_oExchange = oExchange;
+            WebsocketPrivate = new BitgetWebsocketPrivate(this);
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate { get; }
 
         /// <summary>
         /// Get the balances for the account.
@@ -35,7 +40,7 @@ namespace Crypto.Futures.Exchanges.Bitget
             foreach (var oItem in oResult.Data)
             {
                 if (oItem == null) continue;
-                IBalance oBalance = new BitgetBalance(Exchange, oItem);
+                IBalance oBalance = new BitgetBalanceMine(Exchange, oItem);
                 if( oBalance.Balance + oBalance.Avaliable + oBalance.Locked <= 0) continue; // Ignore empty balances
                 aResult.Add(oBalance);
             }

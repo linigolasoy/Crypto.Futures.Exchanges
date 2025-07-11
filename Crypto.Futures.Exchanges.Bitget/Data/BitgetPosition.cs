@@ -1,12 +1,7 @@
 ﻿using Bitget.Net.Enums.V2;
 using Bitget.Net.Objects.Models.V2;
 using Crypto.Futures.Exchanges.Model;
-using CryptoExchange.Net.SharedApis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Crypto.Futures.Exchanges.WebsocketModel;
 
 namespace Crypto.Futures.Exchanges.Bitget.Data
 {
@@ -27,6 +22,19 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
 
         }
 
+        public BitgetPositionMine(IFuturesSymbol oSymbol, BitgetPositionUpdate oUpdate)
+        {
+            Id = oUpdate.PositionId;
+            Symbol = oSymbol;
+            CreatedAt = oUpdate.CreateTime.ToLocalTime();
+            UpdatedAt = oUpdate.UpdateTime.ToLocalTime();
+            IsLong = (oUpdate.PositionSide == PositionSide.Long);
+            IsOpen = true;
+            AveragePriceOpen = oUpdate.AverageOpenPrice;
+            Quantity = oUpdate.Total;
+            Profit = oUpdate.UnrealizedProfitAndLoss + oUpdate.RealizedProfitAndLoss;
+        }
+
         public BitgetPositionMine(IFuturesSymbol oSymbol, BitgetPositionHistoryEntry oJson)
         {
             // Constructor logic if needed
@@ -41,22 +49,33 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
             PriceClose = oJson.AverageClosePrice;
 
         }
+        public WsMessageType MessageType { get => WsMessageType.Position; }
 
         public string Id { get; }
 
         public IFuturesSymbol Symbol { get; }
-
+        public decimal Profit { get; private set; } = 0;
         public DateTime CreatedAt { get; }
 
-        public DateTime UpdatedAt { get; }
+        public DateTime UpdatedAt { get; private set; }
 
         public bool IsLong { get; }
 
-        public bool IsOpen { get; }
+        public bool IsOpen { get; internal set; }
 
         public decimal AveragePriceOpen { get; }
         public decimal? PriceClose { get; set; } = null;    
 
         public decimal Quantity { get; }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            if (!(oMessage is IPosition)) return;
+            IPosition oPosition = (IPosition)oMessage;  
+            UpdatedAt = oPosition.UpdatedAt;
+            IsOpen = oPosition.IsOpen;
+            Profit = oPosition.Profit;
+            PriceClose = oPosition.PriceClose;
+        }
     }
 }

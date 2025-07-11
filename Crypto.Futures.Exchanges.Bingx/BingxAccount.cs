@@ -1,7 +1,9 @@
 ﻿using BingX.Net.Enums;
 using Crypto.Futures.Exchanges.Bingx.Data;
+using Crypto.Futures.Exchanges.Bingx.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +20,12 @@ namespace Crypto.Futures.Exchanges.Bingx
         public BingxAccount(BingxFutures oExchange)
         {
             m_oExchange = oExchange;
+            WebsocketPrivate = new BingxWebsocketPrivate(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate { get; }
 
         public async Task<IBalance[]?> GetBalances()
         {

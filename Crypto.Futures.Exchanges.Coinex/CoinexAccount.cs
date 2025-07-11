@@ -1,6 +1,8 @@
 ﻿using CoinEx.Net.Enums;
 using Crypto.Futures.Exchanges.Coinex.Data;
+using Crypto.Futures.Exchanges.Coinex.Ws;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,9 +24,12 @@ namespace Crypto.Futures.Exchanges.Coinex
         public CoinexAccount(CoinexFutures oExchange)
         {
             m_oExchange = oExchange;
+            WebsocketPrivate = new CoinexWebsocketPrivate(this);
         }
 
         public IFuturesExchange Exchange { get => m_oExchange; }
+
+        public IWebsocketPrivate WebsocketPrivate { get; }
 
         /// <summary>
         /// Account balances retrieval. 

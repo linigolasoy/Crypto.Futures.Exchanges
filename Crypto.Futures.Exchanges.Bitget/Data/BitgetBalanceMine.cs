@@ -9,14 +9,22 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Bitget.Data
 {
-    internal class BitgetBalance : IBalance
+    internal class BitgetBalanceMine : IBalance
     {
-        public BitgetBalance(IFuturesExchange oExchange, BitgetFuturesBalance oBalance)
+        public BitgetBalanceMine(IFuturesExchange oExchange, BitgetFuturesBalance oBalance)
         {
             Exchange = oExchange;
             Currency = oBalance.MarginAsset;
             Balance = oBalance.Equity;
             Locked = oBalance.Locked;
+            Avaliable = oBalance.Available;
+        }
+        public BitgetBalanceMine(IFuturesExchange oExchange, BitgetFuturesBalanceUpdate oBalance)
+        {
+            Exchange = oExchange;
+            Currency = oBalance.MarginAsset;
+            Balance = oBalance.Equity;
+            Locked = oBalance.Equity - oBalance.Available;
             Avaliable = oBalance.Available;
         }
         public IFuturesExchange Exchange { get; }
