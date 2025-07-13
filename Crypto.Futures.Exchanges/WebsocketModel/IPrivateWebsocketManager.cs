@@ -24,6 +24,8 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
         public IBalance[] Balances { get; }
         public IOrder[] Orders { get; }
+
+        public IOrder? GetOrder(string strOrderId);
         public IPosition[] Positions { get; }
 
         public void Put(IWebsocketMessageBase oMessage); 

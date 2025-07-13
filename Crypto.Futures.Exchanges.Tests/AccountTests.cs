@@ -42,7 +42,7 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
             decimal nNewLeverage = 10;
-            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p=> p == ExchangeType.CoinExFutures))
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -104,8 +104,8 @@ namespace Crypto.Futures.Exchanges.Tests
                 decimal nPrice = Math.Round( oFound.LastPrice * 0.8M, oXrp.Decimals);
                 await Task.Delay(2000);
                 // Limit order test
-                bool bOrdered = await oExchange.Trading.CreateOrder(oXrp, true, 5, nPrice);
-                Assert.IsTrue(bOrdered);
+                string? strOrder = await oExchange.Trading.CreateOrder(oXrp, true, 5, nPrice);
+                Assert.IsNotNull(strOrder);
                 await Task.Delay(2000);
                 Assert.IsNotNull( oLastOrder );
                 Assert.IsTrue(oLastOrder.Status == ModelOrderStatus.New || oLastOrder.Status == ModelOrderStatus.Placed);
@@ -115,16 +115,16 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsTrue(oLastOrder.Status == ModelOrderStatus.Canceled);
 
                 // Market order test
-                bOrdered = await oExchange.Trading.CreateOrder(oXrp, true, 5);
-                Assert.IsTrue(bOrdered);
+                strOrder = await oExchange.Trading.CreateOrder(oXrp, true, 5);
+                Assert.IsNotNull(strOrder);
                 await Task.Delay(2000);
                 Assert.IsTrue(oLastOrder != null);
                 Assert.IsTrue(oLastOrder.Status == ModelOrderStatus.Filled);
 
                 Assert.IsNotNull(oLastPosition);
 
-                bool bClosePosition = await oExchange.Trading.ClosePosition(oLastPosition);
-                Assert.IsTrue(bClosePosition);
+                strOrder = await oExchange.Trading.ClosePosition(oLastPosition);
+                Assert.IsNotNull(strOrder);
                 await Task.Delay(2000);
                 Assert.IsTrue(!oLastPosition.IsOpen);
 

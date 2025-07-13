@@ -22,6 +22,7 @@ namespace Crypto.Futures.Bot
         public DateTime DateOpen { get; }
         public DateTime? DateClose { get; }
 
+        public IPosition? Position { get; }
         public bool Update();
     }
 
@@ -33,9 +34,9 @@ namespace Crypto.Futures.Bot
 
         public decimal Money { get; }   
         public decimal Leverage { get; }
-        public ITradingBot Bot { get; } 
-
         public int OrderTimeout { get; set; } // Timeout for orders in seconds   
+        public ITradingBot Bot { get; }
+
         public IBalance[] Balances { get; }
         public ITraderPosition[] ActivePositions { get; }
         public ITraderPosition[] ClosedPositions { get; }

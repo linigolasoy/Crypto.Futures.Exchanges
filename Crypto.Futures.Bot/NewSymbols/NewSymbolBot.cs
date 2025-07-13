@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.NewSymbols
 {
+    /*
     internal class NewSymbolBot : ITradingBot
     {
         private IFuturesExchange[]? m_aExchanges = null;
@@ -115,4 +116,5 @@ namespace Crypto.Futures.Bot.NewSymbols
             return true;
         }
     }
+    */
 }

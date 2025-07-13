@@ -2,6 +2,8 @@
 
 
 using Crypto.Futures.Bot;
+using Crypto.Futures.Bot.Interface;
+using Crypto.Futures.Bot.Interface.Arbitrage;
 using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Factory;
 
@@ -41,10 +43,9 @@ public class Program
     public static async Task Main(string[] args)
     {
         IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
-        ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "RealArbitrageBot");
 
         // ITradingBot oBot = BotFactory.CreateNewSymbolBot(oSetup, oLogger);
-        ITradingBot oBot = BotFactory.CreateArbitrageBot(oSetup, oLogger, false);
+        IArbitrageBot oBot = BotFactory.CreateArbitrageBot(oSetup, false);
 
         try
         {
@@ -52,7 +53,7 @@ public class Program
             // ITradingBot oBot = BotFactory.CreateSpreadBot(oSetup, oLogger);
             // ITradingBot oBot = new OppositeOrderTester(oSetup, oLogger);
 
-            oLogger.Info("Enter main program");
+            oBot.Logger.Info("Enter main program");
             await oBot.Start();
             eAction eResult = eAction.None;
             while (eResult != eAction.Cancel)
@@ -61,13 +62,13 @@ public class Program
                 await Task.Delay(500);
             }
 
-            oLogger.Info("Exit main program");
+            oBot.Logger.Info("Exit main program");
             await Task.Delay(1000);
             await oBot.Stop();
         }
         catch (Exception ex)
         {
-            oLogger.Error("Error on main program", ex);
+            oBot.Logger.Error("Error on main program", ex);
         }
 
     }

@@ -30,24 +30,6 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
 
         public string[] SubscribedCurrencies { get => m_aSubscribed.Keys.ToArray(); }
 
-        /// <summary>
-        /// Create exchanges
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        private IFuturesExchange[]? CreateExchanges()
-        {
-            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
-
-            foreach (var eType in Bot.Setup.ExchangeTypes)
-            {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(Bot.Setup, eType, Bot.Logger);
-                if (!oExchange.Tradeable) continue;
-                aExchanges.Add(oExchange);
-            }
-            return aExchanges.ToArray();
-        }
-
 
 
         /// <summary>
@@ -213,7 +195,7 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
         private async Task MainLoop()
         {
             // Create exchanges
-            IFuturesExchange[]? aExchanges = CreateExchanges();
+            IFuturesExchange[]? aExchanges = Bot.Exchanges;
             if (aExchanges == null) return;
             // Create currency pairs
             while(!m_oCancelSource.IsCancellationRequested)

@@ -110,7 +110,7 @@ namespace Crypto.Futures.Exchanges.Coinex
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            var oResult = await m_oExchange.RestClient.FuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, MarginMode.Isolated, (int)nLeverage);
+            var oResult = await m_oExchange.RestClient.FuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, MarginMode.Cross, (int)nLeverage);
             if (oResult == null) return false;
             if (!oResult.Success)
             {

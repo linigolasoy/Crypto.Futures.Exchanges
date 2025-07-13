@@ -24,7 +24,7 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <param name="oPosition"></param>
         /// <param name="nPrice"></param>
         /// <returns></returns>
-        public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
         {
             OrderSide eSide = (oPosition.IsLong ? OrderSide.Sell : OrderSide.Buy);
             FuturesOrderType eType = (nPrice != null ? FuturesOrderType.Limit : FuturesOrderType.Market);
@@ -60,17 +60,17 @@ namespace Crypto.Futures.Exchanges.Bingx
                 CancellationToken ct = default(CancellationToken)
                 */
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if (oResult.Data == null) return false;
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
             if (oResult.Data.OrderId <= 0)
             {
-                return false; // No order ID means failure
+                return null; // No order ID means failure
             }
 
-            return true; // Order created successfully
+            return oResult.Data.OrderId.ToString(); // Order created successfully
         }
 
-        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
         {
             OrderSide eSide = bLong ? OrderSide.Buy : OrderSide.Sell;
             FuturesOrderType eType = ( nPrice != null ? FuturesOrderType.Limit : FuturesOrderType.Market);
@@ -105,14 +105,14 @@ namespace Crypto.Futures.Exchanges.Bingx
                     CancellationToken ct = default(CancellationToken)
                     */
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if (oResult.Data == null) return false;
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
             if( oResult.Data.OrderId <= 0)
             {
-                return false; // No order ID means failure
+                return null; // No order ID means failure
             }
 
-            return true; // Order created successfully
+            return oResult.Data.OrderId.ToString(); // Order created successfully
         }
 
         /// <summary>

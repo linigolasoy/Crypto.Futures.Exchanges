@@ -43,7 +43,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
             return true; // All orders closed successfully
         }
 
-        public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
         {
             FuturesSide eSide = oPosition.IsLong ? FuturesSide.SellCloseLong : FuturesSide.BuyCloseShort;
             FuturesOrderType eType = (nPrice == null ? FuturesOrderType.Market : FuturesOrderType.Limit);
@@ -61,13 +61,13 @@ namespace Crypto.Futures.Exchanges.Bitmart
                            // TriggerPriceType ? presetTakeProfitPriceType = null, 
                            // TriggerPriceType ? presetStopLossPriceType = null, decimal ? presetTakeProfitPrice = null, decimal ? presetStopLossPrice = null, StpMode ? stpMode = null, CancellationToken ct = default(CancellationToken)
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if (oResult.Data == null) return false; // No order created
-            if (oResult.Data.OrderId <= 0) return false; // No order id, no order created  
-            return true; // Order created successfully
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null; // No order created
+            if (oResult.Data.OrderId <= 0) return null; // No order id, no order created  
+            return oResult.Data.OrderId.ToString(); // Order created successfully
         }
 
-        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
         {
             FuturesSide eSide = bLong ? FuturesSide.BuyOpenLong : FuturesSide.SellOpenShort;
             FuturesOrderType eType = (nPrice == null ? FuturesOrderType.Market : FuturesOrderType.Limit);
@@ -85,10 +85,10 @@ namespace Crypto.Futures.Exchanges.Bitmart
                            // TriggerPriceType ? presetTakeProfitPriceType = null, 
                            // TriggerPriceType ? presetStopLossPriceType = null, decimal ? presetTakeProfitPrice = null, decimal ? presetStopLossPrice = null, StpMode ? stpMode = null, CancellationToken ct = default(CancellationToken)
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if( oResult.Data == null ) return false; // No order created
-            if(oResult.Data.OrderId <= 0 ) return false; // No order id, no order created  
-            return true; // Order created successfully
+            if (oResult == null || !oResult.Success) return null;
+            if( oResult.Data == null ) return null; // No order created
+            if(oResult.Data.OrderId <= 0 ) return null; // No order id, no order created  
+            return oResult.Data.OrderId.ToString(); // Order created successfully
         }
     }
 }

@@ -57,7 +57,7 @@ namespace Crypto.Futures.Exchanges.Bitmart
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
-            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, (int)nLeverage, MarginType.IsolatedMargin );
+            var oResult = await m_oExchange.RestClient.UsdFuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, (int)nLeverage, MarginType.CrossMargin );
             if (oResult == null || !oResult.Success) return false;
             m_aLeverages[oSymbol.Symbol] = nLeverage;
             return true;

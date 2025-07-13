@@ -69,7 +69,11 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             foreach (var oData in oEvent.Data)
             {
                 IFuturesSymbol? oSymbol = Account.Exchange.SymbolManager.GetSymbol(oData.Symbol);
-                if( oSymbol == null ) continue;
+                if( oSymbol == null )
+                {
+                    if( oEvent.Symbol != null ) oSymbol = Account.Exchange.SymbolManager.GetSymbol(oEvent.Symbol);
+                    if (oSymbol == null) continue;
+                }
                 IOrder oOrder = new BitgetOrderMine(oSymbol, oData);
                 Put(oOrder);
             }

@@ -1,6 +1,5 @@
 ﻿using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Model;
-using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,52 +9,19 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Trading
 {
-
     /*
     /// <summary>
-    /// Trader position implementation for the IPosition interface.
+    /// Trader with sockets
     /// </summary>
-    internal class TraderIPosition : IPosition
+    internal class TraderSocket : ITrader
     {
-        public TraderIPosition(ITraderPosition oPosition)
-        {
-            Id = oPosition.Id.ToString();
-            Symbol = oPosition.Symbol;
-            CreatedAt = oPosition.DateOpen;
-            UpdatedAt = DateTime.Now;
-            IsLong = oPosition.IsLong;
-            IsOpen = (oPosition.DateClose == null);
-            AveragePriceOpen = oPosition.PriceOpen;
-            Quantity = oPosition.Volume;
-        }
-        public WsMessageType MessageType { get => WsMessageType.Position; }
-        public string Id { get; }
-        public IFuturesSymbol Symbol { get; }
-        public DateTime CreatedAt { get; }
-        public DateTime UpdatedAt { get; }
-        public bool IsLong { get; }
-        public bool IsOpen { get; }
-        public decimal Profit { get; private set; } = 0;
-        public decimal AveragePriceOpen { get; }
-        public decimal? PriceClose { get; set; } = null;
-        public decimal Quantity { get; }
-
-        public void Update(IWebsocketMessageBase oMessage)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Trader implementation without a socket connection.  
-    /// </summary>
-    public class TraderNoSocket : ITrader
-    {
-        private const int WAIT_DELAY = 1000; 
 
         private ConcurrentDictionary<ExchangeType, IBalance> m_aBalances = new ConcurrentDictionary<ExchangeType, IBalance>();
-        public TraderNoSocket(ITradingBot oBot)
-        {
+
+
+        private const int WAIT_DELAY = 1000;
+        public TraderSocket( ITradingBot oBot ) 
+        { 
             Bot = oBot;
             Money = oBot.Setup.MoneyDefinition.Money;
             Leverage = oBot.Setup.MoneyDefinition.Leverage;
@@ -76,45 +42,37 @@ namespace Crypto.Futures.Bot.Trading
 
 
         /// <summary>
-        /// Close position  
+        /// Close position
         /// </summary>
         /// <param name="oPosition"></param>
         /// <param name="nPrice"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> Close(ITraderPosition oPosition, decimal? nPrice = null)
         {
             try
             {
-                IPosition oIPosition = new TraderIPosition(oPosition);
-                bool bClose = await oIPosition.Symbol.Exchange.Trading.ClosePosition(oIPosition, nPrice);
+                if( oPosition.Position == null ) return false;
+                bool bClose = await oPosition.Symbol.Exchange.Trading.ClosePosition(oPosition.Position, nPrice);
                 if (!bClose)
                 {
-                    Bot.Logger.Error($"Failed to create close order for symbol {oIPosition.Symbol.ToString()} Long:{oIPosition.IsLong}");
+                    Bot.Logger.Error($"Failed to create close order for symbol {oPosition.Symbol.ToString()} Long:{oPosition.Position.IsLong}");
                     return false;
+
                 }
-                int nRetries = OrderTimeout * 1000 / WAIT_DELAY;
+                int nDelay = 100;
+                int nRetries = OrderTimeout * 1000 / nDelay;
                 while (nRetries >= 0)
                 {
-                    await Task.Delay(WAIT_DELAY);
-                    IPosition[]? aPositions = await oIPosition.Symbol.Exchange.Account.GetPositions();
-                    if (aPositions != null)
+                    await Task.Delay(nDelay);
+                    if (!oPosition.Position.IsOpen)
                     {
-                        IPosition? oFound = aPositions.FirstOrDefault(p => p.Symbol.Symbol == oIPosition.Symbol.Symbol && p.IsLong == oIPosition.IsLong && p.Quantity == oIPosition.Quantity);
-                        if (oFound == null)
-                        {
-                            IPosition[]? aHistory = await oIPosition.Symbol.Exchange.Account.GetPositionHistory(oIPosition.Symbol);
-                            if (aHistory == null) continue;
-                            IPosition? oClosed = aHistory.OrderByDescending(p=> p.CreatedAt).FirstOrDefault(p => p.Symbol.Symbol == oIPosition.Symbol.Symbol && p.IsLong == oIPosition.IsLong && p.Quantity == oIPosition.Quantity && p.CreatedAt > oPosition.DateOpen);
-                            if (oClosed == null) continue;
-                            ((TraderPosition)oPosition).PriceClose = oClosed.PriceClose!.Value;
-                            Bot.Logger.Info($"  Closed position {oPosition.Id} for {oPosition.Symbol.ToString()} at price {oPosition.PriceClose} with volume {oPosition.Volume} (long: {oPosition.IsLong})");
-                            return true;
-                        }
+                        ((TraderPosition)oPosition).Profit = oPosition.Position.Profit;
+                        Bot.Logger.Info($"  Closed position {oPosition.Id} for {oPosition.Symbol.ToString()} with  profit {oPosition.Profit} with volume {oPosition.Volume} (long: {oPosition.IsLong})");
+                        return true;
                     }
                     nRetries--;
                 }
-                await oIPosition.Symbol.Exchange.Trading.CloseOrders(oIPosition.Symbol); // Cancel order if not found
+                await oPosition.Symbol.Exchange.Trading.CloseOrders(oPosition.Symbol); // Cancel order if not found
                 return false;
 
 
@@ -126,8 +84,20 @@ namespace Crypto.Futures.Bot.Trading
             }
         }
 
+        private void UpdateBalances()
+        {
+            if (m_aBalances.Count > 0) return;
+            foreach( var oExchange in Bot.Exchanges )
+            {
+                IBalance[] aBalances = oExchange.Account.WebsocketPrivate.Balances;
+                IBalance? oFound = aBalances.FirstOrDefault(p => p.Currency == "USDT");
+                if (oFound == null) continue;
+                m_aBalances.TryAdd(oExchange.ExchangeType, oFound); 
+            }
+        }
+
         /// <summary>
-        /// Ttrade
+        /// Try to open new position
         /// </summary>
         /// <param name="oSymbol"></param>
         /// <param name="bLong"></param>
@@ -138,23 +108,27 @@ namespace Crypto.Futures.Bot.Trading
         {
             try
             {
-                bool bOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice); 
-                if(!bOrder)
+                UpdateBalances();
+                bool bOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice);
+                if (!bOrder)
                 {
                     Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
                     return null;
                 }
-                int nRetries = OrderTimeout * 1000 / WAIT_DELAY;
+                int nDelay = 100;
+                int nRetries = OrderTimeout * 1000 / nDelay;
                 while (nRetries >= 0)
                 {
-                    await Task.Delay(WAIT_DELAY);
-                    IPosition[]? aPositions = await oSymbol.Exchange.Account.GetPositions();
-                    if ( aPositions != null )
+                    await Task.Delay(nDelay);
+                    IPosition[] aPositions = oSymbol.Exchange.Account.WebsocketPrivate.Positions;
+                    if (aPositions != null && aPositions.Length > 0)
                     {
                         IPosition? oFound = aPositions.FirstOrDefault(p => p.Symbol.Symbol == oSymbol.Symbol && p.IsLong == bLong && p.Quantity == nVolume);
-                        if(oFound != null)
+                        if (oFound != null)
                         {
-                            ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, oFound.AveragePriceOpen);
+                            TraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, oFound.AveragePriceOpen);
+                            oPosition.Position = oFound;
+                            
                             Bot.Logger.Info($"  Opened position {oPosition.Id} for {oSymbol.ToString()} at price {oFound.AveragePriceOpen} with volume {nVolume} (long: {bLong})");
                             return oPosition;
                         }
@@ -168,9 +142,9 @@ namespace Crypto.Futures.Bot.Trading
             {
                 Bot.Logger.Error($"Error opening position for symbol {oSymbol.ToString()}: {ex.Message}", ex);
                 return null;
-            }   
-        }
 
+            }
+        }
 
         /// <summary>
         /// Put leverage on symbol
@@ -184,13 +158,13 @@ namespace Crypto.Futures.Bot.Trading
                 decimal? nLeverage = await oSymbol.Exchange.Account.GetLeverage(oSymbol);
                 if (nLeverage != null && nLeverage == this.Leverage) return true;
                 bool bResult = await oSymbol.Exchange.Account.SetLeverage(oSymbol, this.Leverage);
-                if(!bResult)
+                if (!bResult)
                 {
                     Bot.Logger.Error($"Failed to set leverage for symbol {oSymbol.ToString()} to {this.Leverage}");
                     return false;
                 }
                 await Task.Delay(WAIT_DELAY); // Wait for the leverage to be set    
-                return bResult; 
+                return bResult;
             }
             catch (Exception ex)
             {

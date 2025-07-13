@@ -31,7 +31,7 @@ namespace Crypto.Futures.Bot.Trading
         public decimal Volume { get; }
 
         public decimal PriceOpen { get; }
-
+        public IPosition? Position { get; internal set; } = null;
         public decimal PriceClose { 
             get => m_nPriceClose;
             set 
@@ -46,9 +46,10 @@ namespace Crypto.Futures.Bot.Trading
 
         public DateTime? DateClose { get; set; } = null;
 
-        public decimal Profit { get; private set; } = 0;
+        public decimal Profit { get; internal set; } = 0;
         private void CalculateProfit( decimal nPrice )
         {
+
             decimal nDiff = nPrice - PriceOpen;
             if (!IsLong) nDiff *= -1.0M;
             decimal nFeesOpen = (IsLong ? Symbol.FeeTaker : Symbol.FeeMaker) * PriceOpen * Volume;

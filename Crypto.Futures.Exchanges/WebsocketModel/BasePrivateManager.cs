@@ -27,10 +27,14 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
         }
         public IFuturesAccount Account { get; }
 
-        public IBalance[] Balances => throw new NotImplementedException();
+        public IBalance[] Balances { get => m_aBalances.Values.ToArray(); }
 
-        public IOrder[] Orders => throw new NotImplementedException();
-
+        public IOrder[] Orders { get => m_aOrders.Values.ToArray(); }
+        public IOrder? GetOrder( string strOrderId )
+        {
+            if( m_aOrders.TryGetValue( strOrderId, out IOrder? order ) ) return order;
+            return null;
+        }
         public IPosition[] Positions { get => m_aPositions.Values.ToArray(); }
 
         public event IPrivateWebsocketManager.OnOrderDelegate? OnOrder = null;

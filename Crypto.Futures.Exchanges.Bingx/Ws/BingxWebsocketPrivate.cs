@@ -99,7 +99,11 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                 var oEndStream = await m_oRestClient.PerpetualFuturesApi.Account.StopUserStreamAsync(m_strSocketKey);
                 m_strSocketKey = null;  
             }
-
+            if( m_oTimer != null )
+            {
+                m_oTimer.Dispose();
+                m_oTimer = null;
+            }
             await Task.Delay(1000);
 
             return true;

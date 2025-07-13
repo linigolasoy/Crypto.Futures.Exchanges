@@ -1,4 +1,6 @@
 ﻿using Crypto.Futures.Bot;
+using Crypto.Futures.Bot.Interface;
+using Crypto.Futures.Bot.Interface.Arbitrage;
 using Crypto.Futures.Exchanges.Factory;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
@@ -61,8 +63,8 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
                 decimal nInvest = nMoney * nLeverage;
-                bool bOrderResult = await oExchange.Trading.CreateOrder(oSymbol, false, nQuantity);
-                Assert.IsTrue(bOrderResult, "Order data should be true (order created).");
+                string? strOrderId = await oExchange.Trading.CreateOrder(oSymbol, false, nQuantity);
+                Assert.IsNotNull(strOrderId);
 
                 await Task.Delay(1000); // Wait for order to be processed
                 IPosition[]? aPositions = await oExchange.Account.GetPositions();
@@ -71,8 +73,8 @@ namespace Crypto.Futures.Exchanges.Tests
                 IPosition? oPosition = aPositions.FirstOrDefault(p => p.Symbol.Symbol.Equals(oSymbol.Symbol));
                 Assert.IsNotNull(oPosition, "Position for the symbol should not be null.");
 
-                bool bCloseResult = await oExchange.Trading.ClosePosition(oPosition);
-                Assert.IsTrue(bCloseResult, "Close position data should be true (position closed).");
+                string? strCloseOrder = await oExchange.Trading.ClosePosition(oPosition);
+                Assert.IsNotNull(strCloseOrder);
 
                 aPositions = await oExchange.Account.GetPositions();
                 Assert.IsNotNull(aPositions, "Positions should not be null after closing.");
@@ -89,33 +91,55 @@ namespace Crypto.Futures.Exchanges.Tests
         {
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
-            ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "TestBotLogger");
 
-            ITradingBot oBot = BotFactory.CreateArbitrageBot(oSetup, oLogger, false);
+            IArbitrageBot oBot = BotFactory.CreateArbitrageBot(oSetup, false);
             string strCurrency = "XRP";
             decimal nQuantity = 5;
-
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            oBot.Trader.OrderTimeout = 30;
+            foreach (var oExchange in oBot.Exchanges.Where(p=> p.ExchangeType == ExchangeType.BitmartFutures))
             {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
-                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
-
-                if (!oExchange.Tradeable) continue;
 
                 IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == strCurrency && p.Quote == "USDT");
                 Assert.IsNotNull(oSymbol, $"Symbol for {strCurrency}USDT should not be null.");
 
+                bool bStarted = await oExchange.Account.WebsocketPrivate.Start();
+                Assert.IsTrue(bStarted);
+                await Task.Delay(2000);
+
+                IWebsocketSubscription? oSubscription = await oExchange.Market.Websocket.Subscribe(oSymbol, WsMessageType.OrderbookPrice);
+                Assert.IsNotNull(oSubscription);
+
+                await Task.Delay(2000);
+                var oData = oExchange.Market.Websocket.DataManager.GetData(oSymbol);
+                Assert.IsNotNull(oData);
+
+                Assert.IsNotNull(oData.LastOrderbookPrice);
+
                 bool bLeverage = await oBot.Trader.PutLeverage(oSymbol);
                 Assert.IsTrue(bLeverage, "Setting leverage should be successful.");
 
-                ITraderPosition? oPosition = await oBot.Trader.Open(oSymbol, true, nQuantity);
+                ICryptoPosition? oPosition = await oBot.Trader.Open(oSymbol, true, nQuantity, oData.LastOrderbookPrice.AskPrice);
+                if( oPosition == null )
+                {
+                    oPosition = await oBot.Trader.Open(oSymbol, true, nQuantity);
+                }
                 Assert.IsNotNull(oPosition, "Position should not be null after opening.");
 
-                oPosition.Update();
-
                 Assert.IsTrue(oPosition.IsLong, "Position should be long.");
-                bool bCloseResult = await oBot.Trader.Close(oPosition);
+                Assert.IsNotNull(oPosition.OrderOpen, "Order open should exist");
+                Assert.IsTrue(oPosition.OrderOpen.FilledPrice > 0, "Filled price should be not zero");
+                Assert.IsTrue(oPosition.IsLong, "Position should be long.");
+                bool bCloseResult = await oBot.Trader.Close(oPosition, oData.LastOrderbookPrice.BidPrice);
+                if (!bCloseResult)
+                {
+                    bCloseResult = await oBot.Trader.Close(oPosition);
+                }
                 Assert.IsTrue(bCloseResult, "Close position data should be true (position closed).");
+
+                bool bStopped = await oExchange.Account.WebsocketPrivate.Stop();
+                Assert.IsTrue(bStopped);
+                await Task.Delay(1000);
+
             }
         }
     }

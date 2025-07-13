@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Arbitrage
 {
+    /*
     /// <summary>
     /// Arbitrage bot implementation
     /// </summary>
@@ -35,10 +36,18 @@ namespace Crypto.Futures.Bot.Arbitrage
         { 
             Setup = oSetup;
             Logger = oLogger;
-            Trader = (bPaperTrading ? new PaperTrader(this) : new TraderNoSocket(this));
+            Trader = (bPaperTrading ? new PaperTrader(this) : new TraderSocket(this));
+            // Create Exchanges
+            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();   
+            foreach (var eType in oSetup.ExchangeTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(Setup, eType, Logger);
+                if( oExchange.Tradeable ) aExchanges.Add(oExchange);    
+            }
+            Exchanges = aExchanges.ToArray();   
         }
         public IExchangeSetup Setup { get; }
-
+        public IFuturesExchange[] Exchanges { get; }
         public ICommonLogger Logger { get; }
 
         public ITrader Trader { get; }
@@ -58,21 +67,18 @@ namespace Crypto.Futures.Bot.Arbitrage
             {
                 await Stop();
             }
+
+            // Start private sockets
+            foreach (var oExchange in Exchanges)
+            {
+                bool bStarted = await oExchange.Account.WebsocketPrivate.Start();
+                if( !bStarted ) return false;   
+            }
             m_oFinder = new ArbitrageFinder(this);
 
             m_oCancelSource = new CancellationTokenSource();
             bool bResult = await m_oFinder.Start();
 
-            /*
-            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
-
-            foreach (var eType in Setup.ExchangeTypes)
-            {
-                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(Setup, eType, Logger);
-                aExchanges.Add(oExchange);
-            }
-            m_aExchanges = aExchanges.ToArray();
-            */
             m_oMainLoop = MainLoop();
 
             Logger.Info("ArbitrageBot started...");
@@ -391,13 +397,6 @@ namespace Crypto.Futures.Bot.Arbitrage
                         foreach (var oChance in aChances)
                         {
                             if( !CanTrade(oChance)) continue;   
-                            /*
-                            {
-                                if (oFound.Status != ArbitrageStatus.Canceled && oFound.Status != ArbitrageStatus.Closed) continue;
-                                m_aChances[oChance.Currency] = oChance;
-                                oChance.TradeTask = ChanceTask(oChance);
-                            }
-                            */
                             if ( m_aChances.TryAdd(oChance.Currency, oChance) )
                             {
                                 oChance.TradeTask = ChanceTask( oChance );
@@ -410,4 +409,5 @@ namespace Crypto.Futures.Bot.Arbitrage
             }
         }
     }
+    */
 }

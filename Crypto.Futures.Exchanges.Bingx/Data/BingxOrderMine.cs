@@ -36,6 +36,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             CreatedAt = (oUpdate.UpdateTime == null ? DateTime.Now : oUpdate.UpdateTime.Value.ToLocalTime());
             UpdatedAt = CreatedAt;
             Filled = (oUpdate.QuantityFilled == null ? 0 : oUpdate.QuantityFilled.Value) * oSymbol.ContractSize;
+            FilledPrice = (oUpdate.AveragePrice == null ? 0 : oUpdate.AveragePrice.Value);
 
         }
 
@@ -76,6 +77,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
         public decimal? Price { get; }
 
         public decimal Filled { get; private set; }
+        public decimal FilledPrice { get; private set; }
 
         public WsMessageType MessageType { get => WsMessageType.Order; }
 
@@ -86,6 +88,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             UpdatedAt = oOrder.UpdatedAt;   
             Status = oOrder.Status;
             Filled = oOrder.Filled; 
+            FilledPrice = oOrder.FilledPrice;
         }
     }
 }

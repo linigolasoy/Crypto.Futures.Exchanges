@@ -69,6 +69,8 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
+            var oMargin = await m_oExchange.RestClient.PerpetualFuturesApi.Account.SetMarginModeAsync(oSymbol.Symbol, MarginMode.Cross);
+            if (oMargin == null || !oMargin.Success) return false;
             var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Account.SetLeverageAsync(oSymbol.Symbol, PositionSide.Both, (int)nLeverage);
             if (oResult == null || !oResult.Success) return false;
             return true;

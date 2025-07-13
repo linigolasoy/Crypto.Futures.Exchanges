@@ -1,4 +1,5 @@
 ﻿using Bitget.Net.Enums;
+using Bitget.Net.Enums.V2;
 using Crypto.Futures.Exchanges.Bitget.Data;
 using Crypto.Futures.Exchanges.Bitget.Ws;
 using Crypto.Futures.Exchanges.Model;
@@ -101,6 +102,8 @@ namespace Crypto.Futures.Exchanges.Bitget
 
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
+            var oMargin = await m_oExchange.RestClient.FuturesApiV2.Account.SetMarginModeAsync(BitgetProductTypeV2.UsdtFutures, oSymbol.Symbol, "USDT", MarginMode.CrossMargin);
+            if( oMargin == null || !oMargin.Success) return false;
             var oResult = await m_oExchange.RestClient.FuturesApiV2.Account.SetLeverageAsync(BitgetProductTypeV2.UsdtFutures, oSymbol.Symbol, "USDT", (int)nLeverage);
             if (oResult == null || !oResult.Success) return false;
             m_aLeverages[oSymbol.Symbol] = nLeverage;

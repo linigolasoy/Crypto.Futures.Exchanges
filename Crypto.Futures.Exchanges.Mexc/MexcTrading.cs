@@ -34,12 +34,12 @@ namespace Crypto.Futures.Exchanges.Mexc
             throw new NotImplementedException();
         }
 
-        public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
         {
             throw new NotImplementedException();    
         }

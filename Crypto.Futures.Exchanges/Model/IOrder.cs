@@ -44,5 +44,6 @@ namespace Crypto.Futures.Exchanges.Model
         public decimal Quantity { get; }    
         public decimal? Price { get; }
         public decimal Filled { get; }
+        public decimal FilledPrice { get; }
     }
 }

@@ -26,6 +26,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
             CreatedAt = oUpdate.CreateTime.ToLocalTime();
             UpdatedAt = (oUpdate.UpdateTime == null ? CreatedAt : oUpdate.UpdateTime.Value.ToLocalTime());
             Filled = oUpdate.QuantityFilled;
+            FilledPrice = (oUpdate.AveragePrice == null ? 0 : oUpdate.AveragePrice.Value);  
         }
 
         private ModelOrderStatus GetStatus( OrderStatus  eStatus )
@@ -66,6 +67,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public decimal? Price { get; }
 
         public decimal Filled { get; private set; }
+        public decimal FilledPrice { get; private set; }
 
         public WsMessageType MessageType { get => WsMessageType.Order; }
 
@@ -76,6 +78,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
             Status = oOrder.Status;
             UpdatedAt = oOrder.UpdatedAt;
             Filled = oOrder.Filled;
+            FilledPrice = oOrder.FilledPrice;
 
         }
     }

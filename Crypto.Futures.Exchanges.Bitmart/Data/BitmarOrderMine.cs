@@ -35,6 +35,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             }
             Type = eType;
             Filled = oUpdate.Order.QuantityFilled * oSymbol.ContractSize;
+            FilledPrice = (oUpdate.Order.AveragePrice == null ? 0 : oUpdate.Order.AveragePrice.Value);  
         }
 
         private ModelOrderStatus GetStatus(BitMartFuturesOrderUpdateEvent oUpdate)
@@ -71,6 +72,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         public decimal? Price { get; }
 
         public decimal Filled { get; private set; }
+        public decimal FilledPrice { get; private set; }    
 
         public WsMessageType MessageType { get => WsMessageType.Order; }
 
@@ -81,6 +83,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
             Status = oOrder.Status;
             UpdatedAt = oOrder.UpdatedAt;
             Filled = oOrder.Filled;
+            FilledPrice = oOrder.FilledPrice;
         }
     }
 }

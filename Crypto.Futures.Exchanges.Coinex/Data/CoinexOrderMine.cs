@@ -38,6 +38,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
             CreatedAt = oOrder.CreateTime.ToLocalTime();
             UpdatedAt = (oOrder.UpdateTime == null ? CreatedAt : oOrder.UpdateTime.Value.ToLocalTime());
             Status = PutStatus(oOrder.Status, oUpdate.Event, nRemaining);
+            FilledPrice = (oOrder.LastFilledPrice == null ? 0 : oOrder.LastFilledPrice.Value);
         }
 
         private ModelOrderStatus PutStatus(OrderStatusV2? eCoinStatus, OrderUpdateType eUpdateType, decimal nRemaining )
@@ -91,6 +92,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
         public decimal? Price { get; }
 
         public decimal Filled { get; private set; }
+        public decimal FilledPrice { get; private set; }
 
         public WsMessageType MessageType { get => WsMessageType.Order; }
 
@@ -111,6 +113,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
                 Status = eStatus;
             }
             Filled = oOrder.Filled;
+            FilledPrice = oOrder.FilledPrice;
 
         }
     }

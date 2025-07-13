@@ -46,7 +46,7 @@ namespace Crypto.Futures.Exchanges.Coinex
             return true;
         }
 
-        public async Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
         {
             OrderSide eSide = (oPosition.IsLong ? OrderSide.Sell : OrderSide.Buy);
             OrderTypeV2 eType = (nPrice == null ? OrderTypeV2.Market : OrderTypeV2.Limit);
@@ -61,13 +61,13 @@ namespace Crypto.Futures.Exchanges.Coinex
                            // SelfTradePreventionMode ? stpMode = null, 
                            // CancellationToken ct = default(CancellationToken)
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if (oResult.Data == null) return false;
-            if (oResult.Data.Id <= 0) return false;
-            return true;
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Id <= 0) return null;
+            return oResult.Data.Id.ToString();
         }
 
-        public async Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
         {
             OrderSide eSide = (bLong ? OrderSide.Buy : OrderSide.Sell);
             OrderTypeV2 eType = (nPrice == null ? OrderTypeV2.Market : OrderTypeV2.Limit);
@@ -82,10 +82,10 @@ namespace Crypto.Futures.Exchanges.Coinex
                            // SelfTradePreventionMode ? stpMode = null, 
                            // CancellationToken ct = default(CancellationToken)
                 );
-            if (oResult == null || !oResult.Success) return false;
-            if (oResult.Data == null) return false;
-            if (oResult.Data.Id <= 0) return false;
-            return true;
+            if (oResult == null || !oResult.Success) return null;
+            if (oResult.Data == null) return null;
+            if (oResult.Data.Id <= 0) return null;
+            return oResult.Data.Id.ToString();
         }
     }
 }

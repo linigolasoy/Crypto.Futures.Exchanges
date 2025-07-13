@@ -16,8 +16,8 @@ namespace Crypto.Futures.Exchanges
         // TODO: Methods
         public IFuturesExchange Exchange { get; }
 
-        public Task<bool> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null);
-        public Task<bool> ClosePosition(IPosition oPosition, decimal? nPrice = null);
+        public Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null);
+        public Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null);
 
         public Task<bool> CloseOrders(IFuturesSymbol oSymbol);
     }
