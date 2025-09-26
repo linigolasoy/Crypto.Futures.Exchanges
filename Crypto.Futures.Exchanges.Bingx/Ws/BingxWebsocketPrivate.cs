@@ -143,7 +143,14 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
         {
             if (oEvent == null || oEvent.Data == null) return;
             IFuturesSymbol? oSymbol = Account.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
-            if (oSymbol == null) return;
+            if (oSymbol == null)
+            {
+                if (oEvent.Symbol != null)
+                {
+                    oSymbol = Account.Exchange.SymbolManager.GetSymbol(oEvent.Symbol);
+                }
+                if (oSymbol == null) return;
+            }
             IOrder oOrder = new BingxOrderMine(oSymbol, oEvent.Data);
             Put(oOrder);
             return;

@@ -38,6 +38,15 @@ namespace Crypto.Futures.Exchanges.Factory
         public int MaxOperations { get; set; } = 0;
     }
 
+    internal class TelegramParsed
+    {
+        [JsonProperty("ApiId")]
+        public int ApiId { get; set; } = 0;
+        [JsonProperty("ApiHash")]
+        public string ApiHash { get; set; } = string.Empty;
+        [JsonProperty("Phone")]
+        public string Phone { get; set; } = string.Empty;
+    }
     internal class SetupParsed
     {
         [JsonProperty("ApiKeys")]
@@ -55,6 +64,8 @@ namespace Crypto.Futures.Exchanges.Factory
         [JsonProperty("Arbitrage")]
         public ArbitrageParsed Arbitrage { get; set; } = new ArbitrageParsed();
 
+        [JsonProperty("TelegramData")]
+        public TelegramParsed TelegramData { get; set; } = new TelegramParsed();
     }
 
     /// <summary>
@@ -101,6 +112,19 @@ namespace Crypto.Futures.Exchanges.Factory
         public decimal ClosePercent { get; }
         public int MaxOperations { get; }
     }
+
+    public class TelegramSetup : ITelegramSetup
+    {
+        internal TelegramSetup(TelegramParsed oParsed)
+        {
+            ApiId = oParsed.ApiId;
+            ApiHash = oParsed.ApiHash;
+            Phone = oParsed.Phone;
+        }
+        public long ApiId { get; }
+        public string ApiHash { get; }
+        public string Phone { get; }
+    }
     /// <summary>
     /// BaseSetup is a placeholder implementation of IExchangeSetup.
     /// </summary>
@@ -136,8 +160,10 @@ namespace Crypto.Futures.Exchanges.Factory
             // This constructor is intentionally left empty.
             MoneyDefinition = new MoneySetup(oParsed!.MoneyParsed);
             Arbitrage = new ArbitrageSetup(oParsed!.Arbitrage);
+            TelegramSetup = new TelegramSetup(oParsed!.TelegramData);
         }
 
+        public ITelegramSetup TelegramSetup { get; }
         public IApiKey[] ApiKeys { get; }
 
         public ExchangeType[] ExchangeTypes { get; }

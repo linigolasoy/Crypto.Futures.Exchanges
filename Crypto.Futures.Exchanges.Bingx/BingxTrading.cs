@@ -24,11 +24,13 @@ namespace Crypto.Futures.Exchanges.Bingx
         /// <param name="oPosition"></param>
         /// <param name="nPrice"></param>
         /// <returns></returns>
-        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null, bool bFillOrKill = false)
         {
             OrderSide eSide = (oPosition.IsLong ? OrderSide.Sell : OrderSide.Buy);
             FuturesOrderType eType = (nPrice != null ? FuturesOrderType.Limit : FuturesOrderType.Market);
             PositionSide ePositionSide = PositionSide.Both; // ( bLong ? PositionSide.Long : PositionSide.Short );
+            TimeInForce eTime = (bFillOrKill ? TimeInForce.FillOrKill : TimeInForce.GoodTillCanceled);   
+
             var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Trading.PlaceOrderAsync(
                     oPosition.Symbol.Symbol, // string symbol, 
                     eSide, // OrderSide side, 
@@ -36,7 +38,8 @@ namespace Crypto.Futures.Exchanges.Bingx
                     ePositionSide, // PositionSide positionSide, 
                     oPosition.Quantity, // decimal ? quantity = null, 
                     nPrice, // decimal ? price = null, 
-                    closePosition: true // bool ? closePosition = null,
+                    closePosition: true, // bool ? closePosition = null,
+                    timeInForce: eTime
                 /*
                 bool ? reduceOnly = null, 
                 decimal ? stopPrice = null, 
@@ -70,40 +73,42 @@ namespace Crypto.Futures.Exchanges.Bingx
             return oResult.Data.OrderId.ToString(); // Order created successfully
         }
 
-        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null, bool bFillOrKill = false)
         {
             OrderSide eSide = bLong ? OrderSide.Buy : OrderSide.Sell;
             FuturesOrderType eType = ( nPrice != null ? FuturesOrderType.Limit : FuturesOrderType.Market);
             PositionSide ePositionSide = PositionSide.Both; // ( bLong ? PositionSide.Long : PositionSide.Short );
+            TimeInForce eTime = (bFillOrKill ? TimeInForce.FillOrKill : TimeInForce.GoodTillCanceled);
             var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.Trading.PlaceOrderAsync(
                     oSymbol.Symbol, // string symbol, 
                     eSide, // OrderSide side, 
                     eType, // FuturesOrderType type, 
                     ePositionSide, // PositionSide positionSide, 
                     nQuantity, // decimal ? quantity = null, 
-                    nPrice // decimal ? price = null, 
-                    /*
-                    bool ? reduceOnly = null, 
-                    decimal ? stopPrice = null, 
-                    decimal ? priceRate = null, 
-                    TakeProfitStopLossMode ? stopLossType = null, 
-                    decimal ? stopLossStopPrice = null, 
-                    decimal ? stopLossPrice = null, 
-                    TriggerType ? stopLossTriggerType = null, 
-                    bool ? stopLossStopGuaranteed = null, 
-                    TakeProfitStopLossMode ? takeProfitType = null, 
-                    decimal ? takeProfitStopPrice = null, 
-                    decimal ? takeProfitPrice = null, 
-                    TriggerType ? takeProfitTriggerType = null, 
-                    bool ? takeProfitStopGuaranteed = null, 
-                    TimeInForce ? timeInForce = null, 
-                    bool ? closePosition = null, 
-                    decimal ? triggerPrice = null, 
-                    bool ? stopGuaranteed = null, 
-                    string ? clientOrderId = null, 
-                    TriggerType ? workingType = null, 
-                    CancellationToken ct = default(CancellationToken)
-                    */
+                    nPrice, // decimal ? price = null, 
+                    timeInForce: eTime
+                /*
+                bool ? reduceOnly = null, 
+                decimal ? stopPrice = null, 
+                decimal ? priceRate = null, 
+                TakeProfitStopLossMode ? stopLossType = null, 
+                decimal ? stopLossStopPrice = null, 
+                decimal ? stopLossPrice = null, 
+                TriggerType ? stopLossTriggerType = null, 
+                bool ? stopLossStopGuaranteed = null, 
+                TakeProfitStopLossMode ? takeProfitType = null, 
+                decimal ? takeProfitStopPrice = null, 
+                decimal ? takeProfitPrice = null, 
+                TriggerType ? takeProfitTriggerType = null, 
+                bool ? takeProfitStopGuaranteed = null, 
+                TimeInForce ? timeInForce = null, 
+                bool ? closePosition = null, 
+                decimal ? triggerPrice = null, 
+                bool ? stopGuaranteed = null, 
+                string ? clientOrderId = null, 
+                TriggerType ? workingType = null, 
+                CancellationToken ct = default(CancellationToken)
+                */
                 );
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;

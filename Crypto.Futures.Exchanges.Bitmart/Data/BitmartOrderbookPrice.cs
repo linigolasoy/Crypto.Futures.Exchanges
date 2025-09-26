@@ -36,10 +36,11 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
         {
             if (!(oMessage is IOrderbookPrice)) return;
             IOrderbookPrice oOrderbookPrice = (IOrderbookPrice)oMessage;
+            if( oOrderbookPrice.AskPrice <= 0 || oOrderbookPrice.BidPrice <= 0 ) return;        
             DateTime = oOrderbookPrice.DateTime;
-            AskPrice = (oOrderbookPrice.AskPrice < 0 ? AskPrice : oOrderbookPrice.AskPrice);
+            AskPrice = oOrderbookPrice.AskPrice;
             AskVolume = (oOrderbookPrice.AskVolume < 0 ? AskVolume : oOrderbookPrice.AskVolume);
-            BidPrice = (oOrderbookPrice.BidPrice < 0 ? BidPrice : oOrderbookPrice.BidPrice);
+            BidPrice = oOrderbookPrice.BidPrice;
             BidVolume = (oOrderbookPrice.BidVolume < 0 ? BidVolume : oOrderbookPrice.BidVolume);
         }
     }

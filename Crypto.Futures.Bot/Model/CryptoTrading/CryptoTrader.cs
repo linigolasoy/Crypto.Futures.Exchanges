@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Crypto.Futures.Bot.Interface.ICryptoTrader;
 
 namespace Crypto.Futures.Bot.Model.CryptoTrading
 {
@@ -80,6 +81,133 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
 
         public ICryptoPosition[] PositionsClosed { get => m_aPositionClosed.Values.ToArray(); }
 
+
+        /// <summary>
+        /// Close position on fill or kill mode
+        /// </summary>
+        /// <param name="oPosition"></param>
+        /// <param name="nPrice"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> CloseFillOrKill(ICryptoPosition oPosition, decimal? nPrice = null)
+        {
+            try
+            {
+                IPosition oFakePosition = new FakePosition(oPosition);
+                string? strOrder = await oPosition.Symbol.Exchange.Trading.ClosePosition(oFakePosition, nPrice, bFillOrKill: true);
+                if (strOrder == null)
+                {
+                    Bot.Logger.Error($"Failed to close position for symbol {oPosition.Symbol.ToString()} Long:{oPosition.IsLong}");
+                    return false;
+                }
+
+                int nDelay = 100;
+                int nRetries = 20;
+
+                IOrder? oOrder = null;
+                while (nRetries >= 0)
+                {
+                    await Task.Delay(nDelay);
+                    if (oOrder == null)
+                    {
+                        oOrder = oPosition.Symbol.Exchange.Account.WebsocketPrivate.GetOrder(strOrder);
+                    }
+                    if (oOrder != null)
+                    {
+                        if (oOrder.Status == ModelOrderStatus.Filled)
+                        {
+                            ((CryptoPosition)oPosition).OrderClose = oOrder;
+                            oPosition.Update();
+                            m_aPositionActive.TryRemove(oPosition.Id, out ICryptoPosition? oValue);
+                            m_aPositionClosed.TryAdd(oPosition.Id, oPosition);
+
+                            //ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
+                            Bot.Logger.Info($"{oPosition.ToString()}");
+                            return true;
+                        }
+                        else if (oOrder.Status == ModelOrderStatus.Canceled)
+                        {
+                            return false;
+                        }
+
+                    }
+                    nRetries--;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Bot.Logger.Error($"Error closing position for symbol {oPosition.Symbol.ToString()}: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Open order in fill or kill mode
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <param name="bLong"></param>
+        /// <param name="nVolume"></param>
+        /// <param name="nPrice"></param>
+        /// <returns></returns>
+        public async Task<ICryptoPosition?> OpenFillOrKill(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
+        {
+            try
+            {
+                InitBalances();
+
+                var oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
+                if (oData == null || oData.LastOrderbookPrice == null)
+                {
+                    Bot.Logger.Error($"Failed to get market socket data for {oSymbol.ToString()} Long:{bLong}");
+                    return null;
+                }
+
+
+                string? strOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice, bFillOrKill: true);
+                if (strOrder == null)
+                {
+                    Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
+                    return null;
+                }
+                int nDelay = 100;
+                int nRetries = 20;
+
+                IOrder? oOrder = null;
+                while (nRetries >= 0 )
+                {
+                    await Task.Delay(nDelay);
+                    if (oOrder == null)
+                    {
+                        oOrder = oSymbol.Exchange.Account.WebsocketPrivate.GetOrder(strOrder);
+                    }
+                    if( oOrder != null )
+                    {
+                        if (oOrder.Status == ModelOrderStatus.Filled)
+                        {
+                            ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
+                            Bot.Logger.Info($"{oPosition.ToString()}");
+                            m_aPositionActive.TryAdd(oPosition.Id, oPosition);
+                            return oPosition;
+                        }
+                        else if (oOrder.Status == ModelOrderStatus.Canceled)
+                        {
+                            return null;    
+                        }
+
+                    }
+                    nRetries--;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}", ex);
+                return null;    
+            }
+        }
+
         /// <summary>
         /// Close
         /// </summary>
@@ -87,7 +215,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// <param name="nPrice"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> Close(ICryptoPosition oPosition, decimal? nPrice = null)
+        public async Task<bool> Close(ICryptoPosition oPosition, MustCancelOrderDelegate? OncheckCancel = null, decimal? nPrice = null)
         {
             try
             {
@@ -103,7 +231,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 int nRetries = OrderTimeout * 1000 / nDelay;
 
                 IOrder? oOrder = null;
-                while (nRetries >= 0)
+                while (nRetries >= 0 || OncheckCancel != null )
                 {
                     await Task.Delay(nDelay);
                     if (oOrder == null)
@@ -121,6 +249,12 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                         //ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
                         Bot.Logger.Info($"{oPosition.ToString()}");
                         return true;
+                    }
+
+                    if (OncheckCancel != null)
+                    {
+                        bool bCancel = OncheckCancel();
+                        if (bCancel) break;
                     }
                     nRetries--;
                 }
@@ -141,7 +275,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// <summary>
         /// Update balances
         /// </summary>
-        private void UpdateBalances()
+        public void InitBalances()
         {
             if (m_aBalances.Count == Bot.Exchanges.Length) return;
             try
@@ -174,11 +308,11 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// <param name="nVolume"></param>
         /// <param name="nPrice"></param>
         /// <returns></returns>
-        public async Task<ICryptoPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
+        public async Task<ICryptoPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, MustCancelOrderDelegate? OncheckCancel = null, decimal? nPrice = null)
         {
             try
             {
-                UpdateBalances();
+                InitBalances();
                 string? strOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice);
                 if (strOrder == null )
                 {
@@ -195,7 +329,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 }
 
                 IOrder? oOrder = null;  
-                while (nRetries >= 0)
+                while (nRetries >= 0 || OncheckCancel != null)
                 {
                     await Task.Delay(nDelay);
                     if( oOrder == null)
@@ -209,6 +343,11 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                         Bot.Logger.Info($"{oPosition.ToString()}");
                         m_aPositionActive.TryAdd(oPosition.Id, oPosition);  
                         return oPosition;
+                    }
+                    if (OncheckCancel != null)
+                    {
+                        bool bCancel = OncheckCancel();
+                        if (bCancel) break;
                     }
                     nRetries--;
                 }

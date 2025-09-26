@@ -70,7 +70,14 @@ namespace Crypto.Futures.Exchanges.Bitmart.Ws
             foreach (var oData in oEvent.Data)
             {
                 IFuturesSymbol? oSymbol = Account.Exchange.SymbolManager.GetSymbol(oData.Order.Symbol);
-                if (oSymbol == null) continue;
+                if (oSymbol == null)
+                {
+                    if( oEvent.Symbol != null )
+                    {
+                        oSymbol = Account.Exchange.SymbolManager.GetSymbol(oEvent.Symbol);
+                    }
+                    if (oSymbol == null) continue;
+                }
                 IOrder oOrder = new BitmarOrderMine(oSymbol, oData);
                 Put(oOrder);
             }

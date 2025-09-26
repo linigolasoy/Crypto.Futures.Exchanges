@@ -34,7 +34,7 @@ namespace Crypto.Futures.Exchanges.Bingx
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
             Market = new BingxMarket(this); 
-            // History = new BingxHistory(this);
+            History = new BingxHistory(this);
             Account = new BingxAccount(this);
             Trading = new BingxTrading(this);
         }
@@ -49,7 +49,7 @@ namespace Crypto.Futures.Exchanges.Bingx
 
         public IFuturesMarket Market { get; }
 
-        public IFuturesHistory History { get => throw new NotImplementedException(); }
+        public IFuturesHistory History { get ; }
 
         public IFuturesTrading Trading { get; }
 

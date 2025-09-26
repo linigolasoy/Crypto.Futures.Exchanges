@@ -9,6 +9,55 @@ namespace Crypto.Futures.Exchanges.Tests
     public class HistoryDataTest
     {
         [TestMethod]
+        public async Task FundingRatesHistoryTests()
+        {
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(CommonTests.SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+            ExchangeType eType = ExchangeType.BingxFutures;
+
+            DateTime dFrom = DateTime.Today.AddMonths(-1);
+            IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
+            Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+
+
+            IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();
+            Assert.IsNotNull(aSymbols, $"Symbols for {eType} should not be null.");
+
+            List<IFundingRate> aFound = new List<IFundingRate>();
+
+            decimal dMinRate = 0.002M + 0.0007M;
+
+            IFundingRate[]? aActual = await oExchange.Market.GetFundingRates();
+            Assert.IsNotNull(aActual);
+            Assert.IsTrue(aActual.Length > 5, "Should have funding rates.");
+            IFundingRate[] aActualFound = aActual.Where(p => p.Rate >= dMinRate).ToArray();
+
+            foreach ( var oSymbol in aSymbols.Where(p => p.Quote == "USDT"))
+            {
+                IFundingRate[]? aRates = await oExchange.History.GetFundingRates(oSymbol, dFrom, DateTime.Today);
+                if( aRates == null || aRates.Length <= 0) continue;
+
+                decimal nRateMax = aRates.Max(p => p.Rate); 
+                decimal nRateMin = aRates.Min(p => p.Rate); 
+
+                IFundingRate[] aFoundSymbol = aRates.Where(p => p.Rate >= dMinRate).ToArray();
+                if( aFoundSymbol.Length > 0 )
+                {
+                    aFound.AddRange(aFoundSymbol);
+                }
+                // Assert.IsTrue(aRates.Length > 10, $"Funding rates for {oSymbol.ToString()} should be > 10.");
+
+
+            }
+
+            IFundingRate[] aSorted = aFound.OrderByDescending(p => p.Next).ToArray();   
+            // var oHist = oExchange.History.
+        }
+
+
+
+        [TestMethod]
         public async Task BarsTest()
         {
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(CommonTests.SETUP_FILE);

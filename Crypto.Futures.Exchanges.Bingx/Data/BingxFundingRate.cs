@@ -25,6 +25,14 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             Next = oJson.NextFundingTime.ToLocalTime();
             Rate = oJson.LastFundingRate;
         }
+
+        public BingxFundingRate(IFuturesSymbol oSymbol, BingXFundingRateHistory oJson)
+        {
+            Symbol = oSymbol;
+            Next = oJson.FundingTime.ToLocalTime();
+            Rate = oJson.FundingRate;
+        }
+
         public IFuturesSymbol Symbol { get; }
 
         public WsMessageType MessageType { get => WsMessageType.FundingRate; }

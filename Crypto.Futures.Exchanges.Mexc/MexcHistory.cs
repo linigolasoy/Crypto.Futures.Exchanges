@@ -96,5 +96,16 @@ namespace Crypto.Futures.Exchanges.Mexc
 
             return aBars.ToArray();
         }
+
+
+        public async Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol oSymbol, DateTime dFrom, DateTime dTo)
+        {
+            return await GetFundingRates( new IFuturesSymbol[] { oSymbol }, dFrom, dTo);
+        }
+        public async Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[] aSymbols, DateTime dFrom, DateTime dTo)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

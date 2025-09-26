@@ -77,6 +77,10 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                     return false;   
                 }
             }
+            // Delay for trader balance
+            await Task.Delay(2000);
+            Trader.InitBalances();  
+
             // Currency Finder
             m_oCurrencyFinder = new CryptoCurrencyFinder(this);
             bool bFinderStarted = await m_oCurrencyFinder.Start();
@@ -85,9 +89,7 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                 Logger.Error($"Could not start CurrencyFinder");
                 return false;
             }
-            // TODO: Chance finder
-            // TODO: Trading loop
-            // TODO: Main loop
+            // Main loop
             m_oMainLoop = MainLoop();
 
             Logger.Info("CryptoArbitrageBot Started");
@@ -129,6 +131,21 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
             return true;
         }
 
+
+        /// <summary>
+        /// Log profits
+        /// </summary>
+        private void LogProfits()
+        {
+            decimal nBalance = Math.Round( (Trader.Balances.Length <= 0 ? 0 : Trader.Balances.Select(p=> p.Balance).Sum()), 2); 
+            decimal nProfitClosed = Math.Round( (Trader.PositionsClosed.Length <= 0 ? 0 : Trader.PositionsClosed.Select(p=> p.Profit).Sum()), 2);
+            decimal nProfitOpen = Math.Round((Trader.PositionsActive.Length <= 0 ? 0: Trader.PositionsActive.Select(p => p.Profit).Sum()), 2);
+
+
+            Logger.Info($">>>>> BALANCE = {nBalance} CLOSED = {nProfitClosed} OPEN = {nProfitOpen}");
+
+        }
+
         /// <summary>
         /// Bot main loop
         /// </summary>
@@ -136,6 +153,8 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
         private async Task MainLoop()
         {
             Logger.Info("CryptoArbitrageBot Main loop started");
+            DateTime dNow = DateTime.Now;   
+            DateTime dLastReport = new DateTime(dNow.Year, dNow.Month, dNow.Day, dNow.Hour, dNow.Minute,0, DateTimeKind.Local);
             while (!m_oCancelSource.IsCancellationRequested)
             {
                 try
@@ -151,6 +170,13 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                                 bool bAdded = await ChanceManager.Add(aChances); 
                             }
                         }
+                    }
+                    dNow = DateTime.Now;
+                    double nDiff = (dNow - dLastReport).TotalMinutes;
+                    if( nDiff >= 2 )
+                    {
+                        LogProfits();
+                        dLastReport = dNow;
                     }
                 }
                 catch (Exception ex)

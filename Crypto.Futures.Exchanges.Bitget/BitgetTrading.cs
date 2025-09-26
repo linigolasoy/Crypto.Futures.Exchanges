@@ -49,12 +49,12 @@ namespace Crypto.Futures.Exchanges.Bitget
             return true;
         }
 
-        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null, bool bFillOrKill = false)
         {
             OrderSide eSide = (!oPosition.IsLong) ? OrderSide.Sell : OrderSide.Buy;
             OrderType eType = (nPrice == null ? OrderType.Market : OrderType.Limit);
             TradeSide eTradeSide = TradeSide.Close; // (bLong ? TradeSide.Open)
-
+            TimeInForce eTime = (bFillOrKill ? TimeInForce.FillOrKill : TimeInForce.GoodTillCanceled);  
             var oResult = await m_oExchange.RestClient.FuturesApiV2.Trading.PlaceOrderAsync(
                     BitgetProductTypeV2.UsdtFutures, // BitgetProductTypeV2 productType, 
                     oPosition.Symbol.Symbol, // string symbol, 
@@ -64,9 +64,12 @@ namespace Crypto.Futures.Exchanges.Bitget
                     MarginMode.CrossMargin, //  MarginMode marginMode, 
                     oPosition.Quantity, // decimal quantity, 
                     nPrice, //  decimal ? price = null, 
-                    TimeInForce.GoodTillCanceled, // TimeInForce ? timeInForce = null, 
-                    eTradeSide //  TradeSide. TradeSide ? tradeSide = null, 
-                               // string ? clientOrderId = null, bool ? reduceOnly = null, decimal ? takeProfitPrice = null, decimal ? stopLossPrice = null, decimal ? takeProfitLimitPrice = null, decimal ? stopLossLimitPrice = null, CancellationToken ct = default(CancellationToken)
+                    timeInForce: eTime, // TimeInForce ? timeInForce = null, 
+                    tradeSide: eTradeSide //  TradeSide. TradeSide ? tradeSide = null, 
+                               // string ? clientOrderId = null, /
+                               // / bool ? reduceOnly = null, 
+                               // decimal ? takeProfitPrice = null, 
+                               // decimal ? stopLossPrice = null, decimal ? takeProfitLimitPrice = null, decimal ? stopLossLimitPrice = null, CancellationToken ct = default(CancellationToken)
                 );
 
             if (oResult == null || !oResult.Success) return null;
@@ -75,12 +78,13 @@ namespace Crypto.Futures.Exchanges.Bitget
             return oResult.Data.OrderId;
         }
 
-        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null, bool bFillOrKill = false  )
         {
 
             OrderSide eSide = (bLong) ? OrderSide.Buy : OrderSide.Sell;
             OrderType eType = (nPrice == null ? OrderType.Market : OrderType.Limit);
             TradeSide eTradeSide = TradeSide.Open; // (bLong ? TradeSide.Open)
+            TimeInForce eTime = (bFillOrKill ? TimeInForce.FillOrKill : TimeInForce.GoodTillCanceled);
 
             var oResult = await m_oExchange.RestClient.FuturesApiV2.Trading.PlaceOrderAsync(
                     BitgetProductTypeV2.UsdtFutures, // BitgetProductTypeV2 productType, 
@@ -91,8 +95,8 @@ namespace Crypto.Futures.Exchanges.Bitget
                     MarginMode.CrossMargin, //  MarginMode marginMode, 
                     nQuantity, // decimal quantity, 
                     nPrice, //  decimal ? price = null, 
-                    TimeInForce.GoodTillCanceled, // TimeInForce ? timeInForce = null, 
-                    eTradeSide //  TradeSide. TradeSide ? tradeSide = null, 
+                    timeInForce: eTime, // TimeInForce ? timeInForce = null, 
+                    tradeSide: eTradeSide //  TradeSide. TradeSide ? tradeSide = null, 
                     // string ? clientOrderId = null, bool ? reduceOnly = null, decimal ? takeProfitPrice = null, decimal ? stopLossPrice = null, decimal ? takeProfitLimitPrice = null, decimal ? stopLossLimitPrice = null, CancellationToken ct = default(CancellationToken)
                 );
 

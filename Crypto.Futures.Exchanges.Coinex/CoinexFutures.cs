@@ -38,7 +38,7 @@ namespace Crypto.Futures.Exchanges.Coinex
             Trading = new CoinexTrading(this);
         }
 
-        public bool Tradeable { get => true; }
+        public bool Tradeable { get => false; }
 
         // internal CryptoRestClient RestClient { get {return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
 

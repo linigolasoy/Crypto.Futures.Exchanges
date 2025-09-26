@@ -1,9 +1,10 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bingx.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
 
 namespace Crypto.Futures.Exchanges.Bingx
 {
-    /*
+    
     /// <summary>
     /// History data for bing
     /// </summary>
@@ -19,9 +20,56 @@ namespace Crypto.Futures.Exchanges.Bingx
         {
             m_oExchange = oExchange;
         }
+
         public IFuturesExchange Exchange { get => m_oExchange; }
 
+        public async Task<IBar[]?> GetBars(IFuturesSymbol oSymbol, BarTimeframe eFrame, DateTime dFrom, DateTime dTo)
+        {
+            throw new NotImplementedException();
+        }
 
+        public async Task<IBar[]?> GetBars(IFuturesSymbol[] aSymbols, BarTimeframe eFrame, DateTime dFrom, DateTime dTo)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol oSymbol, DateTime dFrom, DateTime dTo)
+        {
+            return await GetFundingRates(new IFuturesSymbol[] { oSymbol }, dFrom, dTo); 
+        }
+
+        public async Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[] aSymbols, DateTime dFrom, DateTime dTo)
+        {
+            List<IFundingRate> aResult = new List<IFundingRate>();  
+
+            
+            foreach ( var oSymbol in aSymbols)
+            {
+                DateTime dToAct = dTo.ToUniversalTime();
+
+                while (true)
+                {
+                    var oResult = await m_oExchange.RestClient.PerpetualFuturesApi.ExchangeData.GetFundingRateHistoryAsync(oSymbol.Symbol, dFrom.ToUniversalTime(), dToAct);
+                    if (oResult == null || !oResult.Success) break;
+                    if(oResult.Data == null || oResult.Data.Length <= 0) break;
+
+                    foreach (var oRate in oResult.Data)
+                    {
+                        aResult.Add(new BingxFundingRate(oSymbol, oRate));
+                    }
+
+                    DateTime dMin = oResult.Data.Min(p => p.FundingTime).AddMinutes(-30);
+                    if (dMin <= dFrom.ToUniversalTime()) break;
+                    if (dMin >= dToAct) break;
+                    dToAct = dMin;
+                    await Task.Delay(1000); // To avoid rate limits.
+                }
+            }
+            //m_oExchange.RestClient.PerpetualFuturesApi.ExchangeData.GetFundingRateHistoryAsync()
+            return aResult.ToArray();   
+        }
+
+        /*
         private string? TimeframeToBingx( BarTimeframe eFrame )
         {
             switch( eFrame)
@@ -91,6 +139,6 @@ namespace Crypto.Futures.Exchanges.Bingx
 
             return aBars.ToArray();
         }
-    }
     */
+    }
 }

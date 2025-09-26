@@ -15,7 +15,7 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
     /// </summary>
     internal class ArbitrageChance : IArbitrageChance
     {
-
+        private const int MAX_DELAY = 1000;
         public ArbitrageChance( IExchangeSetup oSetup, string strCurrency, IOrderbookPrice oBookLong, IOrderbookPrice oBookShort ) 
         { 
             Setup = oSetup;
@@ -52,12 +52,12 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
         {
             DateTime dNow = DateTime.Now;
 
-            double nDiffTimeLong = (dNow - OrderbookLong.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
-            double nDiffTimeShort = (dNow - OrderbookShort.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
+            // double nDiffTimeLong = (dNow - OrderbookLong.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
+            // double nDiffTimeShort = (dNow - OrderbookShort.Symbol.Exchange.Market.Websocket.DataManager.LastUpdate).TotalMilliseconds;
 
-            // double nDiffTimeLong = (dNow - OrderbookLong.DateTime).TotalMilliseconds;
-            // double nDiffTimeShort = (dNow - OrderbookShort.DateTime).TotalMilliseconds;
-            if ( nDiffTimeLong > 1000 || nDiffTimeShort > 1000  ) return false;
+            double nDiffTimeLong = (dNow - OrderbookLong.DateTime).TotalMilliseconds;
+            double nDiffTimeShort = (dNow - OrderbookShort.DateTime).TotalMilliseconds;
+            if ( nDiffTimeLong > MAX_DELAY || nDiffTimeShort > MAX_DELAY) return false;
             PriceLong = OrderbookLong.AskPrice;
             PriceShort = OrderbookShort.BidPrice;
 

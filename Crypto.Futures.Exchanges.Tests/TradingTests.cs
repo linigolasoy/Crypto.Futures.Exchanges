@@ -118,7 +118,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 bool bLeverage = await oBot.Trader.PutLeverage(oSymbol);
                 Assert.IsTrue(bLeverage, "Setting leverage should be successful.");
 
-                ICryptoPosition? oPosition = await oBot.Trader.Open(oSymbol, true, nQuantity, oData.LastOrderbookPrice.AskPrice);
+                ICryptoPosition? oPosition = await oBot.Trader.OpenFillOrKill(oSymbol, true, nQuantity, oData.LastOrderbookPrice.AskPrice);
                 if( oPosition == null )
                 {
                     oPosition = await oBot.Trader.Open(oSymbol, true, nQuantity);
@@ -129,10 +129,10 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsNotNull(oPosition.OrderOpen, "Order open should exist");
                 Assert.IsTrue(oPosition.OrderOpen.FilledPrice > 0, "Filled price should be not zero");
                 Assert.IsTrue(oPosition.IsLong, "Position should be long.");
-                bool bCloseResult = await oBot.Trader.Close(oPosition, oData.LastOrderbookPrice.BidPrice);
+                bool bCloseResult = await oBot.Trader.CloseFillOrKill(oPosition, oData.LastOrderbookPrice.BidPrice);
                 if (!bCloseResult)
                 {
-                    bCloseResult = await oBot.Trader.Close(oPosition);
+                    bCloseResult = await oBot.Trader.CloseFillOrKill(oPosition);
                 }
                 Assert.IsTrue(bCloseResult, "Close position data should be true (position closed).");
 

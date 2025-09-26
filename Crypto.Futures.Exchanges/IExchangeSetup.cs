@@ -41,6 +41,14 @@ namespace Crypto.Futures.Exchanges
         public int MaxOperations { get; }
     }
 
+    public interface ITelegramSetup
+    {
+        public long ApiId { get; }
+        public string ApiHash { get; }
+        public string Phone { get; }
+    }
+
+
     public interface IExchangeSetup
     {
         public IApiKey[] ApiKeys { get; }
@@ -51,5 +59,7 @@ namespace Crypto.Futures.Exchanges
 
         public IMoneySetup MoneyDefinition { get; }
         public IArbitrageSetup Arbitrage { get; }
+
+        public ITelegramSetup TelegramSetup { get; }
     }
 }

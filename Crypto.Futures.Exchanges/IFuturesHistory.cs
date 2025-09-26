@@ -19,5 +19,8 @@ namespace Crypto.Futures.Exchanges
         public Task<IBar[]?> GetBars( IFuturesSymbol oSymbol, BarTimeframe eFrame, DateTime dFrom, DateTime dTo);
 
         public Task<IBar[]?> GetBars(IFuturesSymbol[] aSymbols, BarTimeframe eFrame, DateTime dFrom, DateTime dTo);
+
+        public Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol oSymbol, DateTime dFrom, DateTime dTo);
+        public Task<IFundingRate[]?> GetFundingRates(IFuturesSymbol[] aSymbols, DateTime dFrom, DateTime dTo);
     }
 }

@@ -17,6 +17,10 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
 
         private const int WAIT_DELAY = 100;
         private const int SECONDS_WAIT = 10;
+        private const int CHECKS_NEEDED = 5;
+
+        private bool m_bNeedsCancelOpen = false;
+        private bool m_bNeedsCancelClose = false;
         public ArbitragePosition( ICryptoBot oBot, IArbitrageChance oChance ) 
         { 
             Bot = oBot;
@@ -63,22 +67,49 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
         private async Task<bool> Check()
         {
             int nRetries = SECONDS_WAIT * 1000 / WAIT_DELAY;
+            int nPassed = 0;
+            int nMaxPassed = 0;
             while (nRetries > 0)
             {
-                if( Chance.Check() )
+                if (Chance.Check())
                 {
                     decimal? nQuantity = CalculateQuantity(Chance);
-                    if( nQuantity != null && nQuantity.Value > 0 ) 
+                    if (nQuantity != null && nQuantity.Value > 0)
                     {
-                        Amount = nQuantity.Value;
-                        return true;
+                        nPassed++;
+                        if( nPassed > nMaxPassed ) nMaxPassed = nPassed;    
+                        if (nPassed >= CHECKS_NEEDED)
+                        {
+                            Amount = nQuantity.Value;
+                            return true;
+                        }
                     }
+                    else nPassed = 0;
                 }
-                await Task.Delay( WAIT_DELAY );
+                else nPassed = 0;
+                await Task.Delay(WAIT_DELAY);
                 nRetries--;
             }
-            Bot.Logger.Info($" Failed Check on {Chance.ToString()} !!!");
+            Bot.Logger.Info($" Failed Check on {Chance.ToString()} Max Passed {nMaxPassed}!!!");
             return false;
+        }
+
+        /// <summary>
+        /// Check if cancel order
+        /// </summary>
+        /// <returns></returns>
+        private bool OnCancelOpen()
+        {
+            return m_bNeedsCancelOpen;
+        }
+
+        /// <summary>
+        /// Check if cancel order close
+        /// </summary>
+        /// <returns></returns>
+        private bool OnCancelClose()
+        {
+            return m_bNeedsCancelClose;
         }
 
         /// <summary>
@@ -89,14 +120,42 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
         {
             try
             {
-                List<Task<ICryptoPosition?>> aTasks = new List<Task<ICryptoPosition?>>();
+                // List<Task<ICryptoPosition?>> aTasks = new List<Task<ICryptoPosition?>>();
                 Bot.Logger.Info($"====> Try Open {Chance.ToString()}");
-                aTasks.Add(Bot.Trader.Open(Chance.OrderbookLong.Symbol, true, Amount, Chance.PriceLong));
-                aTasks.Add(Bot.Trader.Open(Chance.OrderbookShort.Symbol, false, Amount, Chance.PriceShort));
-                await Task.WhenAll( aTasks );
+                Task<ICryptoPosition?> oTaskLong = Bot.Trader.OpenFillOrKill(Chance.OrderbookLong.Symbol, true, Amount, Chance.PriceLong);
+                Task<ICryptoPosition?> oTaskShort = Bot.Trader.OpenFillOrKill(Chance.OrderbookShort.Symbol, false, Amount, Chance.PriceShort);
+                // Task<ICryptoPosition?> oTaskLong = Bot.Trader.Open(Chance.OrderbookLong.Symbol, true, Amount, OnCancelOpen, Chance.PriceLong);
+                // Task<ICryptoPosition?> oTaskShort = Bot.Trader.Open(Chance.OrderbookShort.Symbol, false, Amount, OnCancelOpen, Chance.PriceShort);
 
-                PositionLong = aTasks[0].Result;
-                PositionShort = aTasks[1].Result;
+                decimal nMoney = Bot.Setup.MoneyDefinition.Money * Bot.Setup.MoneyDefinition.Leverage;
+                decimal nMaxProfit = nMoney * Bot.Setup.Arbitrage.ClosePercent / 100.0M;
+                decimal nMaxLoss = -nMaxProfit;
+                while (true)
+                {
+                    if (oTaskLong.IsCompleted && oTaskShort.IsCompleted) break;
+                    if( oTaskLong.IsCompleted )
+                    {
+                        PositionLong = oTaskLong.Result;
+                        if( PositionLong != null )
+                        {
+                            PositionLong.Update();
+                            // if( PositionLong.Profit < nMaxLoss || PositionLong.Profit > nMaxProfit ) m_bNeedsCancelOpen = true;
+                        }
+                    }
+                    if (oTaskShort.IsCompleted)
+                    {
+                        PositionShort = oTaskShort.Result;
+                        if (PositionShort != null)
+                        {
+                            PositionShort.Update();
+                            // if (PositionShort.Profit < nMaxLoss || PositionShort.Profit > nMaxProfit) m_bNeedsCancelOpen = true;
+                        }
+                    }
+                    await Task.Delay(100);
+                }
+
+                PositionLong = oTaskLong.Result;
+                PositionShort = oTaskShort.Result;
                 // No position on any side, just leave chance
 
                 if(PositionLong == null && PositionShort == null ) return false;   
@@ -104,7 +163,7 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                 // Close market short
                 if(PositionLong == null && PositionShort != null)
                 {
-                    bool bClosed = await Bot.Trader.Close(PositionShort);
+                    bool bClosed = await Bot.Trader.CloseFillOrKill(PositionShort);
                     if (!bClosed) throw new Exception("Error closing short position on market");
                     bCancel = true; 
                     // return false;   
@@ -113,7 +172,7 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                 if (PositionLong != null && PositionShort == null)
                 {
                     bool bClosed = await Bot.Trader.Close(PositionLong);
-                    if (bClosed) throw new Exception("Error closing long position on market");
+                    if (!bClosed) throw new Exception("Error closing long position on market");
                     bCancel = true;
                     // return false;
                 }
@@ -173,12 +232,29 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
                     if (nProfit >= nDesiredProfit)
                     {
                         Bot.Logger.Info($"====> Trying to close {Chance.ToString()}");
-                        List<Task<bool>> aTasks = new List<Task<bool>>();
-                        aTasks.Add(Bot.Trader.Close(PositionLong, PositionLong.LastPrice));
-                        aTasks.Add(Bot.Trader.Close(PositionShort, PositionShort.LastPrice));
-                        await Task.WhenAll(aTasks);
-                        bool bClosedLong = aTasks[0].Result;
-                        bool bClosedShort = aTasks[1].Result;
+                        Task<bool> oTaskLong = Bot.Trader.Close(PositionLong, OnCancelClose, PositionLong.LastPrice);
+                        Task<bool> oTaskShort = Bot.Trader.Close(PositionShort, OnCancelClose, PositionShort.LastPrice);
+                        int nLoops = 0;
+                        int nMaxLoops = 200;
+                        while( true )
+                        {
+                            if (oTaskLong.IsCompleted && oTaskShort.IsCompleted) break;
+                            PositionLong.Update(); PositionShort.Update();
+                            decimal nNewProfit = PositionLong.Profit + PositionShort.Profit;
+                            if ( oTaskLong.IsCompleted && nLoops > nMaxLoops )
+                            {
+                                if( nNewProfit > nDesiredProfit && nNewProfit < -nDesiredProfit ) m_bNeedsCancelClose = true;
+                            }
+                            if (oTaskShort.IsCompleted && nLoops > nMaxLoops)
+                            {
+                                if (nNewProfit > nDesiredProfit && nNewProfit < -nDesiredProfit) m_bNeedsCancelClose = true;
+                            }
+                            await Task.Delay(100);
+                            nLoops++;   
+                        }
+
+                        bool bClosedLong = oTaskLong.Result;
+                        bool bClosedShort = oTaskShort.Result;
 
                         if (!bClosedLong)
                         {

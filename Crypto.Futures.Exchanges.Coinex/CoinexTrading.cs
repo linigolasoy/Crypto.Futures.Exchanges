@@ -46,10 +46,11 @@ namespace Crypto.Futures.Exchanges.Coinex
             return true;
         }
 
-        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null)
+        public async Task<string?> ClosePosition(IPosition oPosition, decimal? nPrice = null, bool bFillOrKill = false)
         {
             OrderSide eSide = (oPosition.IsLong ? OrderSide.Sell : OrderSide.Buy);
             OrderTypeV2 eType = (nPrice == null ? OrderTypeV2.Market : OrderTypeV2.Limit);
+            if( bFillOrKill ) throw new NotImplementedException();  
             var oResult = await m_oExchange.RestClient.FuturesApi.Trading.PlaceOrderAsync(
                     oPosition.Symbol.Symbol, // string symbol, 
                     eSide, // OrderSide side, 
@@ -67,10 +68,11 @@ namespace Crypto.Futures.Exchanges.Coinex
             return oResult.Data.Id.ToString();
         }
 
-        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null)
+        public async Task<string?> CreateOrder(IFuturesSymbol oSymbol, bool bLong, decimal nQuantity, decimal? nPrice = null, bool bFillOrKill = false)
         {
             OrderSide eSide = (bLong ? OrderSide.Buy : OrderSide.Sell);
             OrderTypeV2 eType = (nPrice == null ? OrderTypeV2.Market : OrderTypeV2.Limit);
+            if (bFillOrKill) throw new NotImplementedException();
             var oResult = await m_oExchange.RestClient.FuturesApi.Trading.PlaceOrderAsync(
                     oSymbol.Symbol, // string symbol, 
                     eSide, // OrderSide side, 
