@@ -4,6 +4,7 @@
 using Crypto.Futures.Bot;
 using Crypto.Futures.Bot.Interface;
 using Crypto.Futures.Bot.Interface.Arbitrage;
+using Crypto.Futures.Bot.Interface.FundingRates;
 using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Factory;
 
@@ -45,8 +46,9 @@ public class Program
         IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
 
         // ITradingBot oBot = BotFactory.CreateNewSymbolBot(oSetup, oLogger);
-        IArbitrageBot oBot = BotFactory.CreateArbitrageBot(oSetup, false);
-
+        // IArbitrageBot oBot = BotFactory.CreateArbitrageBot(oSetup, false);
+        ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "FundingRateBot");
+        IFundingRateBot oBot = BotFactory.CreateFundingRateBot(oSetup, oLogger, true);
         try
         {
             // ITradingBot oBot = BotFactory.CreateFuturesArbitrageBot(oSetup, oLogger);
