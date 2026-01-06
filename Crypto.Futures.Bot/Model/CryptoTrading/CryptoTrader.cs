@@ -63,9 +63,10 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         private ConcurrentDictionary<int, ICryptoPosition> m_aPositionClosed = new ConcurrentDictionary<int, ICryptoPosition>();
         public CryptoTrader( ICryptoBot oBot) 
         { 
-            Bot = oBot;
+            Logger = oBot.Logger;
             Money = oBot.Setup.MoneyDefinition.Money;
             Leverage = oBot.Setup.MoneyDefinition.Leverage;
+            Exchanges = oBot.Exchanges;
         }
         public decimal Money { get; }
 
@@ -73,7 +74,10 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
 
         public int OrderTimeout { get; set; } = 60;
 
-        public ICryptoBot Bot { get; }
+        // public ICryptoBot Bot { get; }
+        public ICommonLogger Logger { get; }
+
+        private IFuturesExchange[] Exchanges { get; }
 
         public IBalance[] Balances { get => m_aBalances.Values.ToArray(); }
 
@@ -97,7 +101,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 string? strOrder = await oPosition.Symbol.Exchange.Trading.ClosePosition(oFakePosition, nPrice, bFillOrKill: true);
                 if (strOrder == null)
                 {
-                    Bot.Logger.Error($"Failed to close position for symbol {oPosition.Symbol.ToString()} Long:{oPosition.IsLong}");
+                    Logger.Error($"Failed to close position for symbol {oPosition.Symbol.ToString()} Long:{oPosition.IsLong}");
                     return false;
                 }
 
@@ -122,7 +126,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                             m_aPositionClosed.TryAdd(oPosition.Id, oPosition);
 
                             //ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
-                            Bot.Logger.Info($"{oPosition.ToString()}");
+                            Logger.Info($"{oPosition.ToString()}");
                             return true;
                         }
                         else if (oOrder.Status == ModelOrderStatus.Canceled)
@@ -137,7 +141,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             }
             catch (Exception ex)
             {
-                Bot.Logger.Error($"Error closing position for symbol {oPosition.Symbol.ToString()}: {ex.Message}", ex);
+                Logger.Error($"Error closing position for symbol {oPosition.Symbol.ToString()}: {ex.Message}", ex);
                 return false;
             }
         }
@@ -160,7 +164,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 var oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
                 if (oData == null || oData.LastOrderbookPrice == null)
                 {
-                    Bot.Logger.Error($"Failed to get market socket data for {oSymbol.ToString()} Long:{bLong}");
+                    Logger.Error($"Failed to get market socket data for {oSymbol.ToString()} Long:{bLong}");
                     return null;
                 }
 
@@ -168,7 +172,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 string? strOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice, bFillOrKill: true);
                 if (strOrder == null)
                 {
-                    Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
+                    Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
                     return null;
                 }
                 int nDelay = 100;
@@ -187,7 +191,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                         if (oOrder.Status == ModelOrderStatus.Filled)
                         {
                             ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
-                            Bot.Logger.Info($"{oPosition.ToString()}");
+                            Logger.Info($"{oPosition.ToString()}");
                             m_aPositionActive.TryAdd(oPosition.Id, oPosition);
                             return oPosition;
                         }
@@ -203,7 +207,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             }
             catch (Exception ex)
             {
-                Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}", ex);
+                Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}", ex);
                 return null;    
             }
         }
@@ -224,7 +228,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 string? strOrder = await oPosition.Symbol.Exchange.Trading.ClosePosition( oFakePosition, nPrice);
                 if (strOrder == null)
                 {
-                    Bot.Logger.Error($"Failed to close position for symbol {oPosition.Symbol.ToString()} Long:{oPosition.IsLong}");
+                    Logger.Error($"Failed to close position for symbol {oPosition.Symbol.ToString()} Long:{oPosition.IsLong}");
                     return false;
                 }
                 int nDelay = 100;
@@ -247,7 +251,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                         m_aPositionClosed.TryAdd(oPosition.Id, oPosition);
 
                         //ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
-                        Bot.Logger.Info($"{oPosition.ToString()}");
+                        Logger.Info($"{oPosition.ToString()}");
                         return true;
                     }
 
@@ -264,7 +268,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             }
             catch (Exception ex)
             {
-                Bot.Logger.Error($"Error closing position for symbol {oPosition.Symbol.ToString()}: {ex.Message}", ex);
+                Logger.Error($"Error closing position for symbol {oPosition.Symbol.ToString()}: {ex.Message}", ex);
                 return false;
 
             }
@@ -277,10 +281,10 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// </summary>
         public void InitBalances()
         {
-            if (m_aBalances.Count == Bot.Exchanges.Length) return;
+            if (m_aBalances.Count == Exchanges.Length) return;
             try
             {
-                foreach( var oExchange in Bot.Exchanges )
+                foreach( var oExchange in Exchanges )
                 {
                     IBalance? oBalance = null;  
                     if( !m_aBalances.TryGetValue(oExchange.ExchangeType, out oBalance) )
@@ -295,7 +299,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             }
             catch( Exception ex )
             {
-                Bot.Logger.Error("Error updating balances", ex);
+                Logger.Error("Error updating balances", ex);
             }
         }
 
@@ -316,7 +320,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 string? strOrder = await oSymbol.Exchange.Trading.CreateOrder(oSymbol, bLong, nVolume, nPrice);
                 if (strOrder == null )
                 {
-                    Bot.Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
+                    Logger.Error($"Failed to open position for symbol {oSymbol.ToString()} Long:{bLong}");
                     return null;
                 }
                 int nDelay = 100;
@@ -324,7 +328,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 var oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
                 if (oData == null || oData.LastOrderbookPrice == null )
                 {
-                    Bot.Logger.Error($"Failed to get market socket data for {oSymbol.ToString()} Long:{bLong}");
+                    Logger.Error($"Failed to get market socket data for {oSymbol.ToString()} Long:{bLong}");
                     return null;
                 }
 
@@ -340,7 +344,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                     if( oOrder.Status == ModelOrderStatus.Filled )
                     {
                         ICryptoPosition oPosition = new CryptoPosition(this, oData.LastOrderbookPrice, oOrder);
-                        Bot.Logger.Info($"{oPosition.ToString()}");
+                        Logger.Info($"{oPosition.ToString()}");
                         m_aPositionActive.TryAdd(oPosition.Id, oPosition);  
                         return oPosition;
                     }
@@ -356,7 +360,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             }
             catch (Exception ex)
             {
-                Bot.Logger.Error($"Error opening position for symbol {oSymbol.ToString()}: {ex.Message}", ex);
+                Logger.Error($"Error opening position for symbol {oSymbol.ToString()}: {ex.Message}", ex);
                 return null;
 
             }
@@ -374,13 +378,13 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 bool bResult = await oSymbol.Exchange.Account.SetLeverage(oSymbol, Leverage);
                 if( !bResult )
                 {
-                    Bot.Logger.Error($"Could not set leverage on {oSymbol.ToString()} Unknown error");
+                    Logger.Error($"Could not set leverage on {oSymbol.ToString()} Unknown error");
                 }
                 return bResult;
             }
             catch (Exception ex)
             {
-                Bot.Logger.Error($"Could not set leverage on {oSymbol.ToString()}", ex);
+                Logger.Error($"Could not set leverage on {oSymbol.ToString()}", ex);
             }
             return false;
         }

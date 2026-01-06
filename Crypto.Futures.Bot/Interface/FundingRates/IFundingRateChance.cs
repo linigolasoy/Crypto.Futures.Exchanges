@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges;
+using Crypto.Futures.Exchanges.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,9 @@ using System.Threading.Tasks;
 namespace Crypto.Futures.Bot.Interface.FundingRates
 {
 
+    /// <summary>
+    /// Symbol data for funding rate chance 
+    /// </summary>
     public interface IFundingRateSymbolData
     {
         public IFuturesSymbol Symbol { get; }
@@ -18,6 +22,10 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
         public decimal Quantity { get; }
         public decimal? PriceClose { get; }
         public DateTime? TimeClose { get; }
+
+        public IOrderbookPrice? OrderbookPrice { get;}
+        public Task<bool> Refresh(ICommonLogger oLogger);
+
     }
 
 
@@ -34,6 +42,7 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
 
         public IFundingRateSymbolData SymbolShort { get; }
 
+        public string Currency { get; } 
         public bool IsActive { get; } 
         public decimal Pnl { get; }
         public decimal Profit { get; }

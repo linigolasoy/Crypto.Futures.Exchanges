@@ -9,7 +9,8 @@ namespace Crypto.Futures.TelegramSignals.Signals
 
     public enum SignalType
     {
-        EveningTraderMidCap
+        EveningTraderMidCap,
+        AfibieCryptoSignals
     }
     
     /// <summary>

@@ -28,6 +28,9 @@ namespace Crypto.Futures.TelegramSignals
                 case SignalType.EveningTraderMidCap:
                     m_oSignalEvaluator = new SignalEveningTraderMidCap();
                     break;
+                case SignalType.AfibieCryptoSignals:
+                    m_oSignalEvaluator = new AfibieSignalEvaluator();
+                    break;
                 default:
                     throw new ArgumentException("Unsupported signal type for TelegramMessageHandler", nameof(eType));
 

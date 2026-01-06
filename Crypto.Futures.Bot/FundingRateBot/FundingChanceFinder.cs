@@ -18,19 +18,27 @@ namespace Crypto.Futures.Bot.FundingRateBot
         }
         public IFundingRateBot Bot { get; }
 
+
+        private bool TimeToCheck()
+        {
+            DateTime dNow = DateTime.Now;
+
+            // if (dNow.Minute != 45) return false;
+            // if ((dNow - m_dLastCheck).TotalMinutes < 30) return false;
+            // m_dLastCheck = dNow;
+
+            return true;
+        }
         public async Task<IFundingRateChance[]> FindNewChances()
         {
             List<IFundingRateChance> aResult = new List<IFundingRateChance>();
             Dictionary<string, List<IFundingRate>> oDictRates = new Dictionary<string, List<IFundingRate>>();
 
             DateTime dNow = DateTime.Now;
+            if( !TimeToCheck()) return Array.Empty<IFundingRateChance>();
 
-            if (dNow.Minute != 45) return Array.Empty<IFundingRateChance>();
-            if ((dNow - m_dLastCheck).TotalMinutes < 30) return Array.Empty<IFundingRateChance>();
-
-            Bot.Logger.Info("FundingChanceFinder: Checking for new funding rate chances");
-            m_dLastCheck = dNow;
-
+            // Bot.Logger.Info("FundingChanceFinder: Checking for new funding rate chances");
+            // List<IFundingRate> aAllRates = new List<IFundingRate>();
             DateTime dMin = DateTime.MaxValue;
             foreach (var oExchange in Bot.Exchanges)
             {
@@ -44,6 +52,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
                         if (!oDictRates.ContainsKey(oRate.Symbol.Base)) oDictRates[oRate.Symbol.Base] = new List<IFundingRate>();
                         if (oRate.Next <= dNow) continue;
                         if (oRate.Next < dMin) dMin = oRate.Next;
+                        // aAllRates.Add(oRate);
                         oDictRates[oRate.Symbol.Base].Add(oRate);
                     }
                 }
@@ -54,11 +63,11 @@ namespace Crypto.Futures.Bot.FundingRateBot
 
             }
 
+            // DateTime[] aDistinct = aAllRates.Select(p => p.Next).Distinct().OrderBy(p => p).ToArray();
 
-            if( (dMin - dNow).TotalMinutes > 20 ) return Array.Empty<IFundingRateChance>(); 
-
-
-
+            decimal nBestFound = 0;
+            string strBestFound = string.Empty;
+            decimal nMinPercent = 0.1M;
             Dictionary<string, IFundingRate[]> aFilterRates = new Dictionary<string, IFundingRate[]>();
             foreach (var item in oDictRates)
             {
@@ -72,8 +81,12 @@ namespace Crypto.Futures.Bot.FundingRateBot
                     IFundingRate oBuy = item.Value.OrderBy(p => p.Rate).First();
                     IFundingRate oSell = item.Value.OrderByDescending(p => p.Rate).First();
                     decimal nDiff = (oSell.Rate - oBuy.Rate) * 100M;
-                    if (nDiff < 0.2m) continue;
-
+                    if( nDiff > nBestFound )
+                    {
+                        nBestFound = nDiff;
+                        strBestFound = oBuy.Symbol.Base;
+                    }
+                    if (nDiff < nMinPercent) continue;
                     oChance = new FundingRateChance(Bot, oBuy, oSell, nDiff);
                 }
                 else if (aOthers.Length > 0)
@@ -85,7 +98,12 @@ namespace Crypto.Futures.Bot.FundingRateBot
                     IFundingRate oFound = oMin;
                     if (Math.Abs(oFound.Rate) < Math.Abs(oMax.Rate)) oFound = oMax;
                     decimal nDiff = Math.Abs(oFound.Rate) * 100M;
-                    if (nDiff < 0.2m) continue;
+                    if (nDiff > nBestFound)
+                    {
+                        nBestFound = nDiff;
+                        strBestFound = oFound.Symbol.Base;
+                    }
+                    if (nDiff < nMinPercent) continue;
                     IFundingRate oBuy = (oFound.Rate < 0 ? oFound : oOther);
                     IFundingRate oSell = (oFound.Rate > 0 ? oFound : oOther);
                     oChance = new FundingRateChance(Bot, oBuy, oSell, nDiff );
@@ -97,11 +115,24 @@ namespace Crypto.Futures.Bot.FundingRateBot
                 }
                 if(oChance != null)
                 {
-                    Bot.Logger.Info($" Found possible funding at {oChance.ChanceDate.ToShortTimeString()} of {oChance.PercentDifference} % on buy {oChance.SymbolLong.Symbol.ToString()} and sell {oChance.SymbolShort.Symbol.ToString()}");
+                    // Bot.Logger.Info($" Found possible funding at {oChance.ChanceDate.ToShortTimeString()} of {oChance.PercentDifference} % on buy {oChance.SymbolLong.Symbol.ToString()} and sell {oChance.SymbolShort.Symbol.ToString()}");
                     aResult.Add(oChance);
                 }
             }
 
+            if ((dMin - dNow).TotalMinutes > 20)
+            {
+                // Bot.Logger.Info($" Skipping, next funding rate ({dMin.ToShortTimeString()} not near");
+                return Array.Empty<IFundingRateChance>();
+            }
+            if( aResult.Count <= 0 )
+            {
+                Bot.Logger.Info($" Nothing found, best is {strBestFound} percent {nBestFound} %");
+            }
+            else
+            {
+                Bot.Logger.Info($" SUCCESS!, found {aResult.Count} chances!");
+            }
             return aResult.ToArray();
         }
     }

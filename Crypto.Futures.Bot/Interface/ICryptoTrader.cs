@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges;
+using Crypto.Futures.Exchanges.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Crypto.Futures.Bot.Interface
         public decimal Money { get; }
         public decimal Leverage { get; }
         public int OrderTimeout { get; set; } // Timeout for orders in seconds   
-        public ICryptoBot Bot { get; }
+        public ICommonLogger Logger { get; }
         public IBalance[] Balances { get; }
 
         public ICryptoPosition[] PositionsActive { get; }
@@ -32,5 +33,7 @@ namespace Crypto.Futures.Bot.Interface
         public Task<bool> CloseFillOrKill(ICryptoPosition oPosition, decimal? nPrice = null);
 
         public Task<bool> PutLeverage(IFuturesSymbol oSymbol);
+
+
     }
 }

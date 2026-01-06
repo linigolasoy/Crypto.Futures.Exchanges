@@ -25,14 +25,14 @@ namespace Crypto.Futures.Exchanges.Tests
             ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "TelegramTest");
             Assert.IsNotNull(oLogger, "Logger should not be null.");
 
-            ISignalScanner oScanner = TelegramFactory.CreateSignalScanner(oSetup, oLogger, SignalType.EveningTraderMidCap);
+            ISignalScanner oScanner = TelegramFactory.CreateSignalScanner(oSetup, oLogger, SignalType.AfibieCryptoSignals);
             Assert.IsNotNull(oScanner, "Signal scanner should not be null.");
 
             IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, ExchangeType.MexcFutures, oLogger);
             Assert.IsNotNull(oExchange, "Exchange should not be null.");
 
             // DateTime dFrom = DateTime.Today.AddMonths(-1); // Get history from one month ago    
-            DateTime dFrom = DateTime.Today.AddMonths(-1); // Get history from one month ago    
+            DateTime dFrom = DateTime.Today.AddDays(-7); // Get history from one month ago    
             DateTime dTo = DateTime.Today.AddDays(-1);
 
             decimal nMoney = 50;

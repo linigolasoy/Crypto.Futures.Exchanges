@@ -26,7 +26,9 @@ namespace Crypto.Futures.Bot.Trading
 
         public PaperTrader(ITradingBot oBot)
         {
-            Bot = oBot;
+            Logger = oBot.Logger;
+            Money = oBot.Setup.MoneyDefinition.Money;
+            Leverage = oBot.Setup.MoneyDefinition.Leverage;
 
             // Create exchanges based on the bot setup  
             List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
@@ -41,14 +43,14 @@ namespace Crypto.Futures.Bot.Trading
             m_aBalances = new ConcurrentDictionary<ExchangeType, IBalance>();
             foreach (IFuturesExchange oExchange in m_aExchanges)
             {
-                decimal nBalance = Bot.Setup.MoneyDefinition.Money * BALANCE_MULTIPLIER;
+                decimal nBalance = Money * BALANCE_MULTIPLIER;
                 IBalance oBalance = new PaperTraderBalance(oExchange, nBalance);
                 m_aBalances.TryAdd(oExchange.ExchangeType, oBalance);
             }
         }
-        public ITradingBot Bot { get; }
-        public decimal Money { get => Bot.Setup.MoneyDefinition.Money; }
-        public decimal Leverage { get => Bot.Setup.MoneyDefinition.Leverage; }
+        public ICommonLogger Logger { get ; }
+        public decimal Money { get; }
+        public decimal Leverage { get; }
 
         private const int MAX_DELAY = 800;
         private const int MIN_DELAY = 200;
@@ -72,7 +74,7 @@ namespace Crypto.Futures.Bot.Trading
                 IBalance? oBalance = m_aBalances[eType];
                 if (oBalance == null) continue;
                 decimal nOpenProfit = (m_aActivePositions.Count <= 0 ? 0 : m_aActivePositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
-                decimal nOpenLocked = (m_aActivePositions.Count <= 0 ? 0 : m_aActivePositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.PriceOpen * p.Volume / Bot.Setup.MoneyDefinition.Leverage));
+                decimal nOpenLocked = (m_aActivePositions.Count <= 0 ? 0 : m_aActivePositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.PriceOpen * p.Volume / Leverage));
                 decimal nClosedProfit = (m_aClosedPositions.Count <= 0 ? 0 : m_aClosedPositions.Values.Where(p => p.Symbol.Exchange.ExchangeType == eType).Sum(p => p.Profit));
                 PaperTraderBalance oPaperBalance = (PaperTraderBalance)oBalance;
                 oPaperBalance.Balance = oPaperBalance.StartBalance + nOpenProfit + nClosedProfit;
@@ -133,7 +135,7 @@ namespace Crypto.Futures.Bot.Trading
                 {
                     // oPosition.Update();
                     ((TraderPosition)oPosition).DateClose = DateTime.Now;
-                    Bot.Logger.Info($"  Closed position {oPosition.Id} for {oPosition.Symbol.ToString()} at price {oPosition.ActualPrice} with profit {oPosition.Profit} (long: {oPosition.IsLong})");
+                    Logger.Info($"  Closed position {oPosition.Id} for {oPosition.Symbol.ToString()} at price {oPosition.ActualPrice} with profit {oPosition.Profit} (long: {oPosition.IsLong})");
                     UpdateBalance(oPosition, true);
                     return true;
                 }
@@ -168,7 +170,7 @@ namespace Crypto.Futures.Bot.Trading
                 {
                     ITraderPosition oPosition = new TraderPosition(oSymbol, bLong, nVolume, nPriceOpen);
                     UpdateBalance(oPosition, false);
-                    Bot.Logger.Info($"  Opened position {oPosition.Id} for {oSymbol.ToString()} at price {nPriceOpen} with volume {nVolume} (long: {bLong})");
+                    Logger.Info($"  Opened position {oPosition.Id} for {oSymbol.ToString()} at price {nPriceOpen} with volume {nVolume} (long: {bLong})");
                     return oPosition;
                 }
                 nRetries--;

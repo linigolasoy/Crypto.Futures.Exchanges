@@ -84,6 +84,58 @@ namespace Crypto.Futures.Exchanges.Tests
 
         }
 
+        private IQuoter CreateQuoter(IExchangeSetup oSetup, ICommonLogger oLogger)
+        {
+            ExchangeType[] aTypes = new ExchangeType[] {
+                ExchangeType.BingxFutures,
+                ExchangeType.BitgetFutures,
+                ExchangeType.BitmartFutures,
+                ExchangeType.CoinExFutures
+            };
+
+            List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
+            foreach (ExchangeType eType in aTypes)
+            {
+                IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType, oLogger);
+                Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+                aExchanges.Add(oExchange);
+            }
+            IQuoter oQuoter = BotFactory.CreateQuoter(aExchanges.ToArray());
+            return oQuoter;
+        }
+
+
+        [TestMethod]
+        public async Task PaperTradingTests()
+        {
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+            ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "PaperTradingTests");
+
+            IQuoter oQuoter = CreateQuoter(oSetup, oLogger);
+
+            ICryptoTrader? oTrader = BotFactory.CreateTrader(oSetup, oLogger, oQuoter.Exchanges, true);
+            Assert.IsNotNull(oTrader, "Trader should not be null.");
+
+            oTrader.InitBalances();
+            await Task.Delay(1000); // Wait for balances to be initialized
+            Assert.IsTrue(oTrader.Balances.Length >= 2, "There should be at least two balance.");
+
+            // Create quoter
+
+            foreach (var oBalance in oTrader.Balances)
+            {
+                Assert.IsTrue(oBalance.Avaliable >= oTrader.Money, "Each balance should have at least money needed for trader.");
+                IFuturesSymbol? oSymbol = oBalance.Exchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "XRP" && p.Quote == "USDT");
+                Assert.IsNotNull(oSymbol, "Symbol for XRPUSDT should not be null.");
+                bool bLeverage = await oTrader.PutLeverage(oSymbol);
+                Assert.IsTrue(bLeverage, "Setting leverage should be successful.");
+
+
+
+            }
+
+        }
 
 
         [TestMethod]
