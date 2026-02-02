@@ -64,44 +64,27 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                     nMinDecimals = nActDecimals;
                 }
             }
-            /*
-            decimal nMaxContract = aSymbols.Max(p => p.ContractSize);
-            decimal nMinContract = aSymbols.Min(p => p.ContractSize);
-            decimal nMinDecimals = aSymbols.Min(p => p.QuantityDecimals);
-            decimal nMaxDecimals = aSymbols.Max(p => p.QuantityDecimals);
-
-            if ( nMaxContract != nMinContract )
-            {
-                if( nMaxContract >= 10 )
-                {
-                    if( nMinContract < 1 )
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        return null; 
-                    }
-                }
-                else
-                {
-                    decimal nDecimals = -(decimal)Math.Log10((double)nMinContract);
-                    return null;
-                }
-                return null;
-            }
-
-            */
             decimal nQuantity = nMoney / nPrice;
             nQuantity = Math.Floor(nQuantity * (decimal)Math.Pow(10, (double)nMinDecimals)) / (decimal)Math.Pow(10, (double)nMinDecimals);
             return nQuantity;
         }
 
 
+        /// <summary>
+        /// Get subscription key for symbol
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
         private string GetSubscriptionKey(IFuturesSymbol oSymbol)
         {
             return $"{oSymbol.Exchange.ExchangeType}-{oSymbol.Symbol}";
         }
+
+        /// <summary>
+        /// Check if symbol needs subscription
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <returns></returns>
         private bool NeedsSubscription(IFuturesSymbol oSymbol)
         {
             string strKey = GetSubscriptionKey(oSymbol);    
@@ -143,7 +126,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             {
                 bool bSubscribed = await SubscribeSymbol(oSymbol);
                 if (!bSubscribed) return null;
-                await Task.Delay(500);
+                await Task.Delay(2500);
             }
 
             var oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
@@ -151,6 +134,12 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             return oData.LastOrderbookPrice;
         }
 
+        /// <summary>
+        /// Get long price
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <param name="nQuantity"></param>
+        /// <returns></returns>
         public async Task<decimal?> GetLongPrice(IFuturesSymbol oSymbol, decimal nQuantity = 0)
         {
             var oOrderPrice = await GetOrderbookPrice(oSymbol);
@@ -158,6 +147,12 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             return oOrderPrice.AskPrice;
         }
 
+        /// <summary>
+        /// Get short price
+        /// </summary>
+        /// <param name="oSymbol"></param>
+        /// <param name="nQuantity"></param>
+        /// <returns></returns>
         public async Task<decimal?> GetShortPrice(IFuturesSymbol oSymbol, decimal nQuantity = 0)
         {
             var oOrderPrice = await GetOrderbookPrice(oSymbol);

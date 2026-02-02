@@ -67,6 +67,20 @@ namespace Crypto.Futures.Exchanges.Bitunix
         }
 
 
+        public static IFuturesSymbol[]? ParseAll(IFuturesExchange oExchange, JToken? oToken)
+        {
+            BitunixSymbolJson[]? aJson = oToken?.ToObject<BitunixSymbolJson[]>();
+            if (aJson == null || aJson.Length <= 0) return null;
+            List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+            foreach (BitunixSymbolJson oItem in aJson)
+            {
+                if (oItem.SymbolStatus.ToUpper() != "OPEN") continue;
+                BitunixSymbol oSymbol = new BitunixSymbol(oExchange, oItem);
+                aResult.Add(oSymbol);
+            }
+            return aResult.ToArray();
+        }
+
         public static IFuturesSymbol? Parse( IFuturesExchange oExchange, JToken? oToken)
         {
             if (oToken == null) return null;

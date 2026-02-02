@@ -13,13 +13,13 @@ namespace Cypto.Futures.Exchanges.Blofin
         private const string BASE_URL = "https://openapi.blofin.com";
         private const string ENDP_SYMBOLS = "/api/v1/market/instruments";
 
-        internal BlofinParser m_oParser;
+        // internal BlofinParser m_oParser;
 
         public BlofinFutures(IExchangeSetup oSetup, ICommonLogger? oLogger)
         {
             Setup = oSetup;
             Logger = oLogger;
-            m_oParser = new BlofinParser(this);
+            // m_oParser = new BlofinParser(this);
             ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
             
             SymbolManager = new FuturesSymbolManager();
@@ -31,8 +31,10 @@ namespace Cypto.Futures.Exchanges.Blofin
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
         public bool Tradeable { get => false; }
-        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
-        internal BlofinParser Parser { get => m_oParser; }
+
+
+        internal IApiCaller ApiCaller { get { return new BaseApiCaller(BASE_URL); } }
+        // internal BlofinParser Parser { get => m_oParser; }
 
         public ICommonLogger? Logger { get; }
 
@@ -50,27 +52,25 @@ namespace Cypto.Futures.Exchanges.Blofin
 
         public async Task<IFuturesSymbol[]?> RefreshSymbols()
         {
+            
             try
             {
-                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await ApiCaller.GetAsync(ENDP_SYMBOLS);
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
-                if (oResult.Data.Count() <= 0) return null;
-                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
-                foreach (var oSymbol in oResult.Data)
-                {
-                    if (oSymbol == null) continue;
-                    aResult.Add(oSymbol);
-                }
+                IFuturesSymbol[]? aResult = BlofinSymbol.ParseAll(this, oResult.Data);
+                if(aResult == null) throw new Exception("Failed to parse symbols from Blofin.");
 
-                SymbolManager.SetSymbols(aResult.ToArray());
-                return aResult.ToArray();
+
+                SymbolManager.SetSymbols(aResult);
+                return aResult;
             }
             catch (Exception ex)
             {
                 if (Logger != null) Logger.Error("Error refreshing symbols", ex);
                 return null;
             }
+            
         }
     }
 }

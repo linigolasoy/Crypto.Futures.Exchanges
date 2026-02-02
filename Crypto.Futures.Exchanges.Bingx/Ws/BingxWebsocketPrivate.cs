@@ -55,8 +55,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
                     OnAccountUpdates,
                     OnOrderUpdates,
                     null,
-                    OnExpired
-                 
+                    OnExpired                 
                 );
 
 
@@ -66,7 +65,6 @@ namespace Crypto.Futures.Exchanges.Bingx.Ws
             // var oResultOrder = await m_oSocketClient.UsdFuturesApi.SubscribeToOrderUpdatesAsync(PrivateOnOrder);
             // if (oResultOrder == null || !oResultOrder.Success) return false;
 
-            // var oResultPosition = await m_oSocketClient.UsdFuturesApi.SubscribeToPositionUpdatesAsync(PrivateOnPosition);
             // if (oResultPosition == null || !oResultPosition.Success) return false;
 
             return true;

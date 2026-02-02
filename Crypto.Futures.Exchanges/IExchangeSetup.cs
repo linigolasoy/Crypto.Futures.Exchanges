@@ -17,7 +17,8 @@ namespace Crypto.Futures.Exchanges
         BitgetFutures,
         BitmartFutures,
         ToobitFutures,
-        BitunixFutures
+        BitunixFutures,
+        Hyperliquidity
     }
 
     public interface IApiKey

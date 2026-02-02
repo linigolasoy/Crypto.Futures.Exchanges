@@ -35,7 +35,9 @@ ApiKey, Request-Time, Signature
         */
         public async Task<IBalance[]?> GetBalances()
         {
-            
+
+
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -62,9 +64,12 @@ ApiKey, Request-Time, Signature
                 }
             }
             return null;
+            */
+            throw new NotImplementedException();
         }
         public async Task<decimal?> GetLeverage(IFuturesSymbol oSymbol)
         {
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -94,6 +99,8 @@ ApiKey, Request-Time, Signature
                 }
             }
             return null;
+            */
+            throw new NotImplementedException();
         }
 
 
@@ -105,6 +112,7 @@ ApiKey, Request-Time, Signature
         /// <returns></returns>
         public async Task<bool> SetLeverage(IFuturesSymbol oSymbol, decimal nLeverage)
         {
+            /*             
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -143,6 +151,8 @@ ApiKey, Request-Time, Signature
                 }
             }
             return false;
+            */
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -151,6 +161,7 @@ ApiKey, Request-Time, Signature
         /// <returns></returns>
         public async Task<IPosition[]?> GetPositions()
         {
+            /*
             try
             {
                 CryptoRestClient oClient = m_oExchange.RestClient;
@@ -177,6 +188,8 @@ ApiKey, Request-Time, Signature
                 }
             }
             return null;
+            */
+            throw new NotImplementedException();
         }
 
         public async Task<IOrder[]?> GetOrders()

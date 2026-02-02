@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Crypto.Futures.Exchanges.Blofin.Data;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
@@ -71,7 +72,34 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
 
 
+        public static IFuturesSymbol[]? ParseAll(IFuturesExchange oExchange, string strJson)
+        {
+            BlofinResponse? oResponse = BlofinResponse.FromJson(strJson);
+            if (oResponse == null || oResponse.data == null || !oResponse.IsSuccess() ) return null;
 
+            BlofinSymbolJson[]? aParsed = JsonConvert.DeserializeObject<BlofinSymbolJson[]>(oResponse.data.ToString())!;
+            if( aParsed == null) return null;
+            List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+
+            foreach( var oJson in aParsed)
+            {
+
+                DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(oJson.ListTime));
+                DateTime dDate = oOffset.Date.ToLocalTime();
+                if (dDate > DateTime.Now.AddDays(1)) continue;
+                if (dDate < DateTime.Today && oJson.State == "suspend")
+                {
+                    continue;
+                }
+                IFuturesSymbol oSymbol = new BlofinSymbol(oExchange, oJson);
+
+                if (oSymbol.LeverageMax <= 5) continue;
+                aResult.Add(oSymbol);
+            }
+
+
+            return aResult.ToArray();
+        }
         public static IFuturesSymbol? Parse(IFuturesExchange oExchange, JToken? oToken)
         {
             if (oToken == null) return null;

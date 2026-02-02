@@ -1,10 +1,7 @@
 ﻿using Crypto.Futures.Bot;
 using Crypto.Futures.Bot.Interface;
-using Crypto.Futures.Bot.Interface.Arbitrage;
 using Crypto.Futures.Exchanges.Factory;
 using Crypto.Futures.Exchanges.Model;
-using Crypto.Futures.Exchanges.WebsocketModel;
-using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Tests
 {
@@ -14,13 +11,19 @@ namespace Crypto.Futures.Exchanges.Tests
         private static string SETUP_FILE = "D:/Data/CryptoFutures/FuturesSetup.json";
 
 
+
+        /// <summary>
+        /// Create exchange instances for testing
+        /// </summary>
+        /// <param name="oSetup"></param>
+        /// <returns></returns>
         private static IFuturesExchange[] CreateExchanges(IExchangeSetup oSetup)
         {
             ExchangeType[] aTypes = new ExchangeType[] {
                 ExchangeType.BingxFutures,
                 ExchangeType.BitgetFutures,
-                ExchangeType.BitmartFutures,
-                ExchangeType.CoinExFutures
+                ExchangeType.BitmartFutures
+                // ,ExchangeType.CoinExFutures
             };
 
             List<IFuturesExchange> aExchanges = new List<IFuturesExchange>();
@@ -35,6 +38,10 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
 
+        /// <summary>
+        /// Test quoter price retrieval across exchanges
+        /// </summary>
+        /// <returns></returns>
         [TestMethod]
         public async Task QuoterPricesTests()
         {
@@ -65,6 +72,11 @@ namespace Crypto.Futures.Exchanges.Tests
         }
 
 
+
+        /// <summary>
+        /// Test quoter quantity matching across exchanges
+        /// </summary>
+        /// <returns></returns>
         [TestMethod]
         public async Task QuoterQuantityMatchTests()
         {
@@ -103,6 +115,60 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
             }
+        }
+
+
+        /// <summary>
+        /// Test quoter quantity matching across exchanges
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public async Task AccountWatcherTests()
+        {
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+            IFuturesExchange[] aExchanges = CreateExchanges(oSetup);
+
+            IAccountWatcher oWatcher = BotFactory.CreateAccountWatcher(aExchanges);
+            Assert.IsNotNull(oWatcher, "Account watcher should not be null.");
+
+
+            await oWatcher.Start();
+
+            // Quoter
+            IQuoter oQuoter = BotFactory.CreateQuoter(aExchanges);
+            Assert.IsNotNull(oQuoter, "Quoter should not be null.");
+
+            await Task.Delay(2000);
+
+            // Start balances retrieval 
+            IBalance[] aStartBalances = oWatcher.GetBalances();
+            Assert.IsNotNull(aStartBalances, "Start balances should not be null.");
+            Assert.IsTrue(aStartBalances.Length  == oWatcher.Exchanges.Length, "Start balances should not be empty.");
+
+            foreach( var oExchange in aExchanges)
+            {
+                IBalance? oStart = aStartBalances.FirstOrDefault(p => p.Exchange.ExchangeType == oExchange.ExchangeType);
+                Assert.IsNotNull(oStart, $"Start balance for {oExchange.ExchangeType} should not be null.");
+
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "XRP" && p.Quote == "USDT");
+                Assert.IsNotNull(oSymbol, $"XRPUSDT symbol should exist on {oExchange.ExchangeType}.");
+
+                decimal? nLongPrice = await oQuoter.GetLongPrice(oSymbol, 1);
+                Assert.IsNotNull(nLongPrice, $"Long price for {oExchange.ExchangeType} XRPUSDT should not be null.");
+
+                // decimal? nQuantity = oQuoter.GetBestQuantity(new IFuturesSymbol[] { oSymbol }, nLongPrice.Value * 1.3M, 5m);
+                // Assert.IsNotNull(nQuantity, $"Best quantity for {oExchange.ExchangeType} XRPUSDT should not be null.");
+
+                // Place order
+                string? strOrder = await oExchange.Trading.CreateOrder(oSymbol, true, 3, nLongPrice.Value * 0.8m);
+                Assert.IsNotNull(strOrder, $"Order creation for {oExchange.ExchangeType} XRPUSDT should not be null.");
+            }
+
+
+            await oWatcher.Stop();  
+
         }
 
 

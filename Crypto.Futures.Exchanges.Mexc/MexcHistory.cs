@@ -61,6 +61,7 @@ namespace Crypto.Futures.Exchanges.Mexc
 
         public async Task<IBar[]?> GetBars(IFuturesSymbol oSymbol, BarTimeframe eFrame, DateTime dFrom, DateTime dTo)
         {
+            /*
             MexcIntervals? oInterval = TimeframeToMexc(eFrame);
             if( oInterval == null ) return null;
             
@@ -76,6 +77,8 @@ namespace Crypto.Futures.Exchanges.Mexc
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             return m_oExchange.Parser.ParseBars(oSymbol, eFrame, oResult.Data);
+            */
+            throw new NotImplementedException();
         }
 
         public async Task<IBar[]?> GetBars(IFuturesSymbol[] aSymbols, BarTimeframe eFrame, DateTime dFrom, DateTime dTo)

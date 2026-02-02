@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Bitmart\Crypto.Futures.Exchanges.Bitmart.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Bitunix\Crypto.Futures.Exchanges.Bitunix.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Coinex\Crypto.Futures.Exchanges.Coinex.csproj" />
+    <ProjectReference Include="..\Crypto.Futures.Exchanges.Hyperliquidity\Crypto.Futures.Exchanges.Hyperliquidity.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Mexc\Crypto.Futures.Exchanges.Mexc.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges.Toobit\Crypto.Futures.Exchanges.Toobit.csproj" />
     <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />

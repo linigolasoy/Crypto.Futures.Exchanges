@@ -27,7 +27,7 @@ namespace Crypto.Futures.Exchanges.Bitunix
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-
+            /*
             var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
@@ -40,6 +40,8 @@ namespace Crypto.Futures.Exchanges.Bitunix
                 aResult.Add(oFunding);
             }
             return aResult.ToArray();
+            */
+            throw new NotImplementedException();
         }
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
         {
@@ -58,6 +60,7 @@ namespace Crypto.Futures.Exchanges.Bitunix
 
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols = null)
         {
+            /*
             var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseTicker(p));
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
@@ -71,6 +74,8 @@ namespace Crypto.Futures.Exchanges.Bitunix
                 aResult.Add(oFunding);
             }
             return aResult.ToArray();
+            */
+            throw new NotImplementedException();
         }
     }
 }

@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.TelegramSignals", "Crypto.Futures.TelegramSignals\Crypto.Futures.TelegramSignals.csproj", "{3A0324A3-9C73-4B35-9CDD-81B82E810673}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crypto.Futures.Exchanges.Hyperliquidity", "Crypto.Futures.Exchanges.Hyperliquidity\Crypto.Futures.Exchanges.Hyperliquidity.csproj", "{CC792D39-A122-444C-8D8B-ADF3204712E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{3A0324A3-9C73-4B35-9CDD-81B82E810673}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A0324A3-9C73-4B35-9CDD-81B82E810673}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A0324A3-9C73-4B35-9CDD-81B82E810673}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC792D39-A122-444C-8D8B-ADF3204712E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC792D39-A122-444C-8D8B-ADF3204712E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC792D39-A122-444C-8D8B-ADF3204712E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC792D39-A122-444C-8D8B-ADF3204712E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

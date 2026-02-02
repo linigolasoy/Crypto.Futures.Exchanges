@@ -3,6 +3,7 @@ using Crypto.Futures.Exchanges.Bitget;
 using Crypto.Futures.Exchanges.Bitmart;
 using Crypto.Futures.Exchanges.Bitunix;
 using Crypto.Futures.Exchanges.Coinex;
+using Crypto.Futures.Exchanges.Hyperliquidity;
 using Crypto.Futures.Exchanges.Mexc;
 using Crypto.Futures.Exchanges.Toobit;
 using Cypto.Futures.Exchanges.Blofin;
@@ -54,6 +55,8 @@ namespace Crypto.Futures.Exchanges.Factory
                     return new BitunixFutures(oSetup, oLogger);
                 case ExchangeType.ToobitFutures:
                     return new ToobitFutures(oSetup, oLogger);
+                case ExchangeType.Hyperliquidity:
+                    return new HyperliquidityExchanges(oSetup, oLogger);
                 default:
                     break;
             }

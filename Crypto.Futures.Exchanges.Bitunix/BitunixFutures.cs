@@ -1,5 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bitunix.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Newtonsoft.Json;
 
 namespace Crypto.Futures.Exchanges.Bitunix
 {
@@ -9,13 +11,13 @@ namespace Crypto.Futures.Exchanges.Bitunix
         private const string BASE_URL = "https://fapi.bitunix.com/";
         private const string ENDP_SYMBOLS = "/api/v1/futures/market/trading_pairs";
 
-        internal BitunixParser m_oParser;
+        // internal BitunixParser m_oParser;
 
         public BitunixFutures(IExchangeSetup oSetup, ICommonLogger? oLogger)
         {
             Setup = oSetup;
             Logger = oLogger;
-            m_oParser = new BitunixParser(this);
+            // m_oParser = new BitunixParser(this);
             ApiKey = Setup.ApiKeys.First(p => p.ExchangeType == this.ExchangeType);
 
             SymbolManager = new FuturesSymbolManager();
@@ -27,8 +29,8 @@ namespace Crypto.Futures.Exchanges.Bitunix
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
         public bool Tradeable { get => false; }
-        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser); } }
-        internal BitunixParser Parser { get => m_oParser; }
+        internal IApiCaller ApiCaller { get { return new BaseApiCaller(BASE_URL); } }
+        // internal BitunixParser Parser { get => m_oParser; }
 
         public ICommonLogger? Logger { get; }
 
@@ -48,19 +50,16 @@ namespace Crypto.Futures.Exchanges.Bitunix
         {
             try
             {
-                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await ApiCaller.GetAsync(ENDP_SYMBOLS);
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
-                if (oResult.Data.Count() <= 0) return null;
-                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
-                foreach (var oSymbol in oResult.Data)
-                {
-                    if (oSymbol == null) continue;
-                    aResult.Add(oSymbol);
-                }
 
-                SymbolManager.SetSymbols(aResult.ToArray());
-                return aResult.ToArray();
+                BitunixResponse? oResponse = JsonConvert.DeserializeObject<BitunixResponse>(oResult.Data);
+                if (oResponse == null || !oResponse.IsSuccess() &&  oResponse.data == null) return null;
+                IFuturesSymbol[]? aResult = BitunixSymbol.ParseAll(this, oResponse.data);
+                if (aResult == null || aResult.Length <= 0) return null;
+                SymbolManager.SetSymbols(aResult);
+                return aResult;
             }
             catch (Exception ex)
             {

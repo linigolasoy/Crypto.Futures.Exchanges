@@ -84,6 +84,22 @@ namespace Crypto.Futures.Exchanges.Mexc
             return base.ToString();
         }
 
+        public static IFuturesSymbol[]? ParseAll(IFuturesExchange oExchange, JToken? oToken)
+        {
+            if( oToken == null) return null;
+            MexcSymbolJson[]? aFound = JsonConvert.DeserializeObject<MexcSymbolJson[]>(oToken.ToString());
+            if (aFound == null) return null;
+            List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+            foreach( var oJson in aFound )
+            {
+                DateTimeOffset oOffset = DateTimeOffset.FromUnixTimeMilliseconds(oJson.OpeningTime);
+                DateTime dDate = oOffset.Date.ToLocalTime();
+                if (dDate > DateTime.Now.AddDays(1)) continue;
+                aResult.Add( new MexcSymbol(oExchange, oJson));
+            }
+            return aResult.ToArray();   
+        }
+
         public static IFuturesSymbol? Parse(IFuturesExchange oExchange, JToken? oToken)
         {
             if (oToken == null) return null;

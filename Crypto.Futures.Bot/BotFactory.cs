@@ -49,5 +49,11 @@ namespace Crypto.Futures.Bot
         {
             return new CryptoQuoter(aExchanges);
         }
+
+        public static IAccountWatcher CreateAccountWatcher(IFuturesExchange[] aExchanges)
+        {
+            return new CryptoAccountWatcher(aExchanges);
+        }
+
     }
 }

@@ -1,5 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Mexc.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.Rest;
+using Newtonsoft.Json;
 
 namespace Crypto.Futures.Exchanges.Mexc
 {
@@ -10,12 +12,12 @@ namespace Crypto.Futures.Exchanges.Mexc
         public const string BASE_URL = "https://contract.mexc.com";
         private const string ENDP_SYMBOLS = "/api/v1/contract/detail";
 
-        internal MexcParser m_oParser;
+        // internal MexcParser m_oParser;
         public MexcFutures(IExchangeSetup oSetup, ICommonLogger? logger = null)
         {
             Setup = oSetup;
             Logger = logger;
-            m_oParser = new MexcParser(this);
+            // m_oParser = new MexcParser(this);
             ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);  
             
             SymbolManager = new FuturesSymbolManager();
@@ -28,8 +30,8 @@ namespace Crypto.Futures.Exchanges.Mexc
         }
 
 
-        internal CryptoRestClient RestClient { get { return new CryptoRestClient(BASE_URL, ApiKey, m_oParser);  } }
-        internal MexcParser Parser { get => m_oParser; }
+        internal IApiCaller ApiCaller { get { return new BaseApiCaller(BASE_URL);  } }
+        // internal MexcParser Parser { get => m_oParser; }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
         public bool Tradeable { get => false; }
@@ -57,19 +59,16 @@ namespace Crypto.Futures.Exchanges.Mexc
         {
             try
             { 
-                var oResult = await RestClient.DoGetArrayParams<IFuturesSymbol?>(ENDP_SYMBOLS, null, p => m_oParser.ParseSymbols(p));
+                var oResult = await ApiCaller.GetAsync(ENDP_SYMBOLS);
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
-                if (oResult.Data.Count() <= 0) return null;
-                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
-                foreach (var oSymbol in oResult.Data)
-                {
-                    if (oSymbol == null) continue;
-                    aResult.Add(oSymbol);
-                }
+                MexcResponse? oResponse = JsonConvert.DeserializeObject<MexcResponse>(oResult.Data.ToString());
+                if (oResponse == null || oResponse.Data == null || !oResponse.Success ) return null;
 
-                SymbolManager.SetSymbols(aResult.ToArray());
-                return aResult.ToArray();
+                IFuturesSymbol[]? aResult = MexcSymbol.ParseAll(this, oResponse.Data);
+                if (aResult == null || aResult.Length <= 0) return null;
+                SymbolManager.SetSymbols(aResult);
+                return aResult;
             }
             catch (Exception ex)
             {

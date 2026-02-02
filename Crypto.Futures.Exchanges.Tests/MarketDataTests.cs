@@ -45,7 +45,7 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes ) //.Where(p=> p== ExchangeType.BitunixFutures))
+            foreach (ExchangeType eType in oSetup.ExchangeTypes)
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
