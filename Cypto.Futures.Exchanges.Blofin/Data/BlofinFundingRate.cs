@@ -45,14 +45,20 @@ namespace Cypto.Futures.Exchanges.Blofin.Data
             Rate = oFunding.Rate;
         }
 
-        public static IFundingRate? Parse(IFuturesExchange oExchange, JToken? oToken)
+        public static IFundingRate[]? ParseAll(IFuturesExchange oExchange, JToken? oToken)
         {
             if (oToken == null) return null;
-            var oFundingJson = oToken.ToObject<BlofinFundingRateJson>();
-            if (oFundingJson == null) return null;
-            var oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
-            if (oSymbol == null) return null;
-            return new BlofinFundingRate(oSymbol, oFundingJson);
+            BlofinFundingRateJson[]? aFundingJson = oToken?.ToObject<BlofinFundingRateJson[]>();
+            if (aFundingJson == null) return null;
+
+            List<IFundingRate> aResult = new List<IFundingRate>();
+            foreach (var oFundingJson in aFundingJson)
+            {
+                var oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
+                if (oSymbol == null) continue;
+                aResult.Add(new BlofinFundingRate(oSymbol, oFundingJson));
+            }
+            return aResult.ToArray();
         }
 
         public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, JToken? oData)

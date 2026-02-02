@@ -7,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Crypto.Futures.Exchanges.Blofin.Ws;
+using Crypto.Futures.Exchanges.Blofin.Data;
+using Newtonsoft.Json;
+using Cypto.Futures.Exchanges.Blofin.Data;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
@@ -33,21 +36,13 @@ namespace Cypto.Futures.Exchanges.Blofin
         /// <returns></returns>
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            /*
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            
+            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_FUNDING);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
-
-            List<IFundingRate> aResult = new List<IFundingRate>();
-            foreach (var oFunding in oResult.Data)
-            {
-                if (oFunding == null) continue;
-                aResult.Add(oFunding);
-            }
-            return aResult.ToArray();
-            */
-            throw new NotImplementedException();
+            BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oResult.Data);
+            if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
+            return BlofinFundingRate.ParseAll(m_oExchange, oResponse.data);
         }
 
 

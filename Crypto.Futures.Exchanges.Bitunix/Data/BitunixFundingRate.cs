@@ -46,14 +46,19 @@ namespace Crypto.Futures.Exchanges.Bitunix.Data
             Rate = oFunding.Rate;
         }
 
-        public static IFundingRate? Parse( IFuturesExchange oExchange, JToken? oToken)
+        public static IFundingRate[]? ParseAll( IFuturesExchange oExchange, JToken? oToken)
         {
             if (oToken == null) return null;
-            BitunixFundingRateJson? oJson = oToken.ToObject<BitunixFundingRateJson>();
-            if (oJson == null) return null;
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
-            if (oSymbol == null) return null;
-            return new BitunixFundingRate(oSymbol, oJson);
+            BitunixFundingRateJson[]? aFundingJson = oToken?.ToObject<BitunixFundingRateJson[]>();
+            if (aFundingJson == null) return null;
+            List<IFundingRate> aResult = new List<IFundingRate>();
+            foreach (var oFundingJson in aFundingJson)
+            {
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oFundingJson.Symbol);
+                if (oSymbol == null) continue;
+                aResult.Add( new BitunixFundingRate(oSymbol, oFundingJson));
+            }
+            return aResult.ToArray();
         }
     }
 }

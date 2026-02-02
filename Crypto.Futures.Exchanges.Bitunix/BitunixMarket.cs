@@ -1,5 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Bitunix.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,21 +29,14 @@ namespace Crypto.Futures.Exchanges.Bitunix
 
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            /*
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<IFundingRate?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseFundingRate(p));
+            
+            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_FUNDING);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
+            BitunixResponse? oResponse = JsonConvert.DeserializeObject<BitunixResponse>(oResult.Data);
+            if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
 
-            List<IFundingRate> aResult = new List<IFundingRate>();
-            foreach (var oFunding in oResult.Data)
-            {
-                if (oFunding == null) continue;
-                aResult.Add(oFunding);
-            }
-            return aResult.ToArray();
-            */
-            throw new NotImplementedException();
+            return BitunixFundingRate.ParseAll(m_oExchange, oResponse.data);
         }
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
         {
