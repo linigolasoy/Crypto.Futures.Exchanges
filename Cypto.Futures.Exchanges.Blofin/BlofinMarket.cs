@@ -62,25 +62,16 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            /*
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_TICKER, null, p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_TICKER);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
 
-            List<ITicker> aResult = new List<ITicker>();
-            foreach (var oTicker in oResult.Data)
-            {
-                if (oTicker == null) continue;
-                if( aSymbols != null )
-                {
-                    if (!aSymbols.Any(p => p.Symbol == oTicker.Symbol.Symbol)) continue;
-                }
-                aResult.Add(oTicker);
-            }
-            return aResult.ToArray();
-            */
-            throw new NotImplementedException();
+            BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oResult.Data);
+            if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
+
+            ITicker[]? aAll = BlofinTicker.ParseAll(m_oExchange, oResponse.data);
+            return aAll;
+
         }
     }
 }

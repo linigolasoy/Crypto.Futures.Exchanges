@@ -58,14 +58,19 @@ namespace Crypto.Futures.Exchanges.Bitunix.Data
 
         public IFuturesSymbol Symbol { get; }
 
-        public static ITicker? Parse( IFuturesExchange oExchange, JToken? oToken )
+        public static ITicker[]? ParseAll( IFuturesExchange oExchange, JToken? oToken )
         {
             if(oToken == null) return null;
-            BitunixTickerJson? oTickerJson = oToken.ToObject<BitunixTickerJson>();
-            if (oTickerJson == null) return null;
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oTickerJson.Symbol);
-            if (oSymbol == null) return null;
-            return new BitunixTicker(oSymbol, oTickerJson);
+            BitunixTickerJson[]? aTickerJson = oToken.ToObject<BitunixTickerJson[]>();
+            if (aTickerJson == null) return null;
+            List<ITicker> aTickers = new List<ITicker>();
+            foreach (BitunixTickerJson oTickerJson in aTickerJson)
+            {
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oTickerJson.Symbol);
+                if (oSymbol == null) continue;
+                aTickers.Add(new BitunixTicker(oSymbol, oTickerJson));
+            }
+            return aTickers.ToArray();
         }
 
         public void Update(IWebsocketMessageBase oMessage)

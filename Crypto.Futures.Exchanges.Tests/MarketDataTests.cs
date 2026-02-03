@@ -114,7 +114,7 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
             string[] aCoins = new string[] { "BTC", "ETH", "XRP", "LTC", "SOL", "BNB", "ADA", "DOT", "DOGE", "TRX" };
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.CoinExFutures))
+            foreach (var oExchange in aExchanges ) //.Where(p=> p.ExchangeType == ExchangeType.CoinExFutures))
             {
                 if( !oExchange.Tradeable) continue;
                 IWebsocketPublic oWs = oExchange.Market.Websocket;

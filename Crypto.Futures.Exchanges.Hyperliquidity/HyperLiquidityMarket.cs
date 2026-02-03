@@ -54,7 +54,24 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
 
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols = null)
         {
-            throw new NotImplementedException();
+            try
+            {
+                PostInfoParams oParams = new PostInfoParams();
+                var oResult = await m_oExchange.ApiCaller.PostAsync(HyperliquidityExchanges.ENDP_SYMBOLS, oParams);
+                if (oResult == null || !oResult.Success || oResult.Data == null) return null;
+
+                ITicker[] aResult = SymbolMetadataParser.ParseTickers(oResult.Data, this.Exchange);
+                if (aSymbols != null)
+                {
+                    aResult = aResult.Where(p => aSymbols.Any(q => p.Symbol.Symbol == q.Symbol)).ToArray();
+                }
+                return aResult;
+            }
+            catch (Exception ex)
+            {
+                if (m_oExchange.Logger != null) m_oExchange.Logger.Error("Error refreshing funding rates", ex);
+                return null;
+            }
         }
     }
 }

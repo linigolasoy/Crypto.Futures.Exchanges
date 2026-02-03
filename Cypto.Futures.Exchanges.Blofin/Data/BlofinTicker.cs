@@ -89,14 +89,20 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
 
         }
 
-        public static ITicker? Parse( IFuturesExchange oExchange, JToken? oToken )
+        public static ITicker[]? ParseAll( IFuturesExchange oExchange, JToken? oToken )
         {
             if( oToken == null ) return null;
-            BlofinTickerJson? oJson = oToken.ToObject<BlofinTickerJson>();
-            if( oJson == null ) return null;
-            IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
-            if( oSymbol == null ) return null;
-            return new BlofinTicker( oSymbol, oJson );
+
+            BlofinTickerJson[]? aJson = oToken.ToObject<BlofinTickerJson[]>();
+            if( aJson == null ) return null;
+            List<ITicker> aResult = new List<ITicker>();
+            foreach (var oJson in aJson)
+            {
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
+                if (oSymbol == null) continue;
+                aResult.Add(new BlofinTicker(oSymbol, oJson));
+            }
+            return aResult.ToArray();
         }
 
         public static IWebsocketMessage[]? ParseWs(IFuturesExchange oExchange, JToken? oToken)
@@ -108,8 +114,12 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
             foreach( var oItem in oArray )
             {
                 if( !(oItem is JObject) ) continue;
-                ITicker? oTicker = Parse(oExchange, oItem); 
-                if( oTicker == null ) continue;
+                BlofinTickerJson? oJson = oToken.ToObject<BlofinTickerJson>();
+                if (oJson == null) continue;
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oJson.Symbol);
+                if (oSymbol == null) continue;
+                ITicker? oTicker = new BlofinTicker(oSymbol, oJson);
+                if ( oTicker == null ) continue;
                 aResult.Add( new BlofinOrderbookPrice(oTicker) );
                 aResult.Add(new BlofinLastPrice(oTicker));
             }

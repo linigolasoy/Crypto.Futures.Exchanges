@@ -55,22 +55,13 @@ namespace Crypto.Futures.Exchanges.Bitunix
 
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols = null)
         {
-            /*
-            var oResult = await m_oExchange.RestClient.DoGetArrayParams<ITicker?>(ENDP_FUNDING, null, p => m_oExchange.Parser.ParseTicker(p));
+            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_TICKERS);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
-            if (oResult.Data.Count() <= 0) return null;
+            BitunixResponse? oResponse = JsonConvert.DeserializeObject<BitunixResponse>(oResult.Data);
+            if (oResponse == null || oResponse.data == null || !oResponse.IsSuccess()) return null;
 
-            List<ITicker> aResult = new List<ITicker>();
-            foreach (var oFunding in oResult.Data)
-            {
-                if (oFunding == null) continue;
-                if( aSymbols != null && aSymbols.Length > 0 && !aSymbols.Any(s => s.Symbol == oFunding.Symbol.Symbol)) continue;
-                aResult.Add(oFunding);
-            }
-            return aResult.ToArray();
-            */
-            throw new NotImplementedException();
+            return BitunixTicker.ParseAll(this.Exchange, oResponse.data);
         }
     }
 }

@@ -158,5 +158,36 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity.Parsing
             return aResult.ToArray();
         }
 
+        public static ITicker[] ParseTickers(string jsonData, IFuturesExchange oExchange)
+        {
+            // Parsing logic to convert jsonData into ISymbol array
+            MetaInfoData oInfo = new MetaInfoData(jsonData);
+            if (oInfo.Data == null || oInfo.Rows == null)
+            {
+                return Array.Empty<ITicker>();
+            }
+            List<ITicker> aResult = new List<ITicker>();
+            DateTime dNow = DateTime.Now;
+            // DateTime dNextFunding = new DateTime(dNow.Year, dNow.Month, dNow.Day, dNow.Hour, 0, 0, DateTimeKind.Local);
+            // dNextFunding = dNextFunding.AddHours(1);
+            foreach (var oUni in oInfo.Data.Universe)
+            {
+                // Process each row to create IFuturesSymbol instances
+                if (oUni == null) continue;
+                if (oUni.MarginTableId < 0 || oUni.MarginTableId >= oInfo.Rows.Length)
+                {
+                    continue;
+                }
+                MetaTableRow oRow = oInfo.Rows[oUni.MarginTableId];
+
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetSymbol(oUni.Name);
+                if (oSymbol == null) continue;
+                ITicker oNew = new HyperTicker(oSymbol, dNow, decimal.Parse(oRow.MarkPx, System.Globalization.CultureInfo.InvariantCulture));
+                aResult.Add(oNew);
+            }
+
+            return aResult.ToArray();
+        }
+
     }
 }
