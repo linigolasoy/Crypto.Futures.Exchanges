@@ -65,13 +65,13 @@ public class Program
             }
 
             oBot.Logger.Info("Exit main program");
-            await Task.Delay(1000);
-            await oBot.Stop();
         }
         catch (Exception ex)
         {
             oBot.Logger.Error("Error on main program", ex);
         }
+        await Task.Delay(1000);
+        await oBot.Stop();
 
     }
 }

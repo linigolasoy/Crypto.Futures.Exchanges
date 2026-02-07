@@ -49,7 +49,7 @@ namespace Crypto.Futures.Exchanges.Tests
 
                 if (!oExchange.Tradeable) continue;
 
-                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "USTC" && p.Quote == "USDT");
+                IFuturesSymbol? oBtc = oExchange.SymbolManager.GetAllValues().First(p => p.Base == "BTC" && p.Quote == "USDT");
                 Assert.IsNotNull(oBtc);
 
                 decimal? nLeverage = await oExchange.Account.GetLeverage(oBtc);

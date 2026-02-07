@@ -16,6 +16,8 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity.Data
             Next = dtNext;
             Rate = dRate;
         }
+
+
         public DateTime Next { get; }
 
         public decimal Rate { get; }

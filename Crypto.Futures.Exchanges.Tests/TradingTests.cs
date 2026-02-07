@@ -46,8 +46,8 @@ namespace Crypto.Futures.Exchanges.Tests
             string strCurrency = "XRP";
             decimal nMoney = 2;
             decimal nLeverage = 10;
-            decimal nQuantity = 5;
-            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.CoinExFutures))
+            decimal nQuantity = 8;
+            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.Hyperliquidity))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -57,13 +57,18 @@ namespace Crypto.Futures.Exchanges.Tests
                 IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == strCurrency && p.Quote == "USDT");
                 Assert.IsNotNull(oSymbol, $"Symbol for {strCurrency}USDT should not be null.");
 
-                bool bLeverage = await oExchange.Account.SetLeverage(oSymbol, nLeverage);
-                Assert.IsTrue(bLeverage, "Setting leverage should be successful.");
+                // IPosition[]? aPositionsPrev = await oExchange.Account.GetPositions();
 
+
+                bool bLeverage = await oExchange.Account.SetLeverage(oSymbol, nLeverage);
+                Assert.IsTrue(bLeverage, "Setting leverage 1 should be successful.");
+
+                bLeverage = await oExchange.Account.SetLeverage(oSymbol, nLeverage);
+                Assert.IsTrue(bLeverage, "Setting leverage 2 should be successful.");
 
 
                 decimal nInvest = nMoney * nLeverage;
-                string? strOrderId = await oExchange.Trading.CreateOrder(oSymbol, false, nQuantity);
+                string? strOrderId = await oExchange.Trading.CreateOrder(oSymbol, true, nQuantity);
                 Assert.IsNotNull(strOrderId);
 
                 await Task.Delay(1000); // Wait for order to be processed

@@ -17,16 +17,13 @@ namespace Crypto.Futures.Bot.FundingRateBot
         private List<IFundingRateChance> m_aActiveChances = new List<IFundingRateChance>();
         private List<IFundingRateChance> m_aClosedChances = new List<IFundingRateChance>();
 
+        private IFuturesExchange[] m_aExchanges = Array.Empty<IFuturesExchange>();
+
         public FundingRateMultiExchangeBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading)
         {
             Setup = oSetup;
             Logger = oLogger;
             List<IFuturesExchange> aEchanges = new List<IFuturesExchange>();
-            aEchanges.Add(ExchangeFactory.CreateExchange(oSetup, ExchangeType.BingxFutures, oLogger));
-            aEchanges.Add(ExchangeFactory.CreateExchange(oSetup, ExchangeType.BitgetFutures, oLogger));
-            aEchanges.Add(ExchangeFactory.CreateExchange(oSetup, ExchangeType.BitmartFutures, oLogger));
-            aEchanges.Add(ExchangeFactory.CreateExchange(oSetup, ExchangeType.CoinExFutures, oLogger));
-            Exchanges = aEchanges.ToArray();
             ChanceFinder = new FundingChanceFinder(this);
             Trader = (bPaperTrading ? new CryptoPaperTrader(this) : throw new NotImplementedException());
         }
@@ -37,7 +34,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
 
         public ICommonLogger Logger { get; }
 
-        public IFuturesExchange[] Exchanges { get; }
+        public IFuturesExchange[] Exchanges { get=> m_aExchanges; }
 
         public ICryptoTrader Trader { get ; }
 
@@ -169,6 +166,42 @@ namespace Crypto.Futures.Bot.FundingRateBot
             throw new NotImplementedException();
         }
 
+
+        /// <summary>
+        /// Find exchanges to use
+        /// </summary>
+        /// <returns></returns>
+        private async Task<bool> FindExchanges()
+        {
+            ExchangeType[] aExchangeTry = new ExchangeType[]
+            {
+                ExchangeType.Hyperliquidity,
+                ExchangeType.BingxFutures,
+                ExchangeType.BitgetFutures,
+                ExchangeType.BitmartFutures,
+                ExchangeType.CoinExFutures
+            };
+
+            List<IFuturesExchange> aEchanges = new List<IFuturesExchange>();
+            foreach (var item in aExchangeTry)
+            {
+                IFuturesExchange oNew = ExchangeFactory.CreateExchange(Setup, item, Logger);
+                await Task.Delay(500);
+                IBalance[]? aBalances = await oNew.Account.GetBalances();
+                if (aBalances == null || aBalances.Length == 0) continue;
+                IBalance? oFound = aBalances.FirstOrDefault(p => p.Currency == "USDT");
+                if (oFound == null || oFound.Balance <= 0) continue;
+                if (oFound.Avaliable + oFound.Locked < Setup.MoneyDefinition.Money) continue;
+                aEchanges.Add(oNew);
+            }
+
+            if (aEchanges.Count < 2) return false;
+
+            m_aExchanges = aEchanges.ToArray();
+            return true;
+
+        }
+
         /// <summary>
         /// Start the bot
         /// </summary>
@@ -176,6 +209,12 @@ namespace Crypto.Futures.Bot.FundingRateBot
         public async Task<bool> Start()
         {
             if (m_oMainTask == null) await Stop();
+            bool bFound = await FindExchanges();
+            if (!bFound)
+            {
+                Logger.Error("FundingRateMultiExchangeBot.Start: No exchanges found, cannot start bot");
+                return false;
+            }
             m_oCts = new CancellationTokenSource();
             m_oMainTask = MainLoop();
             return true;

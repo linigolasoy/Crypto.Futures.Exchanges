@@ -19,9 +19,9 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             Exchange = oExchange;
             Currency = oJson.Asset;
 
-            Avaliable = oJson.AvailableMargin;
-            Locked = oJson.FrozenMargin;
-            Balance = oJson.Equity;
+            Avaliable = (oJson.AvailableMargin == null ? 0: oJson.AvailableMargin.Value);
+            Locked = (oJson.FrozenMargin == null ? 0 : oJson.FrozenMargin.Value);
+            Balance = (oJson.Equity == null ? 0 : oJson.Equity.Value);
         }
 
         internal BingxBalance(IFuturesExchange oExchange, BingXFuturesBalanceChange oChange)

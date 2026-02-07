@@ -30,7 +30,7 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
         public IExchangeSetup Setup { get; }
         public IApiKey ApiKey { get; }
-        public bool Tradeable { get => true; }
+        public bool Tradeable { get => false; }
 
 
         internal IApiCaller ApiCaller { get { return new BaseApiCaller(BASE_URL); } }

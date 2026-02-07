@@ -1,12 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Hyperliquidity.Parsing;
+﻿using Crypto.Futures.Exchanges.Hyperliquidity.Data;
+using Crypto.Futures.Exchanges.Hyperliquidity.Ws;
 using Crypto.Futures.Exchanges.Model;
-using Crypto.Futures.Exchanges.Rest;
 using Crypto.Futures.Exchanges.WebsocketModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Crypto.Futures.Exchanges.Hyperliquidity
 {
@@ -17,10 +12,11 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         public HyperLiquidityMarket(HyperliquidityExchanges oExchange)
         {
             m_oExchange = oExchange;
+            Websocket = new HyperWebsocketPublic(this);
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
 
-        public IWebsocketPublic Websocket => throw new NotImplementedException();
+        public IWebsocketPublic Websocket { get; }
 
         public async Task<IFundingRate?> GetFundingRate(IFuturesSymbol oSymbol)
         {
@@ -34,20 +30,28 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         {
             try
             {
-                PostInfoParams oParams = new PostInfoParams();
-                var oResult = await m_oExchange.ApiCaller.PostAsync(HyperliquidityExchanges.ENDP_SYMBOLS, oParams);
-                if (oResult == null || !oResult.Success || oResult.Data == null) return null;
-
-                IFundingRate[] aResult = SymbolMetadataParser.ParseFunding(oResult.Data, this.Exchange);
-                if( aSymbols != null )
+                var aTickers = await m_oExchange.RestClient.FuturesApi.ExchangeData.GetExchangeInfoAndTickersAsync();
+                if (aTickers == null || !aTickers.Success || aTickers.Data == null) return null;
+                if (aTickers.Data.ExchangeInfo.Symbols == null || aTickers.Data.ExchangeInfo.Symbols.Length == 0) return null;
+                List<IFundingRate> aResult = new List<IFundingRate>();
+                DateTime dNow = DateTime.Now;
+                DateTime dNex = new DateTime(dNow.Year, dNow.Month, dNow.Day, dNow.Hour, 0, 0, DateTimeKind.Local).AddHours(1); // Funding every hour
+                foreach (var sym in aTickers.Data.Tickers)
                 {
-                    aResult = aResult.Where(p => aSymbols.Any(q=> p.Symbol.Symbol == q.Symbol)).ToArray();
+                    IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(sym.Symbol);
+                    if (oSymbol == null) continue;
+                    if(sym.FundingRate == null) continue;
+                    decimal nRate = sym.FundingRate.Value;
+
+
+                    aResult.Add(new HyperFundingRate(oSymbol,dNex, nRate));
+
                 }
-                return aResult;
+                return aResult.ToArray();
             }
             catch (Exception ex)
             {
-                if (m_oExchange.Logger != null) m_oExchange.Logger.Error("Error refreshing funding rates", ex);
+                if (Exchange.Logger != null) Exchange.Logger.Error("Error refreshing funding rates", ex);
                 return null;
             }
         }
@@ -56,20 +60,27 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         {
             try
             {
-                PostInfoParams oParams = new PostInfoParams();
-                var oResult = await m_oExchange.ApiCaller.PostAsync(HyperliquidityExchanges.ENDP_SYMBOLS, oParams);
-                if (oResult == null || !oResult.Success || oResult.Data == null) return null;
-
-                ITicker[] aResult = SymbolMetadataParser.ParseTickers(oResult.Data, this.Exchange);
-                if (aSymbols != null)
+                var aTickers = await m_oExchange.RestClient.FuturesApi.ExchangeData.GetExchangeInfoAndTickersAsync();
+                if (aTickers == null || !aTickers.Success || aTickers.Data == null) return null;
+                if (aTickers.Data.ExchangeInfo.Symbols == null || aTickers.Data.ExchangeInfo.Symbols.Length == 0) return null;
+                List<ITicker> aResult = new List<ITicker>();
+                DateTime dNow = DateTime.Now;
+                foreach (var sym in aTickers.Data.Tickers)
                 {
-                    aResult = aResult.Where(p => aSymbols.Any(q => p.Symbol.Symbol == q.Symbol)).ToArray();
+                    IFuturesSymbol? oSymbol = Exchange.SymbolManager.GetSymbol(sym.Symbol);
+                    if (oSymbol == null) continue;
+                    decimal nPrice = sym.MarkPrice;
+                    ITicker oTicker = new HyperTicker(oSymbol, dNow, nPrice);
+
+
+                    aResult.Add(oTicker);
+
                 }
-                return aResult;
+                return aResult.ToArray();
             }
             catch (Exception ex)
             {
-                if (m_oExchange.Logger != null) m_oExchange.Logger.Error("Error refreshing funding rates", ex);
+                if (Exchange.Logger != null) Exchange.Logger.Error("Error refreshing funding rates", ex);
                 return null;
             }
         }

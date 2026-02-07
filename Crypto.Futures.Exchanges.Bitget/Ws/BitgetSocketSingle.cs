@@ -61,28 +61,36 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
             return oResult;
         }
 
-        private void OnTicker(DataEvent<BitgetFuturesTickerUpdate> oEvent)
+        private void OnTicker(DataEvent<BitgetFuturesTickerUpdate[]> oEvent)
         {
             if (oEvent == null || oEvent.Data == null) return;
-            IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Data.Symbol);
-            if (oSymbol == null) return;
-            IWebsocketMessage oMessageFunding = new BitgetFundingRate(oSymbol, oEvent.Data);
-            m_oWebsocket.DataManager.Put(oMessageFunding);
-            IWebsocketMessage oMessageLastPrice = new BitgetLastPrice(oSymbol, oEvent.Data);
-            m_oWebsocket.DataManager.Put(oMessageLastPrice);
+            foreach( var oData in oEvent.Data )
+            {
+
+                IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oData.Symbol);
+                if (oSymbol == null) continue;
+                IWebsocketMessage oMessageFunding = new BitgetFundingRate(oSymbol, oData);
+                m_oWebsocket.DataManager.Put(oMessageFunding);
+                IWebsocketMessage oMessageLastPrice = new BitgetLastPrice(oSymbol, oData);
+                m_oWebsocket.DataManager.Put(oMessageLastPrice);
+            }
 
         }
-        private void OnOrderBook(DataEvent<BitgetOrderBookUpdate> oEvent)
+        private void OnOrderBook(DataEvent<BitgetOrderBookUpdate[]> oEvent)
         {
             if (oEvent == null || oEvent.Data == null || oEvent.Symbol == null) return;
             IFuturesSymbol? oSymbol = m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oEvent.Symbol);
             if (oSymbol == null) return;
-            IWebsocketMessage oMessageOrderbook = new BitgetOrderbookPrice(oSymbol, oEvent.Data);
-            m_oWebsocket.DataManager.Put(oMessageOrderbook);
-            // IWebsocketMessage oMessageFunding = new BitgetFundingRate(oSymbol, oEvent.Data);
-            // m_oWebsocket.DataManager.Put(oMessageFunding);
-            // IWebsocketMessage oMessageLastPrice = new BitgetLastPrice(oSymbol, oEvent.Data);
-            // m_oWebsocket.DataManager.Put(oMessageLastPrice);
+            foreach (var oData in oEvent.Data)
+            {
+
+                IWebsocketMessage oMessageOrderbook = new BitgetOrderbookPrice(oSymbol, oData);
+                m_oWebsocket.DataManager.Put(oMessageOrderbook);
+                // IWebsocketMessage oMessageFunding = new BitgetFundingRate(oSymbol, oEvent.Data);
+                // m_oWebsocket.DataManager.Put(oMessageFunding);
+                // IWebsocketMessage oMessageLastPrice = new BitgetLastPrice(oSymbol, oEvent.Data);
+                // m_oWebsocket.DataManager.Put(oMessageLastPrice);
+            }
 
         }
     }

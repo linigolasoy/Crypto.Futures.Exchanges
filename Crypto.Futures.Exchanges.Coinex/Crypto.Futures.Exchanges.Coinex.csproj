@@ -7,8 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoinEx.Net" Version="9.1.0" />
-    <PackageReference Include="CryptoExchange.Net" Version="9.1.0" />
+    <PackageReference Include="CoinEx.Net" Version="10.3.0" />
   </ItemGroup>
 
   <ItemGroup>

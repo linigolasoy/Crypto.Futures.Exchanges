@@ -1,7 +1,7 @@
-﻿using Crypto.Futures.Exchanges.Hyperliquidity.Parsing;
-using Crypto.Futures.Exchanges.Model;
-using Crypto.Futures.Exchanges.Rest;
-using System.Buffers.Text;
+﻿using Crypto.Futures.Exchanges.Model;
+using CryptoExchange.Net.Authentication;
+using HyperLiquid.Net.Clients;
+using HyperLiquid.Net.Interfaces.Clients;
 
 namespace Crypto.Futures.Exchanges.Hyperliquidity
 {
@@ -11,17 +11,22 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
     public class HyperliquidityExchanges : IFuturesExchange
     {
 
-        // private HyperParser m_oParser;
 
-        public const string BASE_URL = "https://api.hyperliquid.xyz";
-        public const string ENDP_SYMBOLS = "/info";
 
 
         public HyperliquidityExchanges(IExchangeSetup setup, ICommonLogger? logger = null)
         {
+            RestClient = new HyperLiquidRestClient();
+
+            ApiKey = setup.ApiKeys.First(p => p.ExchangeType == this.ExchangeType);
+            ApiCredentials oCred = new ApiCredentials(
+                ApiKey.ApiKey,
+                ApiKey.ApiSecret
+                );
+
+            RestClient.SetApiCredentials(oCred);
             Setup = setup;
             Logger = logger;
-            ApiKey = setup.ApiKeys.First(p => p.ExchangeType == this.ExchangeType);
             // m_oParser = new HyperParser(this);
             // TODO: Load symbols, initialize components
             SymbolManager = new FuturesSymbolManager();
@@ -30,15 +35,11 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
 
 
             Market = new HyperLiquidityMarket(this);
+            Account = new HyperLiquidityAccount(this);
+            Trading = new HyperLiquidityTrading(this);
         }
 
-        internal IApiCaller ApiCaller 
-        { 
-            get 
-            { 
-                return new BaseApiCaller(BASE_URL); 
-            }
-        }
+        internal IHyperLiquidRestClient RestClient { get; }
 
         public IExchangeSetup Setup { get; }
 
@@ -54,9 +55,9 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
 
         public IFuturesHistory History => throw new NotImplementedException();
 
-        public IFuturesTrading Trading => throw new NotImplementedException();
+        public IFuturesTrading Trading { get; }
 
-        public IFuturesAccount Account => throw new NotImplementedException();
+        public IFuturesAccount Account { get; }
 
         public IFuturesSymbolManager SymbolManager { get; }
 
@@ -64,13 +65,28 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         {
             try
             {
-                PostInfoParams oParams = new PostInfoParams();
-                var oResult = await ApiCaller.PostAsync(ENDP_SYMBOLS, oParams);
-                if (oResult == null || !oResult.Success || oResult.Data == null ) return null;
+                var aTickers = await RestClient.FuturesApi.ExchangeData.GetExchangeInfoAndTickersAsync();
+                if( aTickers == null || !aTickers.Success || aTickers.Data == null) return null;
+                if( aTickers.Data.ExchangeInfo.Symbols == null || aTickers.Data.ExchangeInfo.Symbols.Length == 0) return null;
+                List<IFuturesSymbol> aSymbols = new List<IFuturesSymbol>();
+                foreach (var sym in aTickers.Data.ExchangeInfo.Symbols)
+                {
+                    BaseSymbol oSymbol = new BaseSymbol(
+                        this,
+                        sym.Name,
+                        sym.Name,
+                        "USDT"
+                        );
+                    oSymbol.Decimals = sym.QuantityDecimals;
+                    oSymbol.QuantityDecimals = sym.QuantityDecimals;
+                    oSymbol.LeverageMax = sym.MaxLeverage;
+                    oSymbol.FeeMaker = 0.00015m;
+                    oSymbol.FeeTaker = 0.00045m;
+                    aSymbols.Add(oSymbol);
 
-                IFuturesSymbol[] aResult = SymbolMetadataParser.ParseSymbols(oResult.Data, this);
-                SymbolManager.SetSymbols(aResult.ToArray());
-                return aResult;
+                }
+                SymbolManager.SetSymbols(aSymbols.ToArray());
+                return aSymbols.ToArray();
             }
             catch (Exception ex)
             {
