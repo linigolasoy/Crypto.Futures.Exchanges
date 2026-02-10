@@ -83,6 +83,7 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
             }
 
         }
+
         public void Put(IWebsocketMessageBase oMessage)
         {
             if (oMessage is IBalance)

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Model.ArbitrageTrading
 {
+    /*
     /// <summary>
     /// Chance manager
     /// </summary>
@@ -69,4 +70,5 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
             }
         }
     }
+    */
 }

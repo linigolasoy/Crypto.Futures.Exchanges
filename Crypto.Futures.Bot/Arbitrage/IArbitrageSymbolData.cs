@@ -20,7 +20,7 @@ namespace Crypto.Futures.Bot.Arbitrage
         public decimal? DesiredPriceClose { get; set; } // Desired price to close position
         public IWebsocketSymbolData? WsSymbolData { get; }
 
-        public ITraderPosition? Position { get; set; }
+        public IPosition? Position { get; set; }
 
     }
 }

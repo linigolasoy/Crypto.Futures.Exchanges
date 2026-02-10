@@ -159,5 +159,15 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             if (oOrderPrice == null) return null;
             return oOrderPrice.BidPrice;
         }
+
+        public async Task<decimal?> GetProfit(IPosition oPosition)
+        {
+            return await GetProfit(new IPosition[] { oPosition });
+        }
+
+        public async Task<decimal?> GetProfit(IPosition[] aPositions)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

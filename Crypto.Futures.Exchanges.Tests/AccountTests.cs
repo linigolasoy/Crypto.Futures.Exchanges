@@ -71,7 +71,9 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.BingxFutures))
+            decimal nQuantity = 8;
+
+            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.Hyperliquidity))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -104,7 +106,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 decimal nPrice = Math.Round( oFound.LastPrice * 0.8M, oXrp.Decimals);
                 await Task.Delay(2000);
                 // Limit order test
-                string? strOrder = await oExchange.Trading.CreateOrder(oXrp, true, 5, nPrice);
+                string? strOrder = await oExchange.Trading.CreateOrder(oXrp, true, nQuantity, nPrice);
                 Assert.IsNotNull(strOrder);
                 await Task.Delay(2000);
                 Assert.IsNotNull( oLastOrder );
@@ -115,7 +117,7 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsTrue(oLastOrder.Status == ModelOrderStatus.Canceled);
 
                 // Market order test
-                strOrder = await oExchange.Trading.CreateOrder(oXrp, true, 5);
+                strOrder = await oExchange.Trading.CreateOrder(oXrp, true, nQuantity);
                 Assert.IsNotNull(strOrder);
                 await Task.Delay(2000);
                 Assert.IsTrue(oLastOrder != null);

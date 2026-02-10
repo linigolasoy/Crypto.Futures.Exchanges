@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Trading
 {
+    /*
     /// <summary>
     /// Paper trader implementation for testing purposes    
     /// </summary>
@@ -193,5 +194,7 @@ namespace Crypto.Futures.Bot.Trading
             m_aLeverages.Add(oSymbol);
             return true; // Always success in paper trading
         }
+
     }
+    */
 }

@@ -30,7 +30,9 @@
         {
             menuStrip1 = new MenuStrip();
             boToolStripMenuItem = new ToolStripMenuItem();
-            MnuArbitrageBot = new ToolStripMenuItem();
+            mnuArbitrageBot = new ToolStripMenuItem();
+            toolStripMenuItem2 = new ToolStripSeparator();
+            mnuSetup = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -46,17 +48,28 @@
             // 
             // boToolStripMenuItem
             // 
-            boToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { MnuArbitrageBot });
+            boToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { mnuArbitrageBot, toolStripMenuItem2, mnuSetup });
             boToolStripMenuItem.Name = "boToolStripMenuItem";
             boToolStripMenuItem.Size = new Size(70, 38);
             boToolStripMenuItem.Text = "Bot";
             // 
-            // MnuArbitrageBot
+            // mnuArbitrageBot
             // 
-            MnuArbitrageBot.Name = "MnuArbitrageBot";
-            MnuArbitrageBot.Size = new Size(359, 44);
-            MnuArbitrageBot.Text = "Arbitrage";
-            MnuArbitrageBot.Click += MnuArbitrageBot_Click;
+            mnuArbitrageBot.Name = "mnuArbitrageBot";
+            mnuArbitrageBot.Size = new Size(359, 44);
+            mnuArbitrageBot.Text = "Arbitrage";
+            mnuArbitrageBot.Click += MnuArbitrageBot_Click;
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new Size(356, 6);
+            // 
+            // mnuSetup
+            // 
+            mnuSetup.Name = "mnuSetup";
+            mnuSetup.Size = new Size(359, 44);
+            mnuSetup.Text = "Configuración";
             // 
             // FrmMain
             // 
@@ -78,6 +91,8 @@
 
         private MenuStrip menuStrip1;
         private ToolStripMenuItem boToolStripMenuItem;
-        private ToolStripMenuItem MnuArbitrageBot;
+        private ToolStripMenuItem mnuArbitrageBot;
+        private ToolStripSeparator toolStripMenuItem2;
+        private ToolStripMenuItem mnuSetup;
     }
 }

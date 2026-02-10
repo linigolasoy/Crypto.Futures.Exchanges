@@ -24,6 +24,6 @@ namespace Crypto.Futures.Bot.Arbitrage.Model
 
         public IWebsocketSymbolData? WsSymbolData { get; }
 
-        public ITraderPosition? Position { get; set ; } =null;
+        public IPosition? Position { get; set ; } =null;
     }
 }

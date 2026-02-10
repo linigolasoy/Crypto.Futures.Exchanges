@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Crypto.Futures.Exchanges.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,8 +37,8 @@ namespace Crypto.Futures.Bot.Interface.Arbitrage
         public decimal PercentProfit { get; }
         public decimal Profit { get; }
 
-        public ICryptoPosition? PositionLong { get; }
-        public ICryptoPosition? PositionShort { get; }
+        public IPosition? PositionLong { get; }
+        public IPosition? PositionShort { get; }
 
         public Task Runner { get; }    
     }

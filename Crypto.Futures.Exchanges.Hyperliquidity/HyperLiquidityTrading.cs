@@ -33,7 +33,24 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         /// <exception cref="NotImplementedException"></exception>
         public async Task<bool> CloseOrders(IFuturesSymbol oSymbol)
         {
-            throw new NotImplementedException();
+            try
+            {
+                IOrder[]? aOrders = await m_oExchange.Account.GetOrders();
+                if (aOrders == null) return true;
+                var aToCancel = aOrders.Where(p => p.Symbol.Symbol == oSymbol.Symbol && (p.Status == ModelOrderStatus.New || p.Status == ModelOrderStatus.Placed)).ToArray();
+                if( aToCancel.Length <= 0) return true;
+                foreach (var oOrder in aToCancel)
+                {
+                    var oCancel = await m_oExchange.RestClient.FuturesApi.Trading.CancelOrderAsync(oOrder.Symbol.Symbol, long.Parse(oOrder.OrderId));
+                    if (oCancel == null || !oCancel.Success) return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (m_oExchange.Logger != null) m_oExchange.Logger?.Error($"HyperLiquidityTrading.CloseOrders: {ex.Message}");
+                return false;
+            }
         }
 
 

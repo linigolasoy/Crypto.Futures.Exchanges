@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Trading
 {
+    /*
     internal class TraderPosition : ITraderPosition
     {
         private static long m_nIdCounter = 1;
@@ -71,4 +72,5 @@ namespace Crypto.Futures.Bot.Trading
             return true;
         }
     }
+    */
 }

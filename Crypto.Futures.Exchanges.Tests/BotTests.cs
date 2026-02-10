@@ -22,7 +22,8 @@ namespace Crypto.Futures.Exchanges.Tests
             ExchangeType[] aTypes = new ExchangeType[] {
                 ExchangeType.BingxFutures,
                 ExchangeType.BitgetFutures,
-                ExchangeType.BitmartFutures
+                ExchangeType.BitmartFutures,
+                ExchangeType.Hyperliquidity
                 // ,ExchangeType.CoinExFutures
             };
 
@@ -132,7 +133,28 @@ namespace Crypto.Futures.Exchanges.Tests
 
             IAccountWatcher oWatcher = BotFactory.CreateAccountWatcher(aExchanges);
             Assert.IsNotNull(oWatcher, "Account watcher should not be null.");
+            int nBalanceChanges = 0;    
+            int nOrderChanges = 0;
+            int nPositionChanges = 0;
+            IPosition? oSavedPosition = null;
 
+            oWatcher.OnBalanceChange += (IBalance oBalance) =>
+            {
+                nBalanceChanges++;
+                Console.WriteLine($"Balance change on {oBalance.Exchange.ExchangeType}: {oBalance.Currency} {oBalance.Balance}");
+            };
+            oWatcher.OnPositionChange += (IPosition oPosition) =>
+            {
+                nPositionChanges++;
+                oSavedPosition = oPosition;
+                Console.WriteLine($"Position change on {oPosition.Symbol.Exchange.ExchangeType}: {oPosition.Symbol.Base}{oPosition.Symbol.Quote} {oPosition.Quantity} ");
+            };
+
+            oWatcher.OnOrderChange += (IOrder oOrder) =>
+            {
+                nOrderChanges++;
+                Console.WriteLine($"Order change on {oOrder.Symbol.Exchange.ExchangeType}: {oOrder.Symbol.Base}{oOrder.Symbol.Quote} {oOrder.Quantity} @ {oOrder.Price} Status: {oOrder.Status}");
+            };
 
             await oWatcher.Start();
 
@@ -147,23 +169,62 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(aStartBalances, "Start balances should not be null.");
             Assert.IsTrue(aStartBalances.Length  == oWatcher.Exchanges.Length, "Start balances should not be empty.");
 
-            foreach( var oExchange in aExchanges)
+            decimal nQuantity = 8;
+            foreach( var oExchange in aExchanges ) //.Where(p=> p.ExchangeType == ExchangeType.Hyperliquidity))
             {
+                int nOrderChangesActual = nOrderChanges;
                 IBalance? oStart = aStartBalances.FirstOrDefault(p => p.Exchange.ExchangeType == oExchange.ExchangeType);
                 Assert.IsNotNull(oStart, $"Start balance for {oExchange.ExchangeType} should not be null.");
+
+                decimal nTotal = oStart.Balance;  
 
                 IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "XRP" && p.Quote == "USDT");
                 Assert.IsNotNull(oSymbol, $"XRPUSDT symbol should exist on {oExchange.ExchangeType}.");
 
-                decimal? nLongPrice = await oQuoter.GetLongPrice(oSymbol, 1);
+                decimal? nLongPrice = await oQuoter.GetLongPrice(oSymbol, nQuantity);
                 Assert.IsNotNull(nLongPrice, $"Long price for {oExchange.ExchangeType} XRPUSDT should not be null.");
 
                 // decimal? nQuantity = oQuoter.GetBestQuantity(new IFuturesSymbol[] { oSymbol }, nLongPrice.Value * 1.3M, 5m);
                 // Assert.IsNotNull(nQuantity, $"Best quantity for {oExchange.ExchangeType} XRPUSDT should not be null.");
 
+                decimal nPriceLimit = Math.Round( nLongPrice.Value * 0.8m, oSymbol.Decimals);
+
                 // Place order
-                string? strOrder = await oExchange.Trading.CreateOrder(oSymbol, true, 3, nLongPrice.Value * 0.8m);
+                string? strOrder = await oExchange.Trading.CreateOrder(oSymbol, true, nQuantity, nPriceLimit);
                 Assert.IsNotNull(strOrder, $"Order creation for {oExchange.ExchangeType} XRPUSDT should not be null.");
+
+
+                await Task.Delay(2000);
+
+                bool bClosedOrder = await oExchange.Trading.CloseOrders(oSymbol);
+                await Task.Delay(2000);
+                Assert.IsTrue(bClosedOrder, $"Order closing for {oExchange.ExchangeType} XRPUSDT should be successful.");
+                int OrderChangesDiff = nOrderChanges - nOrderChangesActual;
+                Assert.IsTrue(OrderChangesDiff == 2, $"Order changes should be detected for {oExchange.ExchangeType} XRPUSDT, changes detected: {OrderChangesDiff}");
+
+
+                // Place Market order
+                nOrderChangesActual = nOrderChanges;
+                int nPositionChangesActual = nPositionChanges;  
+                oSavedPosition = null;
+                strOrder = await oExchange.Trading.CreateOrder(oSymbol, true, nQuantity);
+                Assert.IsNotNull(strOrder, $"Order creation for {oExchange.ExchangeType} XRPUSDT should not be null.");
+
+
+                await Task.Delay(3000);
+                Assert.IsNotNull(oSavedPosition, $"Position change should be detected for {oExchange.ExchangeType} XRPUSDT after market order.");   
+
+                string? strCloseOrder = await oExchange.Trading.ClosePosition(oSavedPosition);
+                Assert.IsNotNull(strCloseOrder, $"Position closing for {oExchange.ExchangeType} XRPUSDT should be successful.");
+
+                await Task.Delay(3000);
+                Assert.IsTrue(!oSavedPosition.IsOpen, $"Position should be closed for {oExchange.ExchangeType} XRPUSDT after close order.");
+
+                OrderChangesDiff = nOrderChanges - nOrderChangesActual;
+                int PositionChangesDiff = nPositionChanges - nPositionChangesActual;
+                Assert.IsTrue(OrderChangesDiff >= 2, $"Order changes should be detected for {oExchange.ExchangeType} XRPUSDT, changes detected: {OrderChangesDiff}");
+                Assert.IsTrue(PositionChangesDiff == 2, $"Position changes should be detected for {oExchange.ExchangeType} XRPUSDT, changes detected: {PositionChangesDiff}");
+
             }
 
 
@@ -171,6 +232,51 @@ namespace Crypto.Futures.Exchanges.Tests
 
         }
 
+
+        /// <summary>
+        /// Test quoter quantity matching across exchanges
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public async Task TraderTests()
+        {
+            IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
+            Assert.IsNotNull(oSetup, "Setup should not be null.");
+
+            IFuturesExchange[] aExchanges = CreateExchanges(oSetup);
+
+            IAccountWatcher oWatcher = BotFactory.CreateAccountWatcher(aExchanges);
+            await oWatcher.Start();
+            await Task.Delay(2000); 
+
+            IQuoter oQuoter = BotFactory.CreateQuoter(aExchanges);
+            Assert.IsNotNull(oQuoter, "Quoter should not be null.");
+            ICommonLogger oLogger = ExchangeFactory.CreateLogger(oSetup, "TraderTests");
+
+            ICryptoTrader oTrader = BotFactory.CreateTrader(oSetup, oLogger, oWatcher, oQuoter);
+            Assert.IsNotNull(oTrader, "Trader should not be null.");
+
+            decimal nQuantity = 8;  
+
+            foreach ( var oExchange in aExchanges)
+            {
+                IFuturesSymbol? oSymbol = oExchange.SymbolManager.GetAllValues().FirstOrDefault(p => p.Base == "XRP" && p.Quote == "USDT");
+                Assert.IsNotNull(oSymbol, $"XRPUSDT symbol should exist on {oExchange.ExchangeType}.");
+                decimal? nLongPrice = await oQuoter.GetLongPrice(oSymbol, nQuantity);
+
+                Assert.IsNotNull(nLongPrice, $"Long price for {oExchange.ExchangeType} XRPUSDT should not be null.");
+                decimal nPriceLimit = Math.Round(nLongPrice.Value * 0.8m, oSymbol.Decimals);
+                // Place order
+                IOrder? oOrder = await oTrader.CreateLimitOrder(oSymbol, true, nQuantity, nPriceLimit);
+                Assert.IsNotNull(oOrder, $"Order creation for {oExchange.ExchangeType} XRPUSDT should not be null.");
+                await Task.Delay(2000);
+                Assert.IsTrue(oTrader.AccountWatcher.GetOrders().Length > 0);
+                bool bClosedOrder = await oTrader.ClosePendingOrders(oSymbol);
+                await Task.Delay(2000);
+                Assert.IsTrue(bClosedOrder, $"Order closing for {oExchange.ExchangeType} XRPUSDT should be successful.");
+                Assert.IsTrue(oOrder.Status== ModelOrderStatus.Canceled, $"Order should be cancelled for {oExchange.ExchangeType} XRPUSDT.");  
+
+            }
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Crypto.Futures.Exchanges.Hyperliquidity.Data;
+using Crypto.Futures.Exchanges.Hyperliquidity.Ws;
 using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using CryptoExchange.Net.Authentication;
@@ -20,10 +21,11 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
         public HyperLiquidityAccount(HyperliquidityExchanges oExchange)
         {
             m_oExchange = oExchange;
+            WebsocketPrivate = new HyperWebsocketPrivate(this);
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
 
-        public IWebsocketPrivate WebsocketPrivate => throw new NotImplementedException();
+        public IWebsocketPrivate WebsocketPrivate { get; }
 
         public async Task<IBalance[]?> GetBalances()
         {
@@ -59,7 +61,30 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
 
         public async Task<IOrder[]?> GetOrders()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var oOrders = await m_oExchange.RestClient.FuturesApi.Trading.GetOpenOrdersAsync(Exchange.ApiKey.ApiKey);
+                if (!oOrders.Success || oOrders.Data == null)
+                {
+                    if (m_oExchange.Logger != null) m_oExchange.Logger?.Error($"HyperLiquidityAccount.GetOrders: Failed to get account info: {oOrders.Error}");
+                    return null;
+                }
+                if(oOrders.Data.Length <= 0) return Array.Empty<IOrder>();
+                List<IOrder> aResult = new List<IOrder>();
+                foreach (var order in oOrders.Data)
+                {
+                    IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(order.ExchangeSymbol);
+                    if (oSymbol == null) continue;
+
+                    aResult.Add(new HyperOrder(oSymbol, order));
+                }
+                return aResult.ToArray();
+            }
+            catch (Exception ex)
+            {
+                if (m_oExchange.Logger != null) m_oExchange.Logger?.Error($"HyperLiquidityAccount.GetPositions: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<IPosition[]?> GetPositionHistory(IFuturesSymbol oSymbol)

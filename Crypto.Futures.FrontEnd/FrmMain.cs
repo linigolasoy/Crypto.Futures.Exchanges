@@ -9,7 +9,12 @@ namespace Crypto.Futures.FrontEnd
 
         private void MnuArbitrageBot_Click(object sender, EventArgs e)
         {
+            var frm = new FrmFundingRate();
+            frm.MdiParent = this;
+            frm.WindowState = FormWindowState.Maximized;
+            frm.Show(); 
 
         }
+
     }
 }

@@ -28,16 +28,12 @@ namespace Crypto.Futures.Bot
 
         public static IArbitrageBot CreateArbitrageBot(IExchangeSetup oSetup, bool bPaperTrading)
         {
-            return new CryptoArbitrageBot(oSetup, bPaperTrading);
+            throw new NotImplementedException(); // return new CryptoArbitrageBot(oSetup, bPaperTrading);
         }
 
-        public static ICryptoTrader CreateTrader(IExchangeSetup oSetup, ICommonLogger oLogger, IFuturesExchange[] aExchanges, bool bPaperTrading)
+        public static ICryptoTrader CreateTrader(IExchangeSetup oSetup, ICommonLogger oLogger, IAccountWatcher oWatcher, IQuoter oQuoter)
         {
-            if (!bPaperTrading)
-            {
-                throw new NotImplementedException();
-            }
-            return new CryptoPaperTrader(oLogger, oSetup, aExchanges);
+            throw new NotImplementedException();
         }
 
         public static IFundingRateBot CreateFundingRateBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading)

@@ -25,7 +25,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
             Logger = oLogger;
             List<IFuturesExchange> aEchanges = new List<IFuturesExchange>();
             ChanceFinder = new FundingChanceFinder(this);
-            Trader = (bPaperTrading ? new CryptoPaperTrader(this) : throw new NotImplementedException());
+            throw new NotImplementedException();
         }
         public IFundingRateChance[] Chances { get => m_aActiveChances.ToArray(); }
 

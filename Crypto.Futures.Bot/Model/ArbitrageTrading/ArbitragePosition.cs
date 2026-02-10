@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace Crypto.Futures.Bot.Model.ArbitrageTrading
 {
 
+    /*
     /// <summary>
     /// Arbitrage position
     /// </summary>
@@ -317,4 +318,5 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
             }
         }
     }
+    */
 }

@@ -18,6 +18,9 @@ namespace Crypto.Futures.Bot.Interface
         public Task<decimal?> GetLongPrice(IFuturesSymbol oSymbol, decimal nQuantity = 0);
         public Task<decimal?> GetShortPrice(IFuturesSymbol oSymbol, decimal nQuantity = 0);
 
+        public Task<decimal?> GetProfit(IPosition oPosition);
+        public Task<decimal?> GetProfit(IPosition[] aPositions);
+
         public decimal? GetBestQuantity(IFuturesSymbol[] aSymbols, decimal nPrice, decimal nMoney);
     }
 }

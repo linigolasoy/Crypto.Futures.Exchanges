@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Model.CryptoTrading
 {
-
+    /*
     /// <summary>
     /// Dummy balance
     /// </summary>
@@ -165,4 +165,5 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             throw new NotImplementedException();
         }
     }
+    */
 }

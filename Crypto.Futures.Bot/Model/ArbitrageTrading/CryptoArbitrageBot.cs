@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Model.ArbitrageTrading
 {
+    /*
     /// <summary>
     /// Arbitrage bot implementation
     /// </summary>
@@ -188,4 +189,5 @@ namespace Crypto.Futures.Bot.Model.ArbitrageTrading
             Logger.Info("CryptoArbitrageBot Main loop ended");
         }
     }
+    */
 }

@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges.Model;
+﻿using Crypto.Futures.Exchanges.Hyperliquidity.Data;
+using Crypto.Futures.Exchanges.Model;
 using Crypto.Futures.Exchanges.WebsocketModel;
 using CryptoExchange.Net.Objects.Sockets;
 using HyperLiquid.Net.Clients;
@@ -92,7 +93,13 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity.Ws
 
         private void OnTicker(DataEvent<HyperLiquidBookTicker> oEvent)
         {
-            throw new NotImplementedException();
+            if (oEvent.Data == null) return;
+            HyperLiquidBookTicker oTicker = oEvent.Data;
+            IFuturesSymbol? oSymbol = this.m_oWebsocket.Market.Exchange.SymbolManager.GetSymbol(oTicker.Symbol);
+            if (oSymbol == null) return;
+            IOrderbookPrice oPrice = new HyperOrderbookPrice(oSymbol, oTicker);
+            m_oWebsocket.DataManager.Put(oPrice);
+            return;
         }
         private void OnPriceUpdate(DataEvent<Dictionary<string,decimal>> oEvent)
         {

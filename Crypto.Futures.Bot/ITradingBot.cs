@@ -1,4 +1,5 @@
-﻿using Crypto.Futures.Exchanges;
+﻿using Crypto.Futures.Bot.Interface;
+using Crypto.Futures.Exchanges;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Crypto.Futures.Bot
         public ICommonLogger Logger { get; }
 
         public IFuturesExchange[] Exchanges { get; }
-        public ITrader Trader { get; }  
+        public ICryptoTrader Trader { get; }  
         public Task<bool> Start();
 
         public Task<bool> Stop();

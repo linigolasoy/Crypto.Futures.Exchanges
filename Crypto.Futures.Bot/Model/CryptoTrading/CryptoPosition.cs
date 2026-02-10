@@ -1,5 +1,6 @@
 ﻿using Crypto.Futures.Bot.Interface;
 using Crypto.Futures.Exchanges.Model;
+using Crypto.Futures.Exchanges.WebsocketModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +9,12 @@ using System.Threading.Tasks;
 
 namespace Crypto.Futures.Bot.Model.CryptoTrading
 {
-    /// <summary>
-    /// Crypto position implementation
-    /// </summary>
-    internal class CryptoPosition : ICryptoPosition
-    {
+    /*
+/// <summary>
+/// Crypto position implementation
+/// </summary>
+internal class CryptoPosition : ICryptoPosition
+{
         private static int m_nId = 0;
         public CryptoPosition(ICryptoTrader oTrader, IOrderbookPrice oPrice, IOrder oOrderOpen ) 
         { 
@@ -81,5 +83,47 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             Profit = Math.Round( (nDiff * Quantity) - nFeesOpen - nFeesClose , 3);
             return true;
         }
+    public ICryptoTrader Trader => throw new NotImplementedException();
+
+        public IOrderbookPrice OrderbookPrice => throw new NotImplementedException();
+
+        public decimal LastPrice => throw new NotImplementedException();
+
+        public IOrder OrderOpen => throw new NotImplementedException();
+
+        public IOrder? OrderClose => throw new NotImplementedException();
+
+        public string Id => throw new NotImplementedException();
+
+        public IFuturesSymbol Symbol => throw new NotImplementedException();
+
+        public DateTime CreatedAt => throw new NotImplementedException();
+
+        public DateTime UpdatedAt => throw new NotImplementedException();
+
+        public bool IsLong => throw new NotImplementedException();
+
+        public bool IsOpen => throw new NotImplementedException();
+
+        public decimal AveragePriceOpen => throw new NotImplementedException();
+
+        public decimal? PriceClose { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public decimal Quantity => throw new NotImplementedException();
+
+        public decimal Profit => throw new NotImplementedException();
+
+        public WsMessageType MessageType => throw new NotImplementedException();
+
+        public bool Update()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Update(IWebsocketMessageBase oMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
+    */
 }

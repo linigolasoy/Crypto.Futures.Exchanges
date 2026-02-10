@@ -1,7 +1,9 @@
 ﻿using Crypto.Futures.Bot.Interface;
+using Crypto.Futures.Bot.Model.CryptoTrading.ChangeTrack;
 using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +14,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
     internal class CryptoAccountWatcher : IAccountWatcher
     {
 
+        private ConcurrentDictionary<ExchangeType, IExchangeTrackData> m_aData = new ConcurrentDictionary<ExchangeType, IExchangeTrackData>();
         /// <summary>
         /// Events
         /// </summary>
@@ -47,7 +50,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             throw new NotImplementedException();
         }
 
-        public ICryptoPosition[] GetPositions()
+        public IPosition[] GetPositions()
         {
             throw new NotImplementedException();
         }
@@ -62,6 +65,89 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 {
                     throw new Exception($"Failed to start account watcher for exchange {oExchange.ExchangeType}");
                 }
+
+                oExchange.Account.WebsocketPrivate.OnBalance += WatcherOnBalance;
+                oExchange.Account.WebsocketPrivate.OnOrder += WatcherOnOrder;
+                oExchange.Account.WebsocketPrivate.OnPosition += WatcherOnPosition;
+            }
+        }
+
+        private void WatcherOnPosition(IPosition oPosition)
+        {
+            if (OnPositionChange == null) return;
+            IExchangeTrackData oTrackData = GetTrackData(oPosition.Symbol.Exchange.ExchangeType);
+
+            IChangeTarget<IPosition>? oFound = null;
+            if (oTrackData.PositionChanged.TryGetValue(oPosition.Id, out var oChangeTarget))
+            {
+                oFound = oTrackData.PositionChanged[oPosition.Id];
+            }
+            bool bEvent = false;
+            if ( oFound != null )
+            {
+                bEvent = oFound.IsChanged();
+            }
+            else
+            {
+                bEvent = true;
+                oTrackData.PositionChanged[oPosition.Id] = new CryptoPositionChange(oPosition);
+            }
+            if (bEvent) OnPositionChange(oPosition);
+        }
+
+
+        private IExchangeTrackData GetTrackData(ExchangeType eType)
+        {
+            if (!m_aData.ContainsKey(eType))
+            {
+                m_aData[eType] = new CryptoExchangeTrackData();
+            }
+            return m_aData[eType];
+        }
+
+        /// <summary>
+        /// Order change tracker, tracks order changes and triggers events only on actual changes to avoid flooding with unchanged order updates    
+        /// </summary>
+        /// <param name="oOrder"></param>
+        private void WatcherOnOrder(IOrder oOrder)
+        {
+            if( OnOrderChange == null ) return; 
+            IExchangeTrackData oTrackData = GetTrackData(oOrder.Symbol.Exchange.ExchangeType);  
+
+            bool bEvent = !oTrackData.OrderChanged.ContainsKey(oOrder.OrderId);
+            if( !bEvent)
+            {
+                bEvent = oTrackData.OrderChanged[oOrder.OrderId].IsChanged();
+            }
+            else
+            {
+                oTrackData.OrderChanged[oOrder.OrderId] = new CryptoOrderChange(oOrder);
+            }
+            if (bEvent) OnOrderChange(oOrder);  
+        }
+
+        /// <summary>
+        /// Balance change tracker
+        /// </summary>
+        /// <param name="oBalance"></param>
+        private void WatcherOnBalance(IBalance oBalance)
+        {
+            if(OnBalanceChange != null)
+            {
+                if( oBalance.Currency != "USDT") return; // Only track USDT balances for now, can be extended to other currencies if needed
+                IExchangeTrackData oTrackData = GetTrackData(oBalance.Exchange.ExchangeType);
+
+                bool bEvent = false;
+                if ( oTrackData.BalanceChanged != null)
+                {
+                    bEvent = oTrackData.BalanceChanged.IsChanged();
+                }
+                else
+                {
+                    bEvent = true;
+                    oTrackData.BalanceChanged = new CryptoBalanceChange(oBalance);
+                }
+                if( bEvent ) OnBalanceChange(oBalance);
             }
         }
 
@@ -69,6 +155,9 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         {
             foreach (var oExchange in Exchanges)
             {
+                oExchange.Account.WebsocketPrivate.OnBalance -= WatcherOnBalance;
+                oExchange.Account.WebsocketPrivate.OnOrder -= WatcherOnOrder;
+                oExchange.Account.WebsocketPrivate.OnPosition -= WatcherOnPosition;
                 await oExchange.Account.WebsocketPrivate.Stop();
             }
         }

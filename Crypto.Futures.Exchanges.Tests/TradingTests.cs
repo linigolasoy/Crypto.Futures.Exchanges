@@ -109,7 +109,7 @@ namespace Crypto.Futures.Exchanges.Tests
             return oQuoter;
         }
 
-
+        /*
         [TestMethod]
         public async Task PaperTradingTests()
         {
@@ -199,5 +199,6 @@ namespace Crypto.Futures.Exchanges.Tests
 
             }
         }
+        */
     }
 }

@@ -17,15 +17,15 @@ namespace Crypto.Futures.Bot.Interface
         public IFuturesExchange[] Exchanges { get; }
 
         public delegate void OnBalanceChangeDelegate(IBalance oBalance);
-        public delegate void OnPositionChangeDelegate(ICryptoPosition oPosition);
+        public delegate void OnPositionChangeDelegate(IPosition oPosition);
         public delegate void OnOrderChangeDelegate(IOrder oOrder);
 
         public event OnBalanceChangeDelegate? OnBalanceChange;
         public event OnPositionChangeDelegate? OnPositionChange;
         public event OnOrderChangeDelegate? OnOrderChange;
-
+        
         public IBalance[] GetBalances();
-        public ICryptoPosition[] GetPositions();
+        public IPosition[] GetPositions();
         public IOrder[] GetOrders();
 
         public Task Start();
