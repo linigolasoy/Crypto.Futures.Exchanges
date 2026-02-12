@@ -55,7 +55,7 @@ namespace Crypto.Futures.Exchanges.Bitmart.Data
 
         public WsMessageType MessageType { get => WsMessageType.Position; }
         public string Id { get; }
-        public decimal Profit { get; private set; } = 0;
+        public decimal Profit { get; set; } = 0;
         public IFuturesSymbol Symbol { get; }
 
         public DateTime CreatedAt { get; }

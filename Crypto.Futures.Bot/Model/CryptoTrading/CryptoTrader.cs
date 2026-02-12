@@ -13,183 +13,261 @@ using static Crypto.Futures.Bot.Interface.ICryptoTrader;
 namespace Crypto.Futures.Bot.Model.CryptoTrading
 {
 
-    /*
-
     /// <summary>
-    /// Crypto trader
+    /// Trading class   
     /// </summary>
-    internal class CryptoTrader : ICryptoTrader
+    public class CryptoTrader : ICryptoTrader
     {
-        private class FakePosition : IPosition
-        {
-            public FakePosition( ICryptoPosition oPosition )
-            {
-                Id = oPosition.OrderOpen.OrderId;
-                Symbol = oPosition.Symbol;
-                CreatedAt = oPosition.OrderOpen.CreatedAt;
-                IsLong = oPosition.IsLong;
-                Quantity = oPosition.OrderOpen.Quantity;
-            }
-            public string Id { get; }
 
-            public IFuturesSymbol Symbol { get; }
-
-            public DateTime CreatedAt { get; }
-
-            public DateTime UpdatedAt => throw new NotImplementedException();
-
-            public bool IsLong { get; }
-
-            public bool IsOpen { get => true; }
-
-            public decimal AveragePriceOpen { get; }
-
-            public decimal? PriceClose { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public decimal Quantity { get; }
-
-            public decimal Profit => throw new NotImplementedException();
-
-            public WsMessageType MessageType => throw new NotImplementedException();
-
-            public void Update(IWebsocketMessageBase oMessage)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-
-        private ConcurrentDictionary<ExchangeType, IBalance> m_aBalances = new ConcurrentDictionary<ExchangeType, IBalance>();  
-        private ConcurrentDictionary<int, ICryptoPosition> m_aPositionActive = new ConcurrentDictionary<int, ICryptoPosition>();
-        private ConcurrentDictionary<int, ICryptoPosition> m_aPositionClosed = new ConcurrentDictionary<int, ICryptoPosition>();
-        public CryptoTrader( ICryptoBot oBot) 
+        private const int RETRIES = 50;
+        public CryptoTrader(
+            IExchangeSetup oSetup,
+            ICommonLogger oLogger,
+            IAccountWatcher oWatcher,
+            IQuoter oQuoter) 
         { 
-            Logger = oBot.Logger;
-            Money = oBot.Setup.MoneyDefinition.Money;
-            Leverage = oBot.Setup.MoneyDefinition.Leverage;
-            Exchanges = oBot.Exchanges;
+            Money = oSetup.MoneyDefinition.Money;
+            Leverage = oSetup.MoneyDefinition.Leverage;
+            Logger = oLogger;
+            AccountWatcher = oWatcher;
+            Quoter = oQuoter;
         }
         public decimal Money { get; }
 
         public decimal Leverage { get; }
 
-        public int OrderTimeout { get; set; } = 60;
+        public int OrderTimeout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        // public ICryptoBot Bot { get; }
         public ICommonLogger Logger { get; }
 
-        private IFuturesExchange[] Exchanges { get; }
+        public IAccountWatcher AccountWatcher { get; }
 
-        public IBalance[] Balances { get => m_aBalances.Values.ToArray(); }
+        public IQuoter Quoter { get; }
 
-        public ICryptoPosition[] PositionsActive { get => m_aPositionActive.Values.ToArray(); }
-
-        public ICryptoPosition[] PositionsClosed { get => m_aPositionClosed.Values.ToArray(); }
-
-
-        /// <summary>
-        /// Close position on fill or kill mode
-        /// </summary>
-        /// <param name="oPosition"></param>
-        /// <param name="nPrice"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> CloseFillOrKill(ICryptoPosition oPosition, decimal? nPrice = null)
+        public async Task<bool> Close(IPosition oPosition, decimal? nPrice = null)
         {
-            throw new NotImplementedException();
-        }
-
-
-        /// <summary>
-        /// Open order in fill or kill mode
-        /// </summary>
-        /// <param name="oSymbol"></param>
-        /// <param name="bLong"></param>
-        /// <param name="nVolume"></param>
-        /// <param name="nPrice"></param>
-        /// <returns></returns>
-        public async Task<ICryptoPosition?> OpenFillOrKill(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Close
-        /// </summary>
-        /// <param name="oPosition"></param>
-        /// <param name="nPrice"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> Close(ICryptoPosition oPosition, MustCancelOrderDelegate? OncheckCancel = null, decimal? nPrice = null)
-        {
-            throw new NotImplementedException();
-        }
-
-
-
-        /// <summary>
-        /// Update balances
-        /// </summary>
-        public void InitBalances()
-        {
-            if (m_aBalances.Count == Exchanges.Length) return;
             try
             {
-                foreach( var oExchange in Exchanges )
+                string? strOrderId = await oPosition.Symbol.Exchange.Trading.ClosePosition(oPosition, nPrice);
+                if (strOrderId == null)
                 {
-                    IBalance? oBalance = null;  
-                    if( !m_aBalances.TryGetValue(oExchange.ExchangeType, out oBalance) )
-                    {
-                        IBalance[] aFound = oExchange.Account.WebsocketPrivate.Balances;
-                        if (aFound == null || aFound.Length <= 0) continue;
-                        IBalance? oFound = aFound.FirstOrDefault(p => p.Currency == "USDT");
-                        if (oFound == null) continue;
-                        m_aBalances.TryAdd(oExchange.ExchangeType, oFound);
-                    }
+                    Logger.Error($"Failed to create limit order on {oPosition.Symbol.ToString()}: Order ID is null");
+                    return false;
                 }
+                // Wait for account watcher
+                int nLoops = 0;
+                while (nLoops < RETRIES)
+                {
+                    if (!oPosition.IsOpen) break;
+
+                    await Task.Delay(200);
+                    nLoops++;
+                }
+                if( oPosition.IsOpen )
+                {
+                    Logger.Error($"Failed to close position on {oPosition.Symbol.ToString()}: Order ID {strOrderId} Socket not found position closed");
+                    return false;
+                }
+
+                return !oPosition.IsOpen;
+
             }
-            catch( Exception ex )
+            catch (Exception ex)
             {
-                Logger.Error("Error updating balances", ex);
+                Logger.Error($"Error closing position on {oPosition.Symbol.ToString()}: {ex.Message}");
+                return false;
             }
         }
 
+        public async Task<bool> ClosePendingOrders(IFuturesSymbol oSymbol)
+        {
+            try
+            {
+                bool bClosed = await oSymbol.Exchange.Trading.CloseOrders(oSymbol);
+                if (!bClosed)
+                {
+                    Logger.Error($"Failed to close pending orders on {oSymbol.ToString()}: CloseOrders returned false");
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error closing pending orders on {oSymbol.ToString()}: {ex.Message}");
+                return false;
+            }
+        }
 
         /// <summary>
-        /// Open position
+        /// Creates a limit order and waits for it to be registered in the account watcher. Returns the created order or null if failed.
         /// </summary>
         /// <param name="oSymbol"></param>
         /// <param name="bLong"></param>
         /// <param name="nVolume"></param>
         /// <param name="nPrice"></param>
         /// <returns></returns>
-        public async Task<ICryptoPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, MustCancelOrderDelegate? OncheckCancel = null, decimal? nPrice = null)
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<IOrder?> CreateLimitOrder(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal nPrice)
         {
-            throw new NotImplementedException();
+            try
+            {
+                string? strOrderId = await oSymbol.Exchange.Trading.CreateOrder(
+                    oSymbol,
+                    bLong,
+                    nVolume,
+                    nPrice);
+                if( strOrderId == null )
+                {
+                    Logger.Error($"Failed to create limit order on {oSymbol.ToString()}: Order ID is null");
+                    return null;
+                }
+                // Wait for account watcher
+                int nLoops = 0;
+                IOrder? oResult = null;
+                while ( nLoops < RETRIES )
+                {
+                    IOrder[] aOrders = AccountWatcher.GetOrders();
+                    oResult = aOrders.FirstOrDefault(o => 
+                        o.OrderId == strOrderId && 
+                        o.Symbol.Symbol == oSymbol.Symbol && 
+                        o.Symbol.Exchange.ExchangeType == o.Symbol.Exchange.ExchangeType );
+                    if (oResult != null) break;
+                    await Task.Delay(200);
+                    nLoops++;
+                }
+
+                if (oResult == null )
+                {
+                    Logger.Error($"Failed to create limit order on {oSymbol.ToString()}: Order ID {strOrderId} Socket not found order");
+                    return null;
+                }
+                return oResult;
+
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error creating limit order on {oSymbol.ToString()}: {ex.Message}");
+                return null;
+            }
         }
 
-        /// <summary>
-        /// Put leverate
-        /// </summary>
-        /// <param name="oSymbol"></param>
-        /// <returns></returns>
+        public async Task<IPosition?> Open(IFuturesSymbol oSymbol, bool bLong, decimal nVolume, decimal? nPrice = null)
+        {
+            try
+            {
+                string? strOrderId = await oSymbol.Exchange.Trading.CreateOrder(
+                    oSymbol,
+                    bLong,
+                    nVolume,
+                    nPrice);
+                if (strOrderId == null)
+                {
+                    Logger.Error($"Failed to create limit order on {oSymbol.ToString()}: Order ID is null");
+                    return null;
+                }
+                // Wait for account watcher
+                int nLoops = 0;
+                IOrder? oOrderResult = null;
+                IPosition? oPositionResult = null;
+                while (nLoops < RETRIES)
+                {
+                    if( oOrderResult == null )
+                    {
+                        IOrder[] aOrders = AccountWatcher.GetOrders();
+                        oOrderResult = aOrders.FirstOrDefault(o =>
+                            o.OrderId == strOrderId &&
+                            o.Symbol.Symbol == oSymbol.Symbol &&
+                            o.Symbol.Exchange.ExchangeType == o.Symbol.Exchange.ExchangeType);
+                    }
+                    if (oOrderResult != null && oOrderResult.Status == ModelOrderStatus.Filled )
+                    {
+                        IPosition[] aPositions = AccountWatcher.GetPositions();
+                        oPositionResult = aPositions.FirstOrDefault(p =>
+                            p.Symbol.Symbol == oSymbol.Symbol &&
+                            p.Symbol.Exchange.ExchangeType == oSymbol.Exchange.ExchangeType && 
+                            p.IsOpen && 
+                            p.Quantity == nVolume);
+                        if (oPositionResult != null) break;
+                    }
+                    // Found order filled, 
+
+                    await Task.Delay(200);
+                    nLoops++;
+                }
+
+                if (oOrderResult == null)
+                {
+                    Logger.Error($"Failed to open position on {oSymbol.ToString()}: Order ID {strOrderId} Socket not found order filled");
+                    return null;
+                }
+
+                if( oPositionResult == null )
+                {
+                    Logger.Error($"Failed to open position on {oSymbol.ToString()}: Order ID {strOrderId} Socket not found position");
+                    return null;
+                }
+                return oPositionResult;
+
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error creating limit order on {oSymbol.ToString()}: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<bool> PutLeverage(IFuturesSymbol oSymbol)
         {
             try
             {
-                bool bResult = await oSymbol.Exchange.Account.SetLeverage(oSymbol, Leverage);
-                if( !bResult )
+                decimal? nLeverage = await oSymbol.Exchange.Account.GetLeverage(oSymbol);
+                if (nLeverage != null && nLeverage.Value == Leverage )
                 {
-                    Logger.Error($"Could not set leverage on {oSymbol.ToString()} Unknown error");
+                    return true;
                 }
-                return bResult;
+                bool bResult = await oSymbol.Exchange.Account.SetLeverage(oSymbol, Leverage);
+                if (!bResult)
+                {
+                    Logger.Error($"Failed to set leverage on {oSymbol.ToString()}: SetLeverage returned false");
+                    return false;
+                }
+                return true;
+
             }
             catch (Exception ex)
             {
-                Logger.Error($"Could not set leverage on {oSymbol.ToString()}", ex);
+                Logger.Error($"Error setting leverage on {oSymbol.ToString()}: {ex.Message}");
+                return false;
             }
-            return false;
+        }
+
+
+
+        /// <summary>
+        /// Update positions from exchange. This is needed to be called after websocket disconnects or if account watcher is not used. If account watcher is used, positions should be updated automatically and this method does not need to be called.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> UpdatePositions()
+        {
+            try
+            {
+                IPosition[] aPositions= AccountWatcher.GetPositions();
+                IPosition[] aOpenned = aPositions.Where(p => p.IsOpen).ToArray();
+                foreach (var oPosition in aOpenned)
+                {
+                    decimal? nProfit = await Quoter.GetProfit(oPosition);
+                    if (nProfit == null) return false;
+                    oPosition.Profit = nProfit.Value;
+                }
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error updating profit on trader positions : {ex.Message}");
+                return false;
+            }
         }
     }
-    */
 }

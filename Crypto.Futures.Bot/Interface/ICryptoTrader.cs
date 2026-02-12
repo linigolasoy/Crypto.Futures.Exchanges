@@ -32,5 +32,7 @@ namespace Crypto.Futures.Bot.Interface
         public Task<bool> PutLeverage(IFuturesSymbol oSymbol);
 
 
+        public Task<bool> UpdatePositions();
+
     }
 }

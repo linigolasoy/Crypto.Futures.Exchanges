@@ -33,7 +33,7 @@ namespace Crypto.Futures.Bot
 
         public static ICryptoTrader CreateTrader(IExchangeSetup oSetup, ICommonLogger oLogger, IAccountWatcher oWatcher, IQuoter oQuoter)
         {
-            throw new NotImplementedException();
+            return new CryptoTrader(oSetup, oLogger, oWatcher, oQuoter);
         }
 
         public static IFundingRateBot CreateFundingRateBot(IExchangeSetup oSetup, ICommonLogger oLogger, bool bPaperTrading)

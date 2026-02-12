@@ -23,6 +23,6 @@ namespace Crypto.Futures.Exchanges.Model
         public decimal? PriceClose { get; set; } 
         public decimal Quantity { get; }
 
-        public decimal Profit { get; }  
+        public decimal Profit { get; set; }  
     }
 }

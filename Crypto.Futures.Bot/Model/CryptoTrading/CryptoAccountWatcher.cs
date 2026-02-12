@@ -47,12 +47,28 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
 
         public IOrder[] GetOrders()
         {
-            throw new NotImplementedException();
+            List<IOrder> aResult = new List<IOrder>();
+            foreach (var oData in m_aData)
+            {
+                if( oData.Value.OrderChanged.Count > 0 )
+                {
+                    aResult.AddRange(oData.Value.OrderChanged.Values.Select(o => o.Item));
+                }
+            }
+            return aResult.ToArray();
         }
 
         public IPosition[] GetPositions()
         {
-            throw new NotImplementedException();
+            List<IPosition> aResult = new List<IPosition>();
+            foreach (var oData in m_aData)
+            {
+                if (oData.Value.PositionChanged.Count > 0)
+                {
+                    aResult.AddRange(oData.Value.PositionChanged.Values.Select(o => o.Item));
+                }
+            }
+            return aResult.ToArray();
         }
 
         public async Task Start()
@@ -74,7 +90,6 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
 
         private void WatcherOnPosition(IPosition oPosition)
         {
-            if (OnPositionChange == null) return;
             IExchangeTrackData oTrackData = GetTrackData(oPosition.Symbol.Exchange.ExchangeType);
 
             IChangeTarget<IPosition>? oFound = null;
@@ -92,7 +107,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
                 bEvent = true;
                 oTrackData.PositionChanged[oPosition.Id] = new CryptoPositionChange(oPosition);
             }
-            if (bEvent) OnPositionChange(oPosition);
+            if (bEvent && OnPositionChange != null) OnPositionChange(oPosition);
         }
 
 
@@ -111,7 +126,6 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// <param name="oOrder"></param>
         private void WatcherOnOrder(IOrder oOrder)
         {
-            if( OnOrderChange == null ) return; 
             IExchangeTrackData oTrackData = GetTrackData(oOrder.Symbol.Exchange.ExchangeType);  
 
             bool bEvent = !oTrackData.OrderChanged.ContainsKey(oOrder.OrderId);
@@ -123,7 +137,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             {
                 oTrackData.OrderChanged[oOrder.OrderId] = new CryptoOrderChange(oOrder);
             }
-            if (bEvent) OnOrderChange(oOrder);  
+            if (bEvent && OnOrderChange != null ) OnOrderChange(oOrder);  
         }
 
         /// <summary>
@@ -132,23 +146,21 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         /// <param name="oBalance"></param>
         private void WatcherOnBalance(IBalance oBalance)
         {
-            if(OnBalanceChange != null)
-            {
-                if( oBalance.Currency != "USDT") return; // Only track USDT balances for now, can be extended to other currencies if needed
-                IExchangeTrackData oTrackData = GetTrackData(oBalance.Exchange.ExchangeType);
+            if( oBalance.Currency != "USDT") return; // Only track USDT balances for now, can be extended to other currencies if needed
+            IExchangeTrackData oTrackData = GetTrackData(oBalance.Exchange.ExchangeType);
 
-                bool bEvent = false;
-                if ( oTrackData.BalanceChanged != null)
-                {
-                    bEvent = oTrackData.BalanceChanged.IsChanged();
-                }
-                else
-                {
-                    bEvent = true;
-                    oTrackData.BalanceChanged = new CryptoBalanceChange(oBalance);
-                }
-                if( bEvent ) OnBalanceChange(oBalance);
+            bool bEvent = false;
+            if ( oTrackData.BalanceChanged != null)
+            {
+                bEvent = oTrackData.BalanceChanged.IsChanged();
             }
+            else
+            {
+                bEvent = true;
+                oTrackData.BalanceChanged = new CryptoBalanceChange(oBalance);
+            }
+            if( bEvent && OnBalanceChange != null ) OnBalanceChange(oBalance);
+            
         }
 
         public async Task Stop()

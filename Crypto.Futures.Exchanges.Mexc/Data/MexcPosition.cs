@@ -69,7 +69,7 @@ namespace Crypto.Futures.Exchanges.Mexc.Data
             Quantity = oJson.HoldVol * oSymbol.ContractSize;
         }
         public string Id { get; }
-        public decimal Profit { get; private set; } = 0;
+        public decimal Profit { get; set; } = 0;
         public DateTime CreatedAt { get; }
         public DateTime UpdatedAt { get; }
 

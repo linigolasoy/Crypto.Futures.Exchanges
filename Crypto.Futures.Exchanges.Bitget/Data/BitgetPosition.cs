@@ -54,7 +54,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public string Id { get; }
 
         public IFuturesSymbol Symbol { get; }
-        public decimal Profit { get; private set; } = 0;
+        public decimal Profit { get; set; } = 0;
         public DateTime CreatedAt { get; }
 
         public DateTime UpdatedAt { get; private set; }

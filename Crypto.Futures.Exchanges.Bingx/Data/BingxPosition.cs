@@ -74,7 +74,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
         public decimal AveragePriceOpen { get; }
         public decimal? PriceClose { get; set; } = null;
 
-        public decimal Profit { get; private set; } = 0;
+        public decimal Profit { get; set; } = 0;
         public decimal Quantity { get; }
 
         public WsMessageType MessageType { get => WsMessageType.Position; }

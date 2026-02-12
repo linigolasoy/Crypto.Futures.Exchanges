@@ -60,7 +60,7 @@ namespace Crypto.Futures.Exchanges.Coinex.Data
         public decimal? PriceClose { get; set; }= null; 
 
         public decimal Quantity { get; }
-        public decimal Profit { get; private set; }
+        public decimal Profit { get; set; }
 
         public void Update(IWebsocketMessageBase oMessage)
         {

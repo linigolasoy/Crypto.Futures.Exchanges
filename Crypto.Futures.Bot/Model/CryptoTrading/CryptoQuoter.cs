@@ -165,9 +165,29 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
             return await GetProfit(new IPosition[] { oPosition });
         }
 
+        private IOrderbookPrice? CheckOrderbook(IFuturesSymbol oSymbol)
+        {
+            var oData = oSymbol.Exchange.Market.Websocket.DataManager.GetData(oSymbol);
+            if (oData == null) return null;
+            return oData.LastOrderbookPrice;
+        }
+
         public async Task<decimal?> GetProfit(IPosition[] aPositions)
         {
-            throw new NotImplementedException();
+            decimal nResult = 0;
+            foreach (var oPosition in aPositions)
+            {
+                IOrderbookPrice? oOrderbook = CheckOrderbook(oPosition.Symbol); 
+                if( oOrderbook == null ) oOrderbook = await GetOrderbookPrice(oPosition.Symbol);
+                if( oOrderbook == null ) return null;
+
+                decimal nPrice = oPosition.IsLong ? oOrderbook.AskPrice : oOrderbook.BidPrice;
+                decimal nProfit = (nPrice - oPosition.AveragePriceOpen) * oPosition.Quantity;
+                if (!oPosition.IsLong) nProfit = -nProfit;
+                nResult += nProfit;
+            }
+
+            return nResult;
         }
     }
 }
