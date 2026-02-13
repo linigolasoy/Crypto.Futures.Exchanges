@@ -3,17 +3,18 @@ using Crypto.Futures.Exchanges;
 using Crypto.Futures.Exchanges.Rest;
 using System.Net.Http.Headers;
 using Crypto.Futures.Exchanges.Blofin;
+using BloFin.Net.Interfaces.Clients;
+using BloFin.Net.Clients;
+using CryptoExchange.Net.Authentication;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
     public class BlofinFutures : IFuturesExchange
     {
 
-        public const int MAX_TASKS = 20;
-        private const string BASE_URL = "https://openapi.blofin.com";
-        private const string ENDP_SYMBOLS = "/api/v1/market/instruments";
 
         // internal BlofinParser m_oParser;
+        private IBloFinRestClient m_oRestClient;
 
         public BlofinFutures(IExchangeSetup oSetup, ICommonLogger? oLogger)
         {
@@ -21,7 +22,10 @@ namespace Cypto.Futures.Exchanges.Blofin
             Logger = oLogger;
             // m_oParser = new BlofinParser(this);
             ApiKey = Setup.ApiKeys.First(p=> p.ExchangeType == this.ExchangeType);
-            
+
+            m_oRestClient = new BloFinRestClient();
+            m_oRestClient.SetApiCredentials(new ApiCredentials(ApiKey.ApiKey, ApiKey.ApiSecret, "Cotton12$$")); 
+
             SymbolManager = new FuturesSymbolManager();
             var oTask = RefreshSymbols();
             oTask.Wait(); // Wait for the symbols to be loaded  
@@ -33,9 +37,8 @@ namespace Cypto.Futures.Exchanges.Blofin
         public bool Tradeable { get => false; }
 
 
-        internal IApiCaller ApiCaller { get { return new BaseApiCaller(BASE_URL); } }
-        // internal BlofinParser Parser { get => m_oParser; }
 
+        public IBloFinRestClient RestClient { get => m_oRestClient; }
         public ICommonLogger? Logger { get; }
 
         public ExchangeType ExchangeType { get => ExchangeType.BlofinFutures; }
@@ -55,15 +58,16 @@ namespace Cypto.Futures.Exchanges.Blofin
             
             try
             {
-                var oResult = await ApiCaller.GetAsync(ENDP_SYMBOLS);
+                var oResult = await RestClient.FuturesApi.ExchangeData.GetTickersAsync();
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
-                IFuturesSymbol[]? aResult = BlofinSymbol.ParseAll(this, oResult.Data);
-                if(aResult == null) throw new Exception("Failed to parse symbols from Blofin.");
+                // IFuturesSymbol[]? aResult = BlofinSymbol.ParseAll(this, oResult.Data);
+                // // if(aResult == null) throw new Exception("Failed to parse symbols from Blofin.");
 
 
-                SymbolManager.SetSymbols(aResult);
-                return aResult;
+                // SymbolManager.SetSymbols(aResult);
+                // return aResult;
+                throw new NotImplementedException("Symbol parsing not implemented yet");
             }
             catch (Exception ex)
             {

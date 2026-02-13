@@ -19,7 +19,7 @@ namespace Crypto.Futures.FrontEnd.FundingRates
 
         public string Exchanges { get => $"{m_oChance.SymbolLong.Symbol.Exchange.ExchangeType} / {m_oChance.SymbolShort.Symbol.Exchange.ExchangeType}"; }
         public DateTime OpenTime { get => m_oChance.ChanceOpenDate; }
-
+        public DateTime Next { get => m_oChance.ChanceNextFundingDate; }
         public decimal Percent { get => m_oChance.PercentDifference; }
         public decimal Pnl { get => m_oChance.Pnl; }
 
@@ -67,11 +67,11 @@ namespace Crypto.Futures.FrontEnd.FundingRates
 
         private static void FormatGrid(DataGridView oGrid) 
         {
-            if( oGrid.Columns.Count < 6) return;    
+            if( oGrid.Columns.Count < 7) return;    
             oGrid.Columns[0].Visible = false;
 
-            oGrid.Columns[4].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             oGrid.Columns[5].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            oGrid.Columns[6].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
         }
     }
 }

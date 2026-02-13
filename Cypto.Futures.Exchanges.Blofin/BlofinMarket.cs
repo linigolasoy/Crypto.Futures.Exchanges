@@ -36,13 +36,15 @@ namespace Cypto.Futures.Exchanges.Blofin
         /// <returns></returns>
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            
+            throw new NotImplementedException();
+            /*
             var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_FUNDING);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
             BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oResult.Data);
             if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
             return BlofinFundingRate.ParseAll(m_oExchange, oResponse.data);
+            */
         }
 
 
@@ -62,6 +64,8 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
+            throw new NotImplementedException();
+            /*
             var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_TICKER);
             if (oResult == null || !oResult.Success) return null;
             if (oResult.Data == null) return null;
@@ -71,7 +75,7 @@ namespace Cypto.Futures.Exchanges.Blofin
 
             ITicker[]? aAll = BlofinTicker.ParseAll(m_oExchange, oResponse.data);
             return aAll;
-
+            */
         }
     }
 }

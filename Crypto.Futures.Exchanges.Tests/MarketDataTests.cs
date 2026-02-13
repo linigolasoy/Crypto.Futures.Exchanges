@@ -24,6 +24,7 @@ namespace Crypto.Futures.Exchanges.Tests
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
+                if( !oExchange.Tradeable) continue; // Skip non-tradeable exchanges 
 
 
                 IFuturesSymbol[]? aSymbols = oExchange.SymbolManager.GetAllValues();

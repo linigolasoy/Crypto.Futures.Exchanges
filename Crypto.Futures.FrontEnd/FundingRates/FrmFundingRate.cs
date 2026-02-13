@@ -119,7 +119,14 @@ namespace Crypto.Futures.FrontEnd
         private void ToolClose_Click(object sender, EventArgs e)
         {
             if (m_oBot == null) return;
-            m_oBot.MarkToClose = true;  
+            if( m_oBot.MarkToClose)
+            {
+                MessageBox.Show("Bot is already marked to close, please wait...");
+            }
+            if (MessageBox.Show("Are you sure you want to mark the bot to close? It will close all positions and chances and stop the bot.", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                m_oBot.MarkToClose = true;
+            }
         }
     }
 }

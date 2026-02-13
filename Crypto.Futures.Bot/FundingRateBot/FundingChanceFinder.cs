@@ -12,9 +12,11 @@ namespace Crypto.Futures.Bot.FundingRateBot
     {
 
         private DateTime m_dLastCheck = DateTime.MinValue;  
+        private decimal MIN_PERCENT = 0.1M;
         public FundingChanceFinder(IFundingRateBot bot)
         {
             Bot = bot;
+            MIN_PERCENT = Bot.Setup.Arbitrage.MinimumPercent;
         }
         public IFundingRateBot Bot { get; }
 
@@ -67,7 +69,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
 
             decimal nBestFound = 0;
             string strBestFound = string.Empty;
-            decimal nMinPercent = 0.1M;
+            decimal nMinPercent = MIN_PERCENT;
             Dictionary<string, IFundingRate[]> aFilterRates = new Dictionary<string, IFundingRate[]>();
             foreach (var item in oDictRates)
             {

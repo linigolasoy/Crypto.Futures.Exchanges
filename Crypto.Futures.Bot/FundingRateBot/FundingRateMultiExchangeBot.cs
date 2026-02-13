@@ -10,7 +10,9 @@ namespace Crypto.Futures.Bot.FundingRateBot
 {
     internal class FundingRateMultiExchangeBot : IFundingRateBot
     {
-        private const int MAX_ACTIVE = 1;
+        private int MAX_ACTIVE = 1;
+        private decimal PERCENT_CLOSE = -1.0M;
+
 
         private DateTime m_dLastProfitUpdate = DateTime.MinValue;   
         private CancellationTokenSource m_oCts = new CancellationTokenSource();
@@ -28,6 +30,8 @@ namespace Crypto.Futures.Bot.FundingRateBot
             Logger = oLogger;
             List<IFuturesExchange> aEchanges = new List<IFuturesExchange>();
             ChanceFinder = new FundingChanceFinder(this);
+            MAX_ACTIVE = Setup.Arbitrage.MaxOperations;
+            PERCENT_CLOSE = Setup.Arbitrage.ClosePercent;
         }
         public IFundingRateChance[] Chances { get => m_aActiveChances.ToArray(); }
 
@@ -262,7 +266,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
             if( bUpdatedPnl )
             {
                 decimal nPercent = 100M * oChance.Pnl / Setup.MoneyDefinition.Money;
-                if( nPercent > -1M )
+                if( nPercent > PERCENT_CLOSE )
                 {
                     await CloseChance(oChance);
                 }
