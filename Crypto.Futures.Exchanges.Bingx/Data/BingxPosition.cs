@@ -85,7 +85,7 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
             IPosition oPosition = (IPosition)oMessage;
             IsOpen = oPosition.IsOpen;  
             PriceClose= oPosition.PriceClose;   
-            Profit = oPosition.Profit;
+            // Profit = oPosition.Profit;
         }
     }
 }

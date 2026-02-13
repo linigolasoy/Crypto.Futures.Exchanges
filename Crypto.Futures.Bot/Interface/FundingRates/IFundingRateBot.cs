@@ -17,5 +17,7 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
 
         public IFundingChanceFinder ChanceFinder { get; }
 
+        public bool MarkToClose { get; set; }
+
     }
 }

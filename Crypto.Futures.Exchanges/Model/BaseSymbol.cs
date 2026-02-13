@@ -33,7 +33,7 @@ namespace Crypto.Futures.Exchanges.Model
 
         public int Decimals { get; set; } = 0;
 
-        public decimal ContractSize { get; set; } = 0;
+        public decimal ContractSize { get; set; } = 1;
 
         public bool UseContractSize { get; set; } = false;
 

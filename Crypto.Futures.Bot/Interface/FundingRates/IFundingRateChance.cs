@@ -15,16 +15,18 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
     public interface IFundingRateSymbolData
     {
         public IFuturesSymbol Symbol { get; }
-        public IFundingRate? RateOpen { get; }
+
+        public IFundingRate RateOpen { get; set; }
+
+        public IPosition? Position { get; set; }
+        /*
 
         public decimal? PriceOpen { get; }
         public DateTime? TimeOpen { get; }
         public decimal Quantity { get; }
         public decimal? PriceClose { get; }
         public DateTime? TimeClose { get; }
-
-        public IOrderbookPrice? OrderbookPrice { get;}
-        public Task<bool> Refresh(ICommonLogger oLogger);
+        */
 
     }
 
@@ -35,8 +37,12 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
     public interface IFundingRateChance
     {
         public IFundingRateBot Bot { get; }
+        public int Id { get; }
 
-        public DateTime ChanceDate { get; } 
+        public DateTime ChanceOpenDate { get; }
+        public DateTime ChanceNextFundingDate { get; }
+
+        public DateTime LastFundingUpdate { get; set; } 
         public decimal PercentDifference { get; }   
         public IFundingRateSymbolData SymbolLong { get; }
 
@@ -44,7 +50,8 @@ namespace Crypto.Futures.Bot.Interface.FundingRates
 
         public string Currency { get; } 
         public bool IsActive { get; } 
-        public decimal Pnl { get; }
+        public bool NeedClose { get; set; }  
+        public decimal Pnl { get; set; }
         public decimal Profit { get; }
     }
 

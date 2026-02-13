@@ -2,6 +2,9 @@ namespace Crypto.Futures.FrontEnd
 {
     internal static class Program
     {
+
+        public const string SETUP_FILE = "D:/Data/CryptoFutures/FuturesSetup.json";
+
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>

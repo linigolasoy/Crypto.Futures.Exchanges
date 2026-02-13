@@ -75,6 +75,15 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading
         {
             foreach (var oExchange in Exchanges)
             {
+                // Point zero of positions
+                IPosition[]? aStart = await oExchange.Account.GetPositions();
+                if( aStart != null && aStart.Length > 0) 
+                { 
+                    IExchangeTrackData oTrackData = GetTrackData(oExchange.ExchangeType); 
+                    foreach (var oPosition in aStart) { oTrackData.PositionChanged[oPosition.Id] = new CryptoPositionChange(oPosition); } 
+                }
+
+
                 // Subscribe to account updates via websocket or polling
                 bool bStarted = await oExchange.Account.WebsocketPrivate.Start();
                 if( !bStarted)

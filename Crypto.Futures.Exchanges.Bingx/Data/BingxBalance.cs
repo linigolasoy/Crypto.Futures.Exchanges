@@ -18,9 +18,11 @@ namespace Crypto.Futures.Exchanges.Bingx.Data
         { 
             Exchange = oExchange;
             Currency = oJson.Asset;
+            decimal nLocked = (oJson.FrozenMargin == null ? 0 : oJson.FrozenMargin.Value);
+            if( oJson.UsedMargin != null) { nLocked += oJson.UsedMargin.Value; }
 
             Avaliable = (oJson.AvailableMargin == null ? 0: oJson.AvailableMargin.Value);
-            Locked = (oJson.FrozenMargin == null ? 0 : oJson.FrozenMargin.Value);
+            Locked = nLocked;
             Balance = (oJson.Equity == null ? 0 : oJson.Equity.Value);
         }
 

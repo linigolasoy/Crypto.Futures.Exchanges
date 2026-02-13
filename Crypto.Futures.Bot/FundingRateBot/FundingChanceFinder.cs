@@ -120,6 +120,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
                 }
             }
 
+            
             if ((dMin - dNow).TotalMinutes > 20)
             {
                 // Bot.Logger.Info($" Skipping, next funding rate ({dMin.ToShortTimeString()} not near");

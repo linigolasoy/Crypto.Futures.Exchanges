@@ -12,27 +12,19 @@ namespace Crypto.Futures.Bot.FundingRateBot
 
     internal class FundingRateSymbolData : IFundingRateSymbolData
     {
-        public FundingRateSymbolData(IFuturesSymbol? symbol, IFundingRate? rateOpen)
+        public FundingRateSymbolData(IFuturesSymbol? symbol, IFundingRate rateOpen, IPosition? oPosition = null)
         {
-            if( rateOpen != null )
-            {
-                RateOpen = rateOpen;
-                Symbol = rateOpen.Symbol;
-            }
-            else if(symbol != null)
-            {
-                Symbol = symbol;
-                RateOpen = null;
-            }
-            else
-            {
-                throw new ArgumentException("Either symbol or rateOpen must be provided");  
-            }
+            RateOpen = rateOpen;
+            Symbol = rateOpen.Symbol;
+            Position = oPosition;
         }
 
         public IFuturesSymbol Symbol { get; }
 
-        public IFundingRate? RateOpen { get; }
+        public IFundingRate? RateOpen { get; set; } = null;
+        public IPosition? Position { get; set; } = null;
+
+        /*
 
         public decimal? PriceOpen { get; set; } = null; 
 
@@ -87,12 +79,17 @@ namespace Crypto.Futures.Bot.FundingRateBot
                 return false;
             }   
         }
-
+        */
     }
 
     internal class FundingRateChance : IFundingRateChance
     {
         public IFundingRateBot Bot { get; }
+
+        private static int m_nLastId = 0;
+        public int Id { get; } = ++m_nLastId;
+
+
 
         public FundingRateChance(
             IFundingRateBot bot, 
@@ -106,18 +103,25 @@ namespace Crypto.Futures.Bot.FundingRateBot
             SymbolShort = new FundingRateSymbolData(oRateShort.Symbol, oRateShort);
 
             Currency = oRateLong.Symbol.Base;   
-            ChanceDate = oRateLong.Next < oRateShort.Next ? oRateLong.Next : oRateShort.Next;
+            ChanceNextFundingDate = oRateLong.Next < oRateShort.Next ? oRateLong.Next : oRateShort.Next;
+            ChanceOpenDate = DateTime.Now;
             PercentDifference = nDifference;
+            LastFundingUpdate = DateTime.Now;
         }
 
         public string Currency { get; }
         public IFundingRateSymbolData SymbolLong { get; }
 
         public IFundingRateSymbolData SymbolShort { get; }
-        public DateTime ChanceDate { get; }
-        public decimal PercentDifference { get; }
+        public DateTime ChanceOpenDate { get; }
+        public DateTime ChanceNextFundingDate { get; internal set; }
+
+        public DateTime LastFundingUpdate { get; set; }
+
+        public decimal PercentDifference { get; internal set; }
 
         public bool IsActive { get; set; } = true;
+        public bool NeedClose { get; set; } = false;    
 
         public decimal Pnl { get; set; } = 0;
 

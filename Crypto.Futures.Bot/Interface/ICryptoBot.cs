@@ -17,7 +17,7 @@ namespace Crypto.Futures.Bot.Interface
         public ICommonLogger Logger { get; }
 
         public IFuturesExchange[] Exchanges { get; }
-        public ICryptoTrader Trader { get; }
+        public ICryptoTrader? Trader { get; }
 
         public CancellationToken CancelToken { get; }
         public Task<bool> Start();
