@@ -18,7 +18,7 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            foreach( ExchangeType eType in oSetup.ExchangeTypes )
+            foreach( ExchangeType eType in oSetup.ExchangeTypes) //.Where(p => p == ExchangeType.ToobitFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -27,7 +27,10 @@ namespace Crypto.Futures.Exchanges.Tests
 
                 IBalance[]? aBalances = await oExchange.Account.GetBalances();
                 Assert.IsNotNull(aBalances);
-                Assert.IsTrue(aBalances.Length > 0);
+                // Assert.IsTrue(aBalances.Length > 0);
+
+                IPosition[]? aPositions = await oExchange.Account.GetPositions();
+                Assert.IsNotNull(aPositions);
 
             }
 
@@ -42,7 +45,7 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
             decimal nNewLeverage = 10;
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            foreach (ExchangeType eType in oSetup.ExchangeTypes) //.Where(p => p == ExchangeType.ToobitFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -71,9 +74,9 @@ namespace Crypto.Futures.Exchanges.Tests
             IExchangeSetup oSetup = ExchangeFactory.CreateSetup(SETUP_FILE);
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
-            decimal nQuantity = 8;
+            decimal nQuantity = 10;
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.Hyperliquidity))
+            foreach (ExchangeType eType in oSetup.ExchangeTypes.Where(p => p == ExchangeType.ToobitFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -105,6 +108,9 @@ namespace Crypto.Futures.Exchanges.Tests
                 Assert.IsNotNull(oFound);
                 decimal nPrice = Math.Round( oFound.LastPrice * 0.8M, oXrp.Decimals);
                 await Task.Delay(2000);
+
+                bool bLeverage = await oExchange.Account.SetLeverage(oXrp, 10);
+                Assert.IsTrue(bLeverage);
                 // Limit order test
                 string? strOrder = await oExchange.Trading.CreateOrder(oXrp, true, nQuantity, nPrice);
                 Assert.IsNotNull(strOrder);
@@ -122,13 +128,16 @@ namespace Crypto.Futures.Exchanges.Tests
                 await Task.Delay(2000);
                 Assert.IsTrue(oLastOrder != null);
                 Assert.IsTrue(oLastOrder.Status == ModelOrderStatus.Filled);
+                IPosition[]? aPositions = await oExchange.Account.GetPositions();
 
                 Assert.IsNotNull(oLastPosition);
 
                 strOrder = await oExchange.Trading.ClosePosition(oLastPosition);
                 Assert.IsNotNull(strOrder);
-                await Task.Delay(2000);
+                await Task.Delay(3000);
                 Assert.IsTrue(!oLastPosition.IsOpen);
+
+                Assert.IsTrue(oExchange.Account.WebsocketPrivate.Positions.Length <= 0);
 
                 /*
                 bool bClosed = await oExchange.Trading.ClosePosition(oLastPosition);

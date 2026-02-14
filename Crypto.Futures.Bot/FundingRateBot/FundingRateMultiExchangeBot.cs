@@ -203,6 +203,10 @@ namespace Crypto.Futures.Bot.FundingRateBot
             DateTime dMin = (oChance.SymbolLong.RateOpen.Next > oChance.SymbolShort.RateOpen.Next ? oChance.SymbolShort.RateOpen.Next : oChance.SymbolLong.RateOpen.Next);
             DateTime dNow = DateTime.Now;
 
+            try
+            {
+
+
             if( oChance.NeedClose )
             {
                 await CloseChance(oChance);
@@ -215,7 +219,7 @@ namespace Crypto.Futures.Bot.FundingRateBot
 
             // Check if needs to update funding
             double nMinutesUpdate = (dNow - oChance.LastFundingUpdate).TotalMinutes;
-            if (nMinutesUpdate > 2 || dMin < dNow)
+            if (nMinutesUpdate > 1 || dMin < dNow)
             {
                 IFundingRate? oFundingLong = await GetUpdatedFunding(oChance.SymbolLong.Symbol);
                 if (oFundingLong == null) return;
@@ -258,9 +262,9 @@ namespace Crypto.Futures.Bot.FundingRateBot
                 }
             }
 
+            ((FundingRateChance)oChance).PercentDifference = 100M * nFundingTot;
             if (nFundingTot > 0)
             {
-                ((FundingRateChance)oChance).PercentDifference = 100M * nFundingTot;
                 return;
             }
             if( bUpdatedPnl )
@@ -272,6 +276,15 @@ namespace Crypto.Futures.Bot.FundingRateBot
                 }
             }
             return;
+            }
+            catch(Exception ex)
+            {
+                Logger.Error($"FundingRateMultiExchangeBot.TryClosePositions: Error trying to close positions for {oChance.Currency}: {ex.Message}");
+            }
+            finally
+            {
+                ((FundingRateChance)oChance).ChanceNextFundingDate = dMin;
+            }
 
         }
 
@@ -449,9 +462,10 @@ namespace Crypto.Futures.Bot.FundingRateBot
             ExchangeType[] aExchangeTry = new ExchangeType[]
             {
                 ExchangeType.Hyperliquidity,
-                ExchangeType.BingxFutures,
+                // ExchangeType.BingxFutures,
                 ExchangeType.BitgetFutures,
                 // ExchangeType.BitmartFutures,
+                ExchangeType.ToobitFutures,
                 ExchangeType.CoinExFutures
             };
 

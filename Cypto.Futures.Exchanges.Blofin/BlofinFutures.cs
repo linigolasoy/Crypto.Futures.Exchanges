@@ -12,6 +12,7 @@ namespace Cypto.Futures.Exchanges.Blofin
     public class BlofinFutures : IFuturesExchange
     {
 
+        public static string BASE_URL = "https://openapi.blofin.com";
 
         // internal BlofinParser m_oParser;
         private IBloFinRestClient m_oRestClient;
@@ -58,16 +59,17 @@ namespace Cypto.Futures.Exchanges.Blofin
             
             try
             {
-                var oResult = await RestClient.FuturesApi.ExchangeData.GetTickersAsync();
+                var oResult = await RestClient.FuturesApi.ExchangeData.GetSymbolsAsync();
                 if (oResult == null || !oResult.Success) return null;
                 if (oResult.Data == null) return null;
-                // IFuturesSymbol[]? aResult = BlofinSymbol.ParseAll(this, oResult.Data);
-                // // if(aResult == null) throw new Exception("Failed to parse symbols from Blofin.");
-
-
-                // SymbolManager.SetSymbols(aResult);
-                // return aResult;
-                throw new NotImplementedException("Symbol parsing not implemented yet");
+                List<IFuturesSymbol> aResult = new List<IFuturesSymbol>();
+                foreach( var oData in oResult.Data )
+                {
+                    IFuturesSymbol oSymbol = new BlofinSymbolMine(this, oData);
+                    aResult.Add(oSymbol);
+                }
+                SymbolManager.SetSymbols(aResult.ToArray());
+                return aResult.ToArray();   
             }
             catch (Exception ex)
             {

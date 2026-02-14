@@ -11,19 +11,10 @@ namespace Crypto.Futures.Exchanges.Blofin.Data
     internal class BlofinResponse
     {
         [JsonProperty("code")]
-        public string code { get; set; } = string.Empty;
-        [JsonProperty("msg")]
-        public string? msg { get; set; } = string.Empty;
+        public int code { get; set; }
+        [JsonProperty("message")]
+        public string? message { get; set; }
         [JsonProperty("data")]
-        public JToken? data { get; set; } = null!;
-
-
-        public bool IsSuccess()
-        {
-            return code.Equals("0");
-        }
-
-        public static BlofinResponse? FromJson(string strJson) =>
-            JsonConvert.DeserializeObject<BlofinResponse>(strJson);
+        public JToken? data { get; set; }
     }
 }

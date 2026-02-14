@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Crypto.Futures.Exchanges\Crypto.Futures.Exchanges.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Ws\" />
+  </ItemGroup>
+
 </Project>

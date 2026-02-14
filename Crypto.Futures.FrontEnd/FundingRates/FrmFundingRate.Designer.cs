@@ -32,6 +32,7 @@
             toolStrip1 = new ToolStrip();
             ToolStart = new ToolStripButton();
             ToolStop = new ToolStripButton();
+            ToolClose = new ToolStripButton();
             SplMain = new SplitContainer();
             splitContainer2 = new SplitContainer();
             GridBalances = new DataGridView();
@@ -48,7 +49,6 @@
             label2 = new Label();
             LblPnlChances = new Label();
             BackWorkerMain = new System.ComponentModel.BackgroundWorker();
-            ToolClose = new ToolStripButton();
             toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)SplMain).BeginInit();
             SplMain.Panel1.SuspendLayout();
@@ -99,6 +99,17 @@
             ToolStop.Text = "Stop bot";
             ToolStop.Visible = false;
             ToolStop.Click += ToolStop_Click;
+            // 
+            // ToolClose
+            // 
+            ToolClose.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            ToolClose.Image = (Image)resources.GetObject("ToolClose.Image");
+            ToolClose.ImageTransparentColor = Color.Magenta;
+            ToolClose.Name = "ToolClose";
+            ToolClose.Size = new Size(46, 36);
+            ToolClose.Text = "Close";
+            ToolClose.ToolTipText = "Close All Positions";
+            ToolClose.Click += ToolClose_Click;
             // 
             // SplMain
             // 
@@ -209,6 +220,7 @@
             GridPositions.RowHeadersWidth = 82;
             GridPositions.Size = new Size(1809, 260);
             GridPositions.TabIndex = 4;
+            GridPositions.CellFormatting += GridPositions_CellFormatting;
             // 
             // panel1
             // 
@@ -256,6 +268,7 @@
             GridChances.RowHeadersWidth = 82;
             GridChances.Size = new Size(1809, 524);
             GridChances.TabIndex = 5;
+            GridChances.CellFormatting += GridChances_CellFormatting;
             // 
             // panel2
             // 
@@ -300,17 +313,6 @@
             BackWorkerMain.DoWork += BackWorkerMain_DoWork;
             BackWorkerMain.ProgressChanged += BackWorkerMain_ProgressChanged;
             BackWorkerMain.RunWorkerCompleted += BackWorkerMain_RunWorkerCompleted;
-            // 
-            // ToolClose
-            // 
-            ToolClose.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            ToolClose.Image = (Image)resources.GetObject("ToolClose.Image");
-            ToolClose.ImageTransparentColor = Color.Magenta;
-            ToolClose.Name = "ToolClose";
-            ToolClose.Size = new Size(46, 36);
-            ToolClose.Text = "Close";
-            ToolClose.ToolTipText = "Close All Positions";
-            ToolClose.Click += ToolClose_Click;
             // 
             // FrmFundingRate
             // 

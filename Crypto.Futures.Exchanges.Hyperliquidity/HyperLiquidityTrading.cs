@@ -67,6 +67,7 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
             {
 
                 OrderType eType = (nPrice.HasValue ? HyperLiquid.Net.Enums.OrderType.Limit : HyperLiquid.Net.Enums.OrderType.Market);
+
                 if (nPrice == null)
                 {
                     nPrice = await GetPrice(oPosition.Symbol, !oPosition.IsLong);
@@ -83,7 +84,10 @@ namespace Crypto.Futures.Exchanges.Hyperliquidity
                     price: (nPrice == null ? 0 : nPrice.Value),
                     timeInForce: (bFillOrKill ? HyperLiquid.Net.Enums.TimeInForce.ImmediateOrCancel : HyperLiquid.Net.Enums.TimeInForce.GoodTillCanceled)
                     );
-                if (oOrder == null || !oOrder.Success || oOrder.Data == null) return null;
+                if (oOrder == null || !oOrder.Success || oOrder.Data == null)
+                {
+                    return null;
+                }
                 return oOrder.Data.OrderId.ToString();
             }
             catch (Exception ex)

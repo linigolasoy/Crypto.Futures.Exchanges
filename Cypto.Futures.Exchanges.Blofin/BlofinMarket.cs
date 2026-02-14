@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Crypto.Futures.Exchanges.Blofin.Ws;
 using Crypto.Futures.Exchanges.Blofin.Data;
 using Newtonsoft.Json;
 using Cypto.Futures.Exchanges.Blofin.Data;
+using Crypto.Futures.Exchanges.Rest;
 
 namespace Cypto.Futures.Exchanges.Blofin
 {
@@ -18,16 +18,15 @@ namespace Cypto.Futures.Exchanges.Blofin
 
         private BlofinFutures m_oExchange;
         private const string ENDP_FUNDING = "/api/v1/market/funding-rate";
-        private const string ENDP_TICKER = "/api/v1/market/tickers";
 
         public BlofinMarket(BlofinFutures oExchange)
         {
             m_oExchange = oExchange;
-            Websocket = new BlofinWebsocketPublic(this);
+            // Websocket = new BlofinWebsocketPublic(this);
         }
         public IFuturesExchange Exchange { get => m_oExchange; }
 
-        public IWebsocketPublic Websocket { get; }
+        public IWebsocketPublic Websocket { get=> throw new NotImplementedException(); }    
 
 
         /// <summary>
@@ -36,15 +35,23 @@ namespace Cypto.Futures.Exchanges.Blofin
         /// <returns></returns>
         private async Task<IFundingRate[]?> GetAllFundingRates()
         {
-            throw new NotImplementedException();
-            /*
-            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_FUNDING);
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-            BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oResult.Data);
-            if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
-            return BlofinFundingRate.ParseAll(m_oExchange, oResponse.data);
-            */
+            try
+            {
+                BaseApiCaller oApiCalled = new BaseApiCaller(BlofinFutures.BASE_URL);
+                var oCallResult = await oApiCalled.GetAsync(ENDP_FUNDING);
+
+                if (oCallResult == null || !oCallResult.Success || oCallResult.Data== null) return null;
+                BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oCallResult.Data);
+                if (oResponse == null || oResponse.code != 0 || oResponse.data == null) return null;
+                return BlofinFundingRate.ParseAll(m_oExchange, oResponse.data);
+
+
+            }
+            catch( Exception ex )
+            {
+                if(m_oExchange.Logger != null ) m_oExchange.Logger.Error($"Error getting funding rates: {ex.Message}", ex);
+                return null;
+            }
         }
 
 
@@ -64,18 +71,24 @@ namespace Cypto.Futures.Exchanges.Blofin
         }
         public async Task<ITicker[]?> GetTickers(IFuturesSymbol[]? aSymbols)
         {
-            throw new NotImplementedException();
-            /*
-            var oResult = await m_oExchange.ApiCaller.GetAsync(ENDP_TICKER);
-            if (oResult == null || !oResult.Success) return null;
-            if (oResult.Data == null) return null;
-
-            BlofinResponse? oResponse = JsonConvert.DeserializeObject<BlofinResponse>(oResult.Data);
-            if (oResponse == null || !oResponse.IsSuccess() || oResponse.data == null) return null;
-
-            ITicker[]? aAll = BlofinTicker.ParseAll(m_oExchange, oResponse.data);
-            return aAll;
-            */
+            try
+            {
+                var oResult = await m_oExchange.RestClient.FuturesApi.ExchangeData.GetTickersAsync();
+                if (oResult == null || !oResult.Success || oResult.Data == null) return null;
+                List<ITicker> aReturn = new List<ITicker>();
+                foreach (var oTicker in oResult.Data)
+                {
+                    IFuturesSymbol? oSymbol = m_oExchange.SymbolManager.GetSymbol(oTicker.Symbol);
+                    if (oSymbol == null) continue; // Skip unknown symbols
+                    aReturn.Add(new BlofinTickerMine(oSymbol, oTicker));
+                }
+                return aReturn.ToArray();
+            }
+            catch( Exception ex )
+            {
+                if (m_oExchange.Logger != null) m_oExchange.Logger.Error($"Error getting tickers: {ex.Message}", ex);
+                return null;
+            }
         }
     }
 }

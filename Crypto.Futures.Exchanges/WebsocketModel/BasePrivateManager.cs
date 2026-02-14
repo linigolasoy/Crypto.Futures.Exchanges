@@ -67,19 +67,16 @@ namespace Crypto.Futures.Exchanges.WebsocketModel
 
         private void PutPosition( IPosition oPosition )
         {
-            m_aPositions.AddOrUpdate(oPosition.Id, oPosition, (p, q) => { q.Update(oPosition); return q; });
-            if (OnPosition != null)
+            m_aPositions.AddOrUpdate(oPosition.Symbol.Symbol, oPosition, (p, q) => { q.Update(oPosition); return q; });
+            if (m_aPositions.TryGetValue(oPosition.Symbol.Symbol, out IPosition? oFound))
             {
-                if (m_aPositions.TryGetValue(oPosition.Id, out IPosition? oFound))
+                if( !oFound.IsOpen )
                 {
-                    OnPosition(oFound);
-                    if( !oFound.IsOpen )
-                    {
-                        int nId = m_nLastId++;
-                        m_aPositionClosed.TryAdd(nId, oFound);
-                        m_aPositions.TryRemove(oFound.Id, out oFound);  
-                    }
+                    int nId = m_nLastId++;
+                    m_aPositionClosed.TryAdd(nId, oFound);
+                    m_aPositions.TryRemove(oFound.Symbol.Symbol, out oFound);  
                 }
+                if( OnPosition != null ) OnPosition(oFound!);
             }
 
         }

@@ -16,7 +16,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
             Exchange = oExchange;
             Currency = oBalance.MarginAsset;
             Balance = oBalance.Equity;
-            Locked = oBalance.Locked;
+            Locked = oBalance.Equity - oBalance.CrossMarginMaxAvailable;
             Avaliable = oBalance.Available;
         }
         public BitgetBalanceMine(IFuturesExchange oExchange, BitgetFuturesBalanceUpdate oBalance)

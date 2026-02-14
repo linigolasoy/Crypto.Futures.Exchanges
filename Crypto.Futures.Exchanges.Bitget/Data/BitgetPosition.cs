@@ -11,11 +11,11 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public BitgetPositionMine(IFuturesSymbol oSymbol, BitgetPosition oJson)
         {
             // Constructor logic if needed
-            Id = Guid.NewGuid().ToString();
             Symbol = oSymbol;
             CreatedAt = oJson.UpdateTime.ToLocalTime();
             UpdatedAt = oJson.UpdateTime.ToLocalTime();
             IsLong = (oJson.PositionSide == PositionSide.Long);
+            Id = $"{oSymbol.Symbol}_{IsLong.ToString()}";
             IsOpen = true;
             AveragePriceOpen = oJson.AverageOpenPrice;
             Quantity = oJson.Total;
@@ -24,11 +24,12 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
 
         public BitgetPositionMine(IFuturesSymbol oSymbol, BitgetPositionUpdate oUpdate)
         {
-            Id = oUpdate.PositionId;
+            //Id = oUpdate.PositionId;
             Symbol = oSymbol;
             CreatedAt = oUpdate.CreateTime.ToLocalTime();
             UpdatedAt = oUpdate.UpdateTime.ToLocalTime();
             IsLong = (oUpdate.PositionSide == PositionSide.Long);
+            Id = $"{oSymbol.Symbol}_{IsLong.ToString()}";
             IsOpen = true;
             AveragePriceOpen = oUpdate.AverageOpenPrice;
             Quantity = oUpdate.Total;
@@ -38,11 +39,11 @@ namespace Crypto.Futures.Exchanges.Bitget.Data
         public BitgetPositionMine(IFuturesSymbol oSymbol, BitgetPositionHistoryEntry oJson)
         {
             // Constructor logic if needed
-            Id = Guid.NewGuid().ToString();
             Symbol = oSymbol;
+            IsLong = (oJson.Side == PositionSide.Long);
+            Id = $"{oSymbol.Symbol}_{IsLong.ToString()}";
             CreatedAt = oJson.CreateTime.ToLocalTime();
             UpdatedAt = oJson.UpdateTime.ToLocalTime(); 
-            IsLong = (oJson.Side == PositionSide.Long);
             IsOpen = true;
             AveragePriceOpen = oJson.AverageOpenPrice;
             Quantity = oJson.OpenTotalPosition;

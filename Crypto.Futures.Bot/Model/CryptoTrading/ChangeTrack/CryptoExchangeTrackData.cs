@@ -17,6 +17,7 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading.ChangeTrack
 
         private ConcurrentDictionary<string, IChangeTarget<IOrder>> m_aOrders = new ConcurrentDictionary<string, IChangeTarget<IOrder>>();
         private ConcurrentDictionary<string, IChangeTarget<IPosition>> m_aPositions = new ConcurrentDictionary<string, IChangeTarget<IPosition>>();
+        private ConcurrentDictionary<string, IChangeTarget<IPosition>> m_aPositionHistory = new ConcurrentDictionary<string, IChangeTarget<IPosition>>();
         public CryptoExchangeTrackData() 
         { 
         }
@@ -25,5 +26,6 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading.ChangeTrack
         public ConcurrentDictionary<string, IChangeTarget<IOrder>> OrderChanged { get => m_aOrders; }
 
         public ConcurrentDictionary<string, IChangeTarget<IPosition>> PositionChanged { get => m_aPositions; }
+        public ConcurrentDictionary<string, IChangeTarget<IPosition>> PositionHistoryChanged { get => m_aPositionHistory; }
     }
 }

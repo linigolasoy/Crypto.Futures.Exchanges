@@ -119,13 +119,56 @@ namespace Crypto.Futures.FrontEnd
         private void ToolClose_Click(object sender, EventArgs e)
         {
             if (m_oBot == null) return;
-            if( m_oBot.MarkToClose)
+            if (m_oBot.MarkToClose)
             {
                 MessageBox.Show("Bot is already marked to close, please wait...");
             }
             if (MessageBox.Show("Are you sure you want to mark the bot to close? It will close all positions and chances and stop the bot.", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 m_oBot.MarkToClose = true;
+            }
+        }
+
+        private void GridChances_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            DataGridView oGrid = (DataGridView)sender;
+            if (e.ColumnIndex > 5 && oGrid.Columns[e.ColumnIndex].Name.Equals("Pnl"))
+            {
+                var oValue = oGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+                if (oValue != null)
+                {
+                    decimal nValue = (decimal)oValue;
+                    if (nValue < 0)
+                    {
+                        e.CellStyle.ForeColor = Color.Red;
+                    }
+                    else
+                    {
+                        e.CellStyle.ForeColor = Color.DarkGreen;
+                    }
+                }
+            }
+        }
+
+        private void GridPositions_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            DataGridView oGrid = (DataGridView)sender;  
+            if( e.ColumnIndex > 0 && oGrid.Columns[e.ColumnIndex].Name.Equals("PnL"))
+            {
+                var oValue = oGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+                if (oValue != null)
+                {
+                    decimal nValue = (decimal)oValue;
+                    if (nValue < 0)
+                    {
+                        e.CellStyle.ForeColor = Color.Red;
+                    }
+                    else
+                    {
+                        e.CellStyle.ForeColor = Color.DarkGreen;
+                    }
+                }
+
             }
         }
     }

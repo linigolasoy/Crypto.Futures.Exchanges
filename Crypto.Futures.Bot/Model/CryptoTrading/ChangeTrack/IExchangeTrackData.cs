@@ -14,5 +14,6 @@ namespace Crypto.Futures.Bot.Model.CryptoTrading.ChangeTrack
         public IChangeTarget<IBalance>? BalanceChanged { get; set; }
         public ConcurrentDictionary<string, IChangeTarget<IOrder>> OrderChanged { get; }
         public ConcurrentDictionary<string, IChangeTarget<IPosition>> PositionChanged { get; }
+        public ConcurrentDictionary<string, IChangeTarget<IPosition>> PositionHistoryChanged { get; }
     }
 }

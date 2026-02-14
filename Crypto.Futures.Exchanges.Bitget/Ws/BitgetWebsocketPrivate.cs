@@ -92,7 +92,7 @@ namespace Crypto.Futures.Exchanges.Bitget.Ws
                 Put(oPosition);
             }
 
-            IPosition[] aToClose = Positions.Where(p=> p.IsOpen && !aUpdated.Any(q=> p.Id == q.Id)).ToArray(); 
+            IPosition[] aToClose = Positions.Where(p=> p.IsOpen && !aUpdated.Any(q=> p.Symbol.Symbol == q.Symbol.Symbol)).ToArray(); 
             foreach( var oToClose in aToClose)
             {
                 BitgetPositionMine oMine = (BitgetPositionMine)oToClose;

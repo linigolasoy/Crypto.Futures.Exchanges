@@ -46,7 +46,7 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            foreach (ExchangeType eType in oSetup.ExchangeTypes) //.Where(p=>p == ExchangeType.ToobitFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -59,6 +59,9 @@ namespace Crypto.Futures.Exchanges.Tests
                 IFuturesSymbol? oEth = aSymbols.FirstOrDefault(x => x.Base == "ETH");
                 Assert.IsNotNull(oEth, $"ETH symbol should not be null for {eType} exchange.");
 
+                IFundingRate[]? aAllFundings = await oExchange.Market.GetFundingRates();
+                Assert.IsNotNull(aAllFundings);
+                Assert.IsTrue(aAllFundings.Length >= aSymbols.Length / 2);
                 IFundingRate? oBtcFunding = await oExchange.Market.GetFundingRate(oBtc);
                 Assert.IsNotNull(oBtcFunding, $"BTC funding rate should not be null for {eType} exchange.");
 
@@ -78,7 +81,7 @@ namespace Crypto.Futures.Exchanges.Tests
             Assert.IsNotNull(oSetup, "Setup should not be null.");
 
 
-            foreach (ExchangeType eType in oSetup.ExchangeTypes)
+            foreach (ExchangeType eType in oSetup.ExchangeTypes) //.Where(p=>p == ExchangeType.ToobitFutures))
             {
                 IFuturesExchange oExchange = ExchangeFactory.CreateExchange(oSetup, eType);
                 Assert.IsNotNull(oExchange, $"Exchange for {eType} should not be null.");
@@ -115,7 +118,7 @@ namespace Crypto.Futures.Exchanges.Tests
 
 
             string[] aCoins = new string[] { "BTC", "ETH", "XRP", "LTC", "SOL", "BNB", "ADA", "DOT", "DOGE", "TRX" };
-            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.Hyperliquidity))
+            foreach (var oExchange in aExchanges.Where(p=> p.ExchangeType == ExchangeType.ToobitFutures))
             {
                 if( !oExchange.Tradeable) continue;
                 IWebsocketPublic oWs = oExchange.Market.Websocket;
